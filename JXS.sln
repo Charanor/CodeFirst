@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ecs.Core", "src\Ecs\Ecs.Cor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ecs.Generators", "src\Ecs\Ecs.Generators\Ecs.Generators.csproj", "{243803F6-1C5C-41A3-B82B-E4EB3B08F3CD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ecs.Examples", "src\Ecs\Ecs.Examples\Ecs.Examples.csproj", "{6C3E143C-978B-4797-AEA1-FAD8735CE0B8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{243803F6-1C5C-41A3-B82B-E4EB3B08F3CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{243803F6-1C5C-41A3-B82B-E4EB3B08F3CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{243803F6-1C5C-41A3-B82B-E4EB3B08F3CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C3E143C-978B-4797-AEA1-FAD8735CE0B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C3E143C-978B-4797-AEA1-FAD8735CE0B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C3E143C-978B-4797-AEA1-FAD8735CE0B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C3E143C-978B-4797-AEA1-FAD8735CE0B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
