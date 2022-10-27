@@ -1,9 +1,14 @@
-﻿namespace JXS.Ecs.Core;
+﻿using JXS.Ecs.Core.Exceptions;
+
+namespace JXS.Ecs.Core;
 
 public class ComponentMapper<T> : IComponentMapper where T : IComponent, IEquatable<T>
 {
 	private const int DEFAULT_ENTITY_COUNT = 256;
 	private readonly World world;
+
+	private readonly bool isDefaultConstructible;
+	private readonly bool isValueType;
 
 	private T[] components;
 	private bool[] hasComponent;
@@ -14,6 +19,8 @@ public class ComponentMapper<T> : IComponentMapper where T : IComponent, IEquata
 		components = new T[DEFAULT_ENTITY_COUNT];
 		hasComponent = new bool[DEFAULT_ENTITY_COUNT];
 		ComponentId = ComponentManager.GetId<T>();
+		isDefaultConstructible = typeof(T).GetConstructor(Type.EmptyTypes) != null;
+		isValueType = typeof(T).IsValueType;
 	}
 
 	public int ComponentId { get; }
@@ -81,9 +88,14 @@ public class ComponentMapper<T> : IComponentMapper where T : IComponent, IEquata
 	/// <inheritdoc cref="IComponentMapper.Create" />
 	public virtual ref T Create(int entity)
 	{
+		if (!isDefaultConstructible && !isValueType)
+		{
+			throw new NotDefaultConstructibleException<T>();
+		}
+
 		EnsureCanContainId(entity);
 		hasComponent[entity] = true;
-		components[entity] = default!;
+		components[entity] = Activator.CreateInstance<T>();
 		world.ComponentAdded(entity);
 		return ref components[entity];
 	}

@@ -1,4 +1,6 @@
-﻿namespace JXS.Ecs.Core;
+﻿using JXS.Ecs.Core.Exceptions;
+
+namespace JXS.Ecs.Core;
 
 public interface IComponentMapper
 {
@@ -25,6 +27,10 @@ public interface IComponentMapper
 	/// </summary>
 	/// <param name="entity">the entity id</param>
 	/// <returns>the newly created component</returns>
+	/// <exception cref="NotDefaultConstructibleException{T}">
+	///     If the component this mapper is bound to can not be 0-argument
+	///     constructed and is not a value type.
+	/// </exception>
 	public IComponent Create(int entity);
 
 	/// <summary>
@@ -66,5 +72,9 @@ public interface IComponentMapper
 	///     if <c>true</c>, ensures that this entity has this component. If <c>false</c> ensures that this
 	///     entity does not have this component.
 	/// </param>
+	/// <exception cref="NotDefaultConstructibleException{T}">
+	///     If the component this mapper is bound to can not be 0-argument
+	///     constructed and is not a value type.
+	/// </exception>
 	public void Set(int entity, bool shouldHave);
 }

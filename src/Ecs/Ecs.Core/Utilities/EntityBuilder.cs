@@ -28,6 +28,8 @@ public class EntityBuilder
 	/// </summary>
 	public int Entity { get; }
 
+	public T Create<T>() where T : IComponent, IEquatable<T>, new() => Add(new T());
+
 	public T Add<T>(T component) where T : IComponent, IEquatable<T> =>
 		world.GetMapper<T>().Add(Entity, component);
 
