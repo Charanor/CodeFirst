@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Graphics.Renderer", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Graphics.Utils", "src\JXS.Graphics.Utils\JXS.Graphics.Utils.csproj", "{C240A3E2-75D7-4908-BFE3-703C96B8F64C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Input.Core", "src\JXS.Input.Core\JXS.Input.Core.csproj", "{2F2B11D1-3BA7-48E4-A04A-9FD0C7CF07ED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,9 @@ Global
 		{C240A3E2-75D7-4908-BFE3-703C96B8F64C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C240A3E2-75D7-4908-BFE3-703C96B8F64C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C240A3E2-75D7-4908-BFE3-703C96B8F64C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F2B11D1-3BA7-48E4-A04A-9FD0C7CF07ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F2B11D1-3BA7-48E4-A04A-9FD0C7CF07ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F2B11D1-3BA7-48E4-A04A-9FD0C7CF07ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F2B11D1-3BA7-48E4-A04A-9FD0C7CF07ED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
