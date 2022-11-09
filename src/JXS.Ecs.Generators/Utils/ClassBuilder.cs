@@ -2,7 +2,7 @@
 
 namespace Ecs.Generators.Utils;
 
-internal class ClassBuilder
+public class ClassBuilder
 {
 	private readonly StringBuilder sb;
 	private int indentation;

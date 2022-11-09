@@ -9,6 +9,8 @@ internal static class GenerationUtils
 	private const string DEFAULT_ENTITY_PARAM_NAME = "entity";
 	private const string DEFAULT_DELTA_PARAM_NAME = "delta";
 
+	private const string COMPONENT_MAPPER_NAMESPACE = "JXS.Ecs.Core";
+
 	public static string GenerateSystemClasses(IImmutableList<SystemToGenerate> systemsToGenerate)
 	{
 		var builder = new ClassBuilder();
@@ -52,10 +54,11 @@ internal static class GenerationUtils
 				foreach (var parameterDeclaration in componentParameters)
 				{
 					builder.IndentedLn(
-						$"private readonly MonoGameEngine.Ecs.ComponentMapper<{parameterDeclaration.Type}> {parameterDeclaration.Name}Mapper = null!;");
+						$"private readonly {COMPONENT_MAPPER_NAMESPACE}.ComponentMapper<{parameterDeclaration.Type}> {parameterDeclaration.Name}Mapper = null!;");
 				}
 
-				builder.BeginBlock($"protected override void Update(int {entityParameterName}, float {deltaParameterName})");
+				builder.BeginBlock(
+					$"protected override void Update(int {entityParameterName}, float {deltaParameterName})");
 				{
 					foreach (var parameterDeclaration in componentParameters)
 					{
@@ -74,7 +77,7 @@ internal static class GenerationUtils
 					}
 
 					var paramList = parameters.Select(param => $"{param.Modifier ?? ""} {param.Name}");
-					builder.IndentedLn($"{system.MethodName}({string.Join(", ", paramList)});");
+					builder.IndentedLn($"{system.MethodName}({string.Join(separator: ", ", paramList)});");
 
 					foreach (var parameterDeclaration in componentParameters)
 					{
@@ -158,6 +161,6 @@ internal static class GenerationUtils
 		public string? Namespace { get; }
 		public bool Optional { get; }
 
-		public string NameOrDefaultIfEmpty(string defaultName) => Name.Length == 0 ? defaultName : Name;
+		public string NameOrDefaultIfEmpty(string defaultName) => Name is { Length: > 0 } ? Name : defaultName;
 	}
 }

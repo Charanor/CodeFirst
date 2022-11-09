@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using Ecs.Generators.Utils;
@@ -14,21 +15,12 @@ public class GenerateProcessEntityMethod : IIncrementalGenerator
 {
 	private const string ITERATING_SYSTEM_NAME = "IteratingSystem";
 
-	private const string ENTITY_PROCESSOR_NAMESPACE = "Ecs.Generators.Attributes";
+	private const string ENTITY_PROCESSOR_NAMESPACE = "JXS.Ecs.Core.Attributes.Generation";
 	private const string ENTITY_PROCESSOR_NAME = "EntityProcessor";
 	private const string ENTITY_PROCESSOR_FULL_NAME = $"{ENTITY_PROCESSOR_NAMESPACE}.{ENTITY_PROCESSOR_NAME}";
-	private const string ENTITY_PROCESSOR_ATTRIBUTE_SOURCE = $@"
-namespace {ENTITY_PROCESSOR_NAMESPACE};
-
-[System.AttributeUsage(System.AttributeTargets.Method)]
-public class {ENTITY_PROCESSOR_NAME} : System.Attribute {{}}
-";
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		context.RegisterPostInitializationOutput(ctx => ctx.AddSource("EntityProcessorAttribute.g.cs",
-			SourceText.From(ENTITY_PROCESSOR_ATTRIBUTE_SOURCE, Encoding.UTF8)));
-
 		var declarations = context.SyntaxProvider.CreateSyntaxProvider(
 			static (syntaxNode, _) => IsEntitySystem(syntaxNode),
 			static (ctx, _) => TransformSyntaxToEntitySystemSyntax(ctx)
