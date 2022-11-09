@@ -1,10 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils", "src\Utils\Utils.csproj", "{8235A964-FF2C-464B-AE8D-B1C4F147992D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Utils", "src\JXS.Utils\JXS.Utils.csproj", "{8235A964-FF2C-464B-AE8D-B1C4F147992D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ecs.Core", "src\Ecs\Ecs.Core\Ecs.Core.csproj", "{CB4415D9-79ED-4447-9FD2-ABD7D0F204B5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Ecs.Core", "src\JXS.Ecs.Core\JXS.Ecs.Core.csproj", "{CB4415D9-79ED-4447-9FD2-ABD7D0F204B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ecs.Generators", "src\Ecs\Ecs.Generators\Ecs.Generators.csproj", "{243803F6-1C5C-41A3-B82B-E4EB3B08F3CD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Ecs.Generators", "src\JXS.Ecs.Generators\JXS.Ecs.Generators.csproj", "{243803F6-1C5C-41A3-B82B-E4EB3B08F3CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Ecs.Examples", "src\JXS.Ecs.Examples\JXS.Ecs.Examples.csproj", "{6C3E143C-978B-4797-AEA1-FAD8735CE0B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Graphics.Core", "src\JXS.Graphics.Core\JXS.Graphics.Core.csproj", "{4B376187-EC70-4972-A07C-7AB2E7EFF20F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Graphics.Renderer", "src\JXS.Graphics.Renderer\JXS.Graphics.Renderer.csproj", "{5E80D28F-77D9-478A-817C-FD8715DE4A03}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Graphics.Utils", "src\JXS.Graphics.Utils\JXS.Graphics.Utils.csproj", "{C240A3E2-75D7-4908-BFE3-703C96B8F64C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,5 +32,21 @@ Global
 		{243803F6-1C5C-41A3-B82B-E4EB3B08F3CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{243803F6-1C5C-41A3-B82B-E4EB3B08F3CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{243803F6-1C5C-41A3-B82B-E4EB3B08F3CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C3E143C-978B-4797-AEA1-FAD8735CE0B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C3E143C-978B-4797-AEA1-FAD8735CE0B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C3E143C-978B-4797-AEA1-FAD8735CE0B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C3E143C-978B-4797-AEA1-FAD8735CE0B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B376187-EC70-4972-A07C-7AB2E7EFF20F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B376187-EC70-4972-A07C-7AB2E7EFF20F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B376187-EC70-4972-A07C-7AB2E7EFF20F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B376187-EC70-4972-A07C-7AB2E7EFF20F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E80D28F-77D9-478A-817C-FD8715DE4A03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E80D28F-77D9-478A-817C-FD8715DE4A03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E80D28F-77D9-478A-817C-FD8715DE4A03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E80D28F-77D9-478A-817C-FD8715DE4A03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C240A3E2-75D7-4908-BFE3-703C96B8F64C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C240A3E2-75D7-4908-BFE3-703C96B8F64C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C240A3E2-75D7-4908-BFE3-703C96B8F64C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C240A3E2-75D7-4908-BFE3-703C96B8F64C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
