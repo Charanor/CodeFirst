@@ -11,8 +11,6 @@ public class InputManager
 
 	private readonly IDictionary<string, MultiAxis> axes;
 
-	private IKeyboardFocusable? keyboardFocus;
-
 	private InputManager()
 	{
 		axes = new Dictionary<string, MultiAxis>();
@@ -20,27 +18,6 @@ public class InputManager
 
 	internal KeyboardState? KeyboardState { get; private set; }
 	internal MouseState? MouseState { get; private set; }
-
-	public IKeyboardFocusable? KeyboardFocus
-	{
-		get => keyboardFocus;
-		set
-		{
-			if (keyboardFocus is not null)
-			{
-				keyboardFocus.Focused = false;
-			}
-
-			if (value is not null)
-			{
-				value.Focused = false;
-			}
-
-			keyboardFocus = value;
-		}
-	}
-
-	public bool ReceivingTextInput { get; private set; }
 
 	public MultiAxis this[string name]
 	{
@@ -95,8 +72,4 @@ public class InputManager
 	public void Define(string name, MouseDirection direction) => this[name] += new MouseMovement(direction);
 
 	public void Define(string name, Keys positive, Keys negative) => this[name] += new KeyboardAxis(positive, negative);
-
-	private int OnTextInput(IntPtr userData, IntPtr evtPtr) => throw new NotSupportedException();
-
-	private int OnTextEdit(IntPtr userData, IntPtr evtPtr) => throw new NotSupportedException();
 }

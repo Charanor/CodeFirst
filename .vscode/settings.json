@@ -3,6 +3,7 @@
 		"ecs",
 		"graphics",
 		"utils",
-		"windowing"
+		"windowing",
+		"input"
 	]
 }
