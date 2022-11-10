@@ -2,6 +2,7 @@
 	"conventionalCommits.scopes": [
 		"ecs",
 		"graphics",
-		"utils"
+		"utils",
+		"windowing"
 	]
 }

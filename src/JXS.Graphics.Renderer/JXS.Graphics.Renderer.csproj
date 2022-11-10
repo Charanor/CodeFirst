@@ -11,4 +11,16 @@
       <ProjectReference Include="..\JXS.Graphics.Core\JXS.Graphics.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Update="Material.vector3f.cs">
+        <DependentUpon>Material.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Material.vector4f.cs">
+        <DependentUpon>Material.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Material.float.cs">
+        <DependentUpon>Material.cs</DependentUpon>
+      </Compile>
+    </ItemGroup>
+
 </Project>
