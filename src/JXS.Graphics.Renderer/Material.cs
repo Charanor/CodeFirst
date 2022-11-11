@@ -91,6 +91,16 @@ public partial record Material
 
 			return BitConverter.ToSingle(Data.ToArray());
 		}
+		
+		public int AsInt()
+		{
+			if (Type != UniformType.Int || Data.Count() != sizeof(int))
+			{
+				throw new InvalidOperationException($"Can not convert {this} to int");
+			}
+
+			return BitConverter.ToInt32(Data.ToArray());
+		}
 
 		public Vector3 AsVector3Float()
 		{
