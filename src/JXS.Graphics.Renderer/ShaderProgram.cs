@@ -2,8 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using JXS.Graphics.Renderer.Exceptions;
-using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 
 namespace JXS.Graphics.Renderer;
@@ -179,4 +177,6 @@ public class ShaderProgram : NativeResource
 	}
 
 	public record ActiveUniformInfo(uint Location, string Name, int ByteSize, UniformType Type);
+
+	public record UniformBlockData();
 }

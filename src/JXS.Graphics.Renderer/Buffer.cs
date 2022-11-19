@@ -1,7 +1,4 @@
-﻿using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL;
-
-namespace JXS.Graphics.Renderer;
+﻿namespace JXS.Graphics.Renderer;
 
 internal class Buffer<TData> : NativeResource where TData:unmanaged
 {

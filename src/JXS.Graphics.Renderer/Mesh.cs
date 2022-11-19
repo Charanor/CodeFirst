@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 
 namespace JXS.Graphics.Renderer;

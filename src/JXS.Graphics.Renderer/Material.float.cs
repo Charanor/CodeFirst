@@ -1,6 +1,4 @@
-﻿using OpenTK.Graphics.OpenGL;
-
-namespace JXS.Graphics.Renderer;
+﻿namespace JXS.Graphics.Renderer;
 
 public partial record Material
 {

@@ -1,6 +1,4 @@
-﻿using OpenTK.Graphics.OpenGL;
-
-namespace JXS.Graphics.Renderer;
+﻿namespace JXS.Graphics.Renderer;
 
 public record VertexAttribute(VertexAttributeLocation Location, int ComponentCount, int ComponentSize, VertexAttribType Type, int Offset)
 {
