@@ -10,6 +10,7 @@ public abstract class Game : GameWindow
 	private Vector2i currentWindowSize;
 
 	private Screen? screen;
+	private bool hasShownScreen;
 
 	protected Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings) : base(
 		gameWindowSettings, nativeWindowSettings)
@@ -21,8 +22,12 @@ public abstract class Game : GameWindow
 		get => screen;
 		set
 		{
-			screen?.Hide();
-			screen = value;
+			if (value != screen)
+			{
+				screen?.Hide();
+				screen = value;
+				hasShownScreen = false;
+			}
 			ShowScreenIfRunning();
 		}
 	}
@@ -70,10 +75,12 @@ public abstract class Game : GameWindow
 
 	private void ShowScreenIfRunning()
 	{
-		if (screen == null || !running)
+		if (screen == null || !running || hasShownScreen)
 		{
 			return;
 		}
+
+		hasShownScreen = true;
 
 		screen.Game = this;
 		screen.Show();
