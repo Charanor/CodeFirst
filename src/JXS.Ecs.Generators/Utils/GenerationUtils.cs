@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -6,10 +7,28 @@ namespace Ecs.Generators.Utils;
 
 internal static class GenerationUtils
 {
+	// Field and parameter names
 	private const string DEFAULT_ENTITY_PARAM_NAME = "entity";
 	private const string DEFAULT_DELTA_PARAM_NAME = "delta";
 
+	// Namespaces
 	private const string COMPONENT_MAPPER_NAMESPACE = "JXS.Ecs.Core";
+
+	private const string REF = "ref";
+
+	// Fields and property names
+	private const string CURRENT_ENTITY = "CurrentEntity";
+	private const string NO_ENTITY = nameof(NO_ENTITY);
+
+	// External functions
+	private const string ASSERT_HAS_ENTITY = "AssertHasEntity";
+
+	// Utility method names
+	private const string REMOVE_METHOD = "Remove";
+
+	// Docstrings
+	private const string COMPONENT_MAPPER_DOC_SUMMARY =
+		$"DO NOT ACCESS MANUALLY! Use the utility methods ({REMOVE_METHOD}, etc.) instead! Accessing manually can cause unpredictable behavior!";
 
 	public static string GenerateSystemClasses(IImmutableList<SystemToGenerate> systemsToGenerate)
 	{
@@ -53,64 +72,88 @@ internal static class GenerationUtils
 				// Generate component mapper definitions
 				foreach (var parameterDeclaration in componentParameters)
 				{
+					builder.DocstringBlock(tag: "summary", COMPONENT_MAPPER_DOC_SUMMARY);
 					builder.IndentedLn(
-						$"private readonly {COMPONENT_MAPPER_NAMESPACE}.ComponentMapper<{parameterDeclaration.Type}> {parameterDeclaration.Name}Mapper = null!;");
+						$"private readonly {COMPONENT_MAPPER_NAMESPACE}.ComponentMapper<{parameterDeclaration.Type}> {MapperName(parameterDeclaration.Name)} = null!;");
 				}
 
+				// Generate utility methods
+				foreach (var parameterDeclaration in componentParameters.Where(parameterDeclaration =>
+					         parameterDeclaration.Modifier == REF))
+				{
+					builder.BeginBlock(
+						$"private void Remove({REF} {parameterDeclaration.Type} {parameterDeclaration.Name})");
+					{
+						builder.FunctionCall(ASSERT_HAS_ENTITY, $"nameof({REMOVE_METHOD})");
+						builder.IndentedLn($"{MapperName(parameterDeclaration.Name)}.Remove({CURRENT_ENTITY});");
+						// We set it to null here to make sure the user gets a NullReferenceException if they try to access it
+						builder.AssignmentOp(parameterDeclaration.Name, value: "null");
+					}
+					builder.EndBlock();
+				}
+
+				// Generate update method
 				builder.BeginBlock(
 					$"protected override void Update(int {entityParameterName}, float {deltaParameterName})");
 				{
+					builder.AssignmentOp(CURRENT_ENTITY, entityParameterName);
 					foreach (var parameterDeclaration in componentParameters)
 					{
 						if (!parameterDeclaration.Optional)
 						{
 							builder.IndentedLn(
-								$"ref {parameterDeclaration.Type} {parameterDeclaration.Name} = ref {parameterDeclaration.Name}Mapper.Get(entity);");
+								$"{REF} {parameterDeclaration.Type} {parameterDeclaration.Name} = {REF} {MapperName(parameterDeclaration.Name)}.Get(entity);");
 						}
 						else
 						{
 							builder.IndentedLn(
-								$"var has{parameterDeclaration.Type} = {parameterDeclaration.Name}Mapper.Has(entity);");
+								$"var has{parameterDeclaration.Type} = {MapperName(parameterDeclaration.Name)}.Has(entity);");
 							builder.IndentedLn(
-								$"{parameterDeclaration.Type}? {parameterDeclaration.Name} = has{parameterDeclaration.Type} ? {parameterDeclaration.Name}Mapper.Get(entity) : null;");
+								$"{parameterDeclaration.Type}? {parameterDeclaration.Name} = has{parameterDeclaration.Type} ? {MapperName(parameterDeclaration.Name)}.Get(entity) : null;");
 						}
 					}
 
 					var paramList = parameters.Select(param => $"{param.Modifier ?? ""} {param.Name}");
-					builder.IndentedLn($"{system.MethodName}({string.Join(separator: ", ", paramList)});");
+					builder.FunctionCall(system.MethodName, paramList);
 
 					foreach (var parameterDeclaration in componentParameters)
 					{
-						if (!parameterDeclaration.Optional || parameterDeclaration.Modifier != "ref")
+						if (!parameterDeclaration.Optional || parameterDeclaration.Modifier != REF)
 						{
 							continue;
 						}
 
 						builder.BeginBlock($"if (has{parameterDeclaration.Type})");
 						{
-							builder.BeginBlock($"if (!{parameterDeclaration.Name}.HasValue)");
+							//builder.BeginBlock($"if (!{parameterDeclaration.Name}.HasValue)");
+							builder.BeginBlock($"if ({parameterDeclaration.Name} == null)");
 							{
-								//builder.IndentedLn(
-								//	$"throw new System.NullReferenceException(nameof({parameterDeclaration.Name}));");
 								builder.IndentedLn(
-									$"{parameterDeclaration.Name}Mapper.Remove(entity);");
+									$"throw new System.NullReferenceException(nameof({parameterDeclaration.Name}));");
 							}
 							builder.EndBlock();
 							builder.BeginBlock("else");
 							{
+								// 	builder.IndentedLn(
+								// 		$"{MapperName(parameterDeclaration.Name)}.Update(entity, {parameterDeclaration.Name}.Value);");
 								builder.IndentedLn(
-									$"{parameterDeclaration.Name}Mapper.Update(entity, {parameterDeclaration.Name}.Value);");
+									$"{MapperName(parameterDeclaration.Name)}.Update(entity, in {parameterDeclaration.Name});");
 							}
 							builder.EndBlock();
 						}
 						builder.EndBlock();
-						builder.BeginBlock($"else if ({parameterDeclaration.Name}.HasValue)");
+						//builder.BeginBlock($"else if ({parameterDeclaration.Name}.HasValue)");
+						builder.BeginBlock($"else if ({parameterDeclaration.Name} != null)");
 						{
+							// builder.IndentedLn(
+							// 	$"{MapperName(parameterDeclaration.Name)}.Add(entity, {parameterDeclaration.Name}.Value);");
 							builder.IndentedLn(
-								$"{parameterDeclaration.Name}Mapper.Add(entity, {parameterDeclaration.Name}.Value);");
+								$"{MapperName(parameterDeclaration.Name)}.Add(entity, in {parameterDeclaration.Name});");
 						}
 						builder.EndBlock();
 					}
+
+					builder.AssignmentOp(CURRENT_ENTITY, NO_ENTITY);
 				}
 				builder.EndBlock();
 			}
@@ -127,40 +170,24 @@ internal static class GenerationUtils
 		return builder.Generate();
 	}
 
-	public readonly struct SystemToGenerate
+	private static void AssignmentOp(this ClassBuilder builder, string variable, IConvertible value)
 	{
-		public SystemToGenerate(string? ns, string systemName, string methodName,
-			IEnumerable<ParameterDeclaration> parameterDeclarations)
-		{
-			Namespace = ns;
-			SystemName = systemName;
-			MethodName = methodName;
-			ParameterDeclarations = parameterDeclarations;
-		}
-
-		public string? Namespace { get; }
-		public string SystemName { get; }
-		public string MethodName { get; }
-		public IEnumerable<ParameterDeclaration> ParameterDeclarations { get; }
+		builder.IndentedLn($"{variable} = {value};");
 	}
 
-	public readonly struct ParameterDeclaration
+	private static void FunctionCall(this ClassBuilder builder, string funcName, params string[] arguments) =>
+		builder.FunctionCall(funcName, arguments.AsEnumerable());
+
+	private static void FunctionCall(this ClassBuilder builder, string funcName, IEnumerable<string> arguments)
 	{
-		public ParameterDeclaration(string? modifier, string type, string name, string? ns, bool optional)
-		{
-			Modifier = modifier;
-			Type = type;
-			Name = name;
-			Namespace = ns;
-			Optional = optional;
-		}
-
-		public string? Modifier { get; }
-		public string Type { get; }
-		public string Name { get; }
-		public string? Namespace { get; }
-		public bool Optional { get; }
-
-		public string NameOrDefaultIfEmpty(string defaultName) => Name is { Length: > 0 } ? Name : defaultName;
+		builder.IndentedLn($"{funcName}({string.Join(separator: ", ", arguments)});");
 	}
+
+	private static void AssertHasEntity(this ClassBuilder builder, string methodName)
+	{
+		builder.IndentedLn($"AssertHasEntity(nameof({methodName}));");
+	}
+
+	private static string Quote(string str) => $@"""{str}""";
+	private static string MapperName(string componentName) => $"____{componentName}Mapper";
 }

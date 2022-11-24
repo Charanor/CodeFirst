@@ -1,7 +1,6 @@
 ﻿using JXS.Ecs.Core;
 using JXS.Ecs.Core.Attributes;
 using JXS.Ecs.Core.Attributes.Generation;
-using JXS.Ecs.Generators.Attributes;
 
 namespace JXS.Ecs.Examples._03_GeneratingCode;
 

@@ -233,7 +233,7 @@ public class World
 			if (!fieldInfo.IsInitOnly)
 			{
 #if DEBUG
-				throw new InjectionException(fieldInfo, "Field is not 'readonly'");
+				throw new InjectionException(fieldInfo, message: "Field is not 'readonly'");
 #else
 				return;
 #endif
@@ -275,10 +275,24 @@ public class World
 		if (!componentType.IsAssignableTo(typeof(IComponent)))
 		{
 			throw new ArgumentException(
-				$"Argument {nameof(componentType)} of type {componentType} does not match type constraint '{nameof(IComponentMapper)}'");
+				$"Argument {nameof(componentType)} of type {componentType} does not match type constraint '{nameof(IComponent)}'");
 		}
 
 		return GetMapperNoTypeCheck(componentType);
+	}
+
+	public ISingletonComponent GetSingletonComponent(Type componentType)
+	{
+		const int fakeEntity = 0; // Singleton mappers always return their singleton, so the entity ID does not matter
+
+		if (!componentType.IsAssignableTo(typeof(ISingletonComponent)) ||
+		    GetMapper(componentType).Get(fakeEntity) is not ISingletonComponent singletonComponent)
+		{
+			throw new ArgumentException(
+				$"Argument {nameof(componentType)} of type {componentType} does not match type constraint '{nameof(ISingletonComponent)}'");
+		}
+
+		return singletonComponent;
 	}
 
 	private IComponentMapper GetMapperNoTypeCheck(Type componentType)

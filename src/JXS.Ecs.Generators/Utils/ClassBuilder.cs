@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace Ecs.Generators.Utils;
 
@@ -6,11 +7,13 @@ public class ClassBuilder
 {
 	private readonly StringBuilder sb;
 	private int indentation;
+	private int docstringIndentation;
 
 	public ClassBuilder()
 	{
 		sb = new StringBuilder();
 		indentation = 0;
+		docstringIndentation = 0;
 	}
 
 	public string Generate() => sb.ToString();
@@ -50,5 +53,37 @@ public class ClassBuilder
 		Raw(code);
 	}
 
-	public void IndentedLn(string code) => Indented(code + "\n");
+	/// <summary>
+	///     asdasd
+	/// </summary>
+	/// <param name="code"></param>
+	public void IndentedLn(string code) => Indented(code + Environment.NewLine);
+
+	private void IndentDocstring() => docstringIndentation++;
+	private void DedentDocstring() => docstringIndentation--;
+
+	public void DocstringBlock(string tag, string contents)
+	{
+		DocstringLn($"<{tag}>");
+		IndentDocstring();
+		{
+			DocstringLn(contents);
+		}
+		DedentDocstring();
+		DocstringLn($"</{tag}>");
+	}
+
+	public void Docstring(string contents)
+	{
+		Indented("///");
+		// <= SIC!
+		for (var i = 0; i <= docstringIndentation; i++)
+		{
+			Raw("\t");
+		}
+
+		Raw(contents);
+	}
+
+	public void DocstringLn(string contents) => Docstring(contents + Environment.NewLine);
 }

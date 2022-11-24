@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using JXS.Ecs.Core.Attributes;
 using JXS.Ecs.Core.Utilities;
@@ -186,6 +187,12 @@ public abstract class EntitySystem
 	/// <param name="entity">the entity that was added</param>
 	protected virtual void EntityRemoved(int entity)
 	{
+	}
+
+	protected virtual void Remove(int entity)
+	{
+		Debug.Assert(World != null);
+		World?.DeleteEntity(entity);
 	}
 
 	private void OnItemRemoved(SnapshotList<int> _, EventArgs<int> e) => EntityRemoved(e.Value);

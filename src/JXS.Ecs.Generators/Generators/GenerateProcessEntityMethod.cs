@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace Ecs.Generators.Generators;
 
 [Generator]
-public class GenerateProcessEntityMethod : IIncrementalGenerator
+public partial class GenerateProcessEntityMethod : IIncrementalGenerator
 {
 	private const string ITERATING_SYSTEM_NAME = "IteratingSystem";
 
@@ -128,10 +128,10 @@ public class GenerateProcessEntityMethod : IIncrementalGenerator
 		context.AddSource("GeneratedSystems.g.cs", SourceText.From(result, Encoding.UTF8));
 	}
 
-	private static IList<GenerationUtils.SystemToGenerate> GetSystemsToGenerate(Compilation compilation,
+	private static IList<SystemToGenerate> GetSystemsToGenerate(Compilation compilation,
 		IEnumerable<IntermediateSyntax> syntaxes, CancellationToken ct)
 	{
-		var systemsToGenerate = new List<GenerationUtils.SystemToGenerate>();
+		var systemsToGenerate = new List<SystemToGenerate>();
 
 		foreach (var (classSyntax, methodSyntax) in syntaxes)
 		{
@@ -153,7 +153,7 @@ public class GenerateProcessEntityMethod : IIncrementalGenerator
 				continue;
 			}
 
-			var parameters = new List<GenerationUtils.ParameterDeclaration>();
+			var parameters = new List<ParameterDeclaration>();
 			// ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
 			foreach (var parameterSyntax in methodSyntax.ParameterList.Parameters)
 			{
@@ -178,7 +178,7 @@ public class GenerateProcessEntityMethod : IIncrementalGenerator
 
 				var parameterName = parameterSyntax.Identifier.ToString();
 				parameters.Add(
-					new GenerationUtils.ParameterDeclaration(modifier, simpleType, parameterName, parameterNs, optional));
+					new ParameterDeclaration(modifier, simpleType, parameterName, parameterNs, optional));
 			}
 
 			if (parameters.Count <= 0)
@@ -186,7 +186,7 @@ public class GenerateProcessEntityMethod : IIncrementalGenerator
 				continue;
 			}
 
-			systemsToGenerate.Add(new GenerationUtils.SystemToGenerate(ns, className, methodName, parameters));
+			systemsToGenerate.Add(new SystemToGenerate(ns, className, methodName, parameters.ToImmutableArray()));
 		}
 
 		return systemsToGenerate;
@@ -206,11 +206,5 @@ public class GenerateProcessEntityMethod : IIncrementalGenerator
 		return semanticModel.GetDeclaredSymbol(syntax) is not IMethodSymbol methodSymbol
 			? null
 			: methodSymbol.Name;
-	}
-
-	private record IntermediateSyntax(ClassDeclarationSyntax ClassSyntax, MethodDeclarationSyntax MethodSyntax)
-	{
-		public ClassDeclarationSyntax ClassSyntax { get; } = ClassSyntax;
-		public MethodDeclarationSyntax MethodSyntax { get; } = MethodSyntax;
 	}
 }
