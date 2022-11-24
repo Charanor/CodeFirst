@@ -4,6 +4,7 @@
 		"graphics",
 		"utils",
 		"windowing",
-		"input"
+		"input",
+		"gui"
 	]
 }
