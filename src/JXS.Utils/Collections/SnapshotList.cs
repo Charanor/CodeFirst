@@ -279,27 +279,12 @@ public class SnapshotList<T> : IList<T>
 	/// <param name="size">the size of the safely iterable array</param>
 	public void Begin(out T[] outputIteratingArray, out int size)
 	{
-		if (IsIterating)
-		{
-			throw new InvalidOperationException(
-				$"Can not {nameof(Begin)}() twice simultaneously on a {nameof(SnapshotList<T>)}. Call {nameof(Commit)} or {nameof(Discard)} first.");
-		}
+		(outputIteratingArray, size) = Begin();
+	}
 
-		if (iteratingArray.Length < Count)
-		{
-			Array.Resize(ref iteratingArray, Count);
-		}
-
-		for (var i = 0; i < Count; i++)
-		{
-			iteratingArray[i] = backingList[i];
-		}
-
-		IsIterating = true;
-		modified = false;
-
-		outputIteratingArray = iteratingArray;
-		size = Count;
+	public SnapshotListIterationHandle BeginHandle()
+	{
+		return new SnapshotListIterationHandle(this);
 	}
 
 	/// <summary>
@@ -347,6 +332,71 @@ public class SnapshotList<T> : IList<T>
 		if (IsIterating)
 		{
 			modified = true;
+		}
+	}
+
+	public enum HandleAction
+	{
+		Discard,
+		Commit
+	}
+
+	public sealed class SnapshotListIterationHandle : IDisposable
+	{
+		private readonly SnapshotList<T> list;
+		private readonly HandleAction defaultAction;
+		private readonly T[] items;
+		private readonly int count;
+
+		private bool hasEnded;
+
+		public SnapshotListIterationHandle(SnapshotList<T> list, HandleAction defaultAction = HandleAction.Discard)
+		{
+			this.list = list;
+			this.defaultAction = defaultAction;
+			list.Begin(out items, out count);
+			hasEnded = false;
+		}
+
+		public void Discard()
+		{
+			if (hasEnded)
+			{
+				return;
+			}
+			hasEnded = true;
+			list.Discard();
+		}
+
+		public void Commit()
+		{
+			if (hasEnded)
+			{
+				return;
+			}
+			hasEnded = true;
+			list.Commit();
+		}
+
+		public void Dispose()
+		{
+			switch (defaultAction)
+			{
+				case HandleAction.Discard:
+					Discard();
+					break;
+				case HandleAction.Commit:
+					Commit();
+					break;
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
+		}
+
+		public void Deconstruct(out T[] outItems, out int outCount)
+		{
+			outItems = items;
+			outCount = count;
 		}
 	}
 }
