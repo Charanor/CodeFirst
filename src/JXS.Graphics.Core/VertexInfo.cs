@@ -1,4 +1,4 @@
-﻿namespace JXS.Graphics.Renderer;
+﻿namespace JXS.Graphics.Core;
 
 public record VertexInfo(Type VertexType, params VertexAttribute[] VertexAttributes)
 {

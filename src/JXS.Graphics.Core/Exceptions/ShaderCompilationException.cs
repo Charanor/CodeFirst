@@ -1,4 +1,4 @@
-﻿namespace JXS.Graphics.Renderer.Exceptions;
+﻿namespace JXS.Graphics.Core.Exceptions;
 
 public class ShaderCompilationException : Exception
 {

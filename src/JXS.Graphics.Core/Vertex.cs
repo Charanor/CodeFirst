@@ -1,6 +1,6 @@
 ﻿using OpenTK.Mathematics;
 
-namespace JXS.Graphics.Renderer;
+namespace JXS.Graphics.Core;
 
 public readonly record struct Vertex(Vector3 Position, Vector3 Normal, Color4<Rgba> Color, Vector2 TexCoords)
 {
@@ -27,6 +27,4 @@ public readonly record struct Vertex(Vector3 Position, Vector3 Normal, Color4<Rg
 		ColorAttribute,
 		TexCoordsAttribute
 	);
-
-	private static string VertexPrefix(string str) => $"vertex{str}";
 }

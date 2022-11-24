@@ -1,4 +1,4 @@
-﻿namespace JXS.Graphics.Renderer;
+﻿namespace JXS.Graphics.Core;
 
 public record VertexAttribute(VertexAttributeLocation Location, int ComponentCount, int ComponentSize, VertexAttribType Type, int Offset)
 {

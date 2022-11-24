@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using JXS.Graphics.Renderer;
-using JXS.Graphics.Renderer.Exceptions;
+using JXS.Graphics.Core;
+using JXS.Graphics.Core.Exceptions;
 using OpenTK.Mathematics;
 
 namespace JXS.Graphics.Utils;

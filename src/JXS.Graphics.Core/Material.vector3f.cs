@@ -1,34 +1,34 @@
 ﻿using OpenTK.Mathematics;
 
-namespace JXS.Graphics.Renderer;
+namespace JXS.Graphics.Core;
 
 public partial record Material
 {
-	public Vector4 GetVector4F(string propertyName) => GetVector4F(GetPropertyId(propertyName));
+	public Vector3 GetVector3F(string propertyName) => GetVector3F(GetPropertyId(propertyName));
 
-	public Vector4 GetVector4F(uint propertyId)
+	public Vector3 GetVector3F(int propertyId)
 	{
 		var registration = GetRegistration(propertyId);
-		const UniformType expectedType = UniformType.FloatVec4;
+		const UniformType expectedType = UniformType.FloatVec3;
 		if (registration.Type != expectedType)
 		{
 			throw new InvalidCastException(
 				$"Property {propertyId} is of type {registration.Type}, but expected {expectedType}");
 		}
 
-		return registration.AsVector4Float();
+		return registration.AsVector3Float();
 	}
 
-	protected void SetVector4F(string propertyName, Vector4 value) => SetVector4F(GetPropertyId(propertyName), value);
+	protected void SetVector3F(string propertyName, Vector3 value) => SetVector3F(GetPropertyId(propertyName), value);
 
-	protected void SetVector4F(uint propertyId, Vector4 value)
+	protected void SetVector3F(int propertyId, Vector3 value)
 	{
 		if (!ShaderProgram.TryGetUniform(propertyId, out var info))
 		{
 			throw new ArgumentException($"No uniform {propertyId} exists on shader", nameof(propertyId));
 		}
 
-		const UniformType expectedType = UniformType.FloatVec4;
+		const UniformType expectedType = UniformType.FloatVec3;
 		if (info.Type != expectedType)
 		{
 			throw new InvalidCastException(
@@ -38,7 +38,6 @@ public partial record Material
 		var data = BitConverter.GetBytes(value.X)
 			.Concat(BitConverter.GetBytes(value.Y))
 			.Concat(BitConverter.GetBytes(value.Z))
-			.Concat(BitConverter.GetBytes(value.W))
 			.ToArray();
 
 		registrations[propertyId] = new MaterialRegistration(info.Type, data);

@@ -1,6 +1,6 @@
-﻿namespace JXS.Graphics.Renderer;
+﻿namespace JXS.Graphics.Core;
 
-internal class Buffer<TData> : NativeResource where TData:unmanaged
+public class Buffer<TData> : NativeResource where TData : unmanaged
 {
 	/// <summary>
 	///     Creates a new Buffer object and initialises it with some data.
@@ -9,8 +9,8 @@ internal class Buffer<TData> : NativeResource where TData:unmanaged
 	/// <param name="usage">how the buffer will be used</param>
 	public Buffer(ReadOnlySpan<TData> data, VertexBufferObjectUsage usage)
 	{
-		Handle = GL.CreateBuffer();
-		GL.NamedBufferData(Handle, data, usage);
+		Handle = CreateBuffer();
+		NamedBufferData(Handle, data, usage);
 	}
 
 	/// <summary>
@@ -20,8 +20,13 @@ internal class Buffer<TData> : NativeResource where TData:unmanaged
 	/// <param name="usage">how the buffer will be used</param>
 	public Buffer(nint reservedSpace, VertexBufferObjectUsage usage)
 	{
-		Handle = GL.CreateBuffer();
-		GL.NamedBufferData(Handle, reservedSpace, IntPtr.Zero, usage);
+		Handle = CreateBuffer();
+		NamedBufferData(Handle, reservedSpace, IntPtr.Zero, usage);
+	}
+
+	public void SetData(ReadOnlySpan<TData> data)
+	{
+		NamedBufferSubData(this, IntPtr.Zero, data);
 	}
 
 	public BufferHandle Handle { get; }

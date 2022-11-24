@@ -1,4 +1,4 @@
-﻿namespace JXS.Graphics.Renderer;
+﻿namespace JXS.Graphics.Core;
 
 public enum VertexAttributeLocation
 {

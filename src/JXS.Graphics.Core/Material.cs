@@ -1,6 +1,6 @@
 ﻿using OpenTK.Mathematics;
 
-namespace JXS.Graphics.Renderer;
+namespace JXS.Graphics.Core;
 
 public partial record Material
 {
@@ -58,12 +58,12 @@ public partial record Material
 		ShaderProgram.Unbind();
 	}
 
-	public uint GetPropertyId(string propertyName) =>
+	public int GetPropertyId(string propertyName) =>
 		ShaderProgram.TryGetUniformLocation(propertyName, out var location)
 			? location
 			: throw new ArgumentException($"No uniform {propertyName} exists on shader", nameof(propertyName));
 
-	private MaterialRegistration GetRegistration(uint propertyId)
+	private MaterialRegistration GetRegistration(int propertyId)
 	{
 		if (propertyId >= registrations.Length)
 		{

@@ -1,32 +1,32 @@
-﻿namespace JXS.Graphics.Renderer;
+﻿namespace JXS.Graphics.Core;
 
 public partial record Material
 {
-	public float GetInt(string propertyName) => GetInt(GetPropertyId(propertyName));
+	public float GetFloat(string propertyName) => GetFloat(GetPropertyId(propertyName));
 
-	public float GetInt(uint propertyId)
+	public float GetFloat(int propertyId)
 	{
 		var registration = GetRegistration(propertyId);
-		const UniformType expectedType = UniformType.Int;
+		const UniformType expectedType = UniformType.Float;
 		if (registration.Type != expectedType)
 		{
 			throw new InvalidCastException(
 				$"Property {propertyId} is of type {registration.Type}, but expected {expectedType}");
 		}
 
-		return registration.AsInt();
+		return registration.AsFloat();
 	}
 
-	protected void SetInt(string propertyName, int value) => SetInt(GetPropertyId(propertyName), value);
+	protected void SetFloat(string propertyName, float value) => SetFloat(GetPropertyId(propertyName), value);
 
-	protected void SetInt(uint propertyId, int value)
+	protected void SetFloat(int propertyId, float value)
 	{
 		if (!ShaderProgram.TryGetUniform(propertyId, out var info))
 		{
 			throw new ArgumentException($"No uniform {propertyId} exists on shader", nameof(propertyId));
 		}
 
-		const UniformType expectedType = UniformType.Int;
+		const UniformType expectedType = UniformType.Float;
 		if (info.Type != expectedType)
 		{
 			throw new InvalidCastException(

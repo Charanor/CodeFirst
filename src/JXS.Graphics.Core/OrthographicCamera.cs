@@ -17,7 +17,7 @@ public class OrthographicCamera : Camera
 	public override Matrix4 Projection =>
 		Matrix4.CreateOrthographic(WorldSize.X, WorldSize.Y, NearClippingPlane, FarClippingPlane);
 
-	public override Matrix4 View => Matrix4.LookAt(Position, Position + Forward, Up);
+	public override Matrix4 View => Matrix4.LookAt(Position, Position + Forward, Vector3.UnitY);
 
 	protected override void UpdateViewport(int screenWidth, int screenHeight)
 	{
