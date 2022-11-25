@@ -1,8 +1,6 @@
 ﻿using JXS.Assets.Core;
-using JXS.Graphics.Core;
-using OpenTK.Graphics.OpenGL;
 
-namespace JXS.Graphics.Utils.Assets;
+namespace JXS.Graphics.Core.Assets;
 
 public record TextureAssetDefinition(string Path) : AssetDefinition<Texture>(Path)
 {

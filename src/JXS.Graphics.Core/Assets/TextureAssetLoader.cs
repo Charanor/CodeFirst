@@ -1,10 +1,8 @@
 ﻿using System.Diagnostics;
 using JXS.Assets.Core;
-using JXS.Graphics.Core;
-using OpenTK.Graphics.OpenGL;
 using StbImageSharp;
 
-namespace JXS.Graphics.Utils.Assets;
+namespace JXS.Graphics.Core.Assets;
 
 public class TextureAssetLoader : CachedAssetLoader<Texture, TextureAssetDefinition>
 {
