@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using JXS.Assets.Core.Loaders;
 
 namespace JXS.Assets.Core;
 
@@ -10,7 +11,7 @@ public sealed class AssetManager : IDisposable
 
 	public AssetManager()
 	{
-		assetLoaders = new List<IAssetLoader>();
+		assetLoaders = new List<IAssetLoader> { new TextAssetLoader() };
 	}
 
 	public void Dispose()
