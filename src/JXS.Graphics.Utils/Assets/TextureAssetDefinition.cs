@@ -10,5 +10,11 @@ public record TextureAssetDefinition(string Path) : AssetDefinition<Texture>(Pat
 	public TextureMinFilter MinFilter { get; init; } = TextureMinFilter.Linear;
 	public TextureMagFilter MagFilter { get; init; } = TextureMagFilter.Linear;
 
-	public override Texture Load(AssetManager manager) => manager.LoadTexture(Path, MipMapLevels, MinFilter, MagFilter);
+	public void Deconstruct(out string path, out int mipMapLevels, out TextureMinFilter minFilter, out TextureMagFilter magFilter)
+	{
+		path = Path;
+		mipMapLevels = MipMapLevels;
+		minFilter = MinFilter;
+		magFilter = MagFilter;
+	}
 }
