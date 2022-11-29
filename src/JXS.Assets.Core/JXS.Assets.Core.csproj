@@ -4,11 +4,6 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>JXS.Graphics.Utils</RootNamespace>
     </PropertyGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\JXS.Graphics.Core\JXS.Graphics.Core.csproj" />
-    </ItemGroup>
 
 </Project>
