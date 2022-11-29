@@ -9,31 +9,37 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="OpenTK" Version="5.0.0-pre.8" />
+        <PackageReference Include="OpenTK" Version="5.0.0-pre.8" />
+        <PackageReference Include="StbImageSharp" Version="2.27.13" />
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Material.float.cs">
-        <DependentUpon>Material.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Material.int.cs">
-        <DependentUpon>Material.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Material.vector3f.cs">
-        <DependentUpon>Material.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Material.vector4f.cs">
-        <DependentUpon>Material.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Texture1D.cs">
-        <DependentUpon>Texture.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Texture2D.cs">
-        <DependentUpon>Texture.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Texture3D.cs">
-        <DependentUpon>Texture.cs</DependentUpon>
-      </Compile>
+        <Compile Update="Material.float.cs">
+            <DependentUpon>Material.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Material.int.cs">
+            <DependentUpon>Material.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Material.vector3f.cs">
+            <DependentUpon>Material.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Material.vector4f.cs">
+            <DependentUpon>Material.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Texture1D.cs">
+            <DependentUpon>Texture.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Texture2D.cs">
+            <DependentUpon>Texture.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Texture3D.cs">
+            <DependentUpon>Texture.cs</DependentUpon>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\JXS.Assets.Core\JXS.Assets.Core.csproj" />
+        <ProjectReference Include="..\JXS.Utils\JXS.Utils.csproj" />
     </ItemGroup>
 
 </Project>

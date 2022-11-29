@@ -1,20 +1,17 @@
-﻿namespace JXS.Assets.Core;
+﻿using System.Diagnostics.CodeAnalysis;
+using JXS.Assets.Core.Loaders;
+
+namespace JXS.Assets.Core;
 
 public sealed class AssetManager : IDisposable
 {
-	private readonly string rootDirectory;
+	private readonly List<IAssetLoader> assetLoaders;
 
-	private readonly IDictionary<string, object> assetCache;
 	private bool isDisposed;
 
-	public AssetManager(params string[] rootDirectoryPath) : this(Path.Combine(rootDirectoryPath))
+	public AssetManager()
 	{
-	}
-
-	public AssetManager(string rootDirectory)
-	{
-		this.rootDirectory = WithCorrectDirectorySeparator(rootDirectory);
-		assetCache = new Dictionary<string, object>();
+		assetLoaders = new List<IAssetLoader> { new TextAssetLoader() };
 	}
 
 	public void Dispose()
@@ -27,99 +24,97 @@ public sealed class AssetManager : IDisposable
 			}
 
 			isDisposed = true;
-
-			// Dispose managed (IDisposable) resources
-			lock (assetCache)
+			lock (assetLoaders)
 			{
-				foreach (var (_, value) in assetCache)
-				{
-					if (value is IDisposable disposable)
-					{
-						disposable.Dispose();
-					}
-				}
+				assetLoaders.ForEach(loader => loader.Dispose());
 			}
 		}
 	}
 
-	public TAssetType Load<TAssetType, TAssetDefinition>(TAssetDefinition definition)
-		where TAssetDefinition : AssetDefinition<TAssetType> => definition.Load(this);
+	public void AddAssetLoader(IAssetLoader assetLoader)
+	{
+		lock (assetLoaders)
+		{
+			assetLoaders.Add(assetLoader);
+		}
+	}
 
-	public bool Unload<TAssetType, TAssetDefinition>(TAssetDefinition definition)
-		where TAssetDefinition : AssetDefinition<TAssetType> => Unload(definition.Path);
+	public void RemoveAssetLoader(IAssetLoader assetLoader)
+	{
+		lock (assetLoaders)
+		{
+			assetLoaders.Remove(assetLoader);
+		}
+	}
 
-	public TAssetType Reload<TAssetType, TAssetDefinition>(TAssetDefinition definition)
+	public bool TryLoadAsset<TAssetType>(AssetDefinition<TAssetType> definition,
+		[NotNullWhen(true)] out TAssetType? asset)
+	{
+		lock (assetLoaders)
+		{
+			foreach (var assetLoader in assetLoaders)
+			{
+				if (assetLoader.TryLoadAsset(definition, out asset))
+				{
+					return true;
+				}
+			}
+
+			asset = default;
+			return false;
+		}
+	}
+
+	public bool CanLoadAsset<TAssetType>(AssetDefinition<TAssetType> assetDefinition)
+	{
+		lock (assetLoaders)
+		{
+			return assetLoaders.Any(assetLoader => assetLoader.CanLoadAsset(assetDefinition));
+		}
+	}
+
+	public bool CanLoadAssetType<TAssetType>()
+	{
+		lock (assetLoaders)
+		{
+			return assetLoaders.Any(assetLoader => assetLoader.CanLoadAssetType<TAssetType>());
+		}
+	}
+
+	public bool CanLoadAssetType(Type assetType)
+	{
+		lock (assetLoaders)
+		{
+			return assetLoaders.Any(assetLoader => assetLoader.CanLoadAssetType(assetType));
+		}
+	}
+
+	public bool Reload<TAssetType, TAssetDefinition>(TAssetDefinition definition,
+		[NotNullWhen(true)] out TAssetType? asset)
 		where TAssetDefinition : AssetDefinition<TAssetType>
 	{
 		Unload(definition);
-		return Load<TAssetType, TAssetDefinition>(definition);
+		return TryLoadAsset(definition, out asset);
 	}
 
-	public bool Unload(string path)
+	public bool Unload<TAssetType, TAssetDefinition>(TAssetDefinition definition)
+		where TAssetDefinition : AssetDefinition<TAssetType>
 	{
-		lock (assetCache)
+		lock (assetLoaders)
 		{
-			var rootRelativePath = FromRoot(path);
-			if (!assetCache.TryGetValue(rootRelativePath, out var asset))
-			{
-				return false;
-			}
-
-			if (asset is IDisposable disposable)
-			{
-				disposable.Dispose();
-			}
-
-			assetCache.Remove(rootRelativePath);
-			return true;
+			return assetLoaders.Any(assetLoader => assetLoader.UnloadAsset(definition));
 		}
 	}
 
-	public bool Unload(object obj)
+	public bool Unload<T>(T obj)
 	{
-		lock (assetCache)
+		lock (assetLoaders)
 		{
-			string? foundKey = null;
-			foreach (var (key, value) in assetCache)
-			{
-				if (value != obj)
-				{
-					continue;
-				}
-
-				foundKey = key;
-				break;
-			}
-
-			return foundKey != null && Unload(foundKey);
-		}
-	}
-
-	public T? GetCachedAsset<T>(string path) where T : class
-	{
-		lock (assetCache)
-		{
-			return assetCache.TryGetValue(path, out var value) ? value as T : null;
-		}
-	}
-
-	public bool CacheAsset<T>(string path, T value) where T : class
-	{
-		lock (assetCache)
-		{
-			if (assetCache.ContainsKey(path))
-			{
-				return false;
-			}
-
-			assetCache.Add(path, value);
-			return true;
+			return assetLoaders.Any(assetLoader => assetLoader.UnloadAsset(obj));
 		}
 	}
 
 	private static string WithCorrectDirectorySeparator(string path) => path
 		.Replace(oldChar: '/', Path.DirectorySeparatorChar)
 		.Replace(oldChar: '\\', Path.DirectorySeparatorChar);
-
-	public string FromRoot(string path) => Path.Combine(rootDirectory, WithCorrectDirectorySeparator(path));
 }

@@ -7,7 +7,7 @@ public class Mesh : NativeResource
 {
 	private readonly Buffer<Vertex> vertexBuffer;
 	private readonly Buffer<uint> indexBuffer;
-	private readonly VertexArray<Vertex> vertexArray;
+	private readonly VertexArray vertexArray;
 
 	private readonly ImmutableArray<Vertex> vertices;
 	private readonly ImmutableArray<uint> indices;
@@ -19,8 +19,7 @@ public class Mesh : NativeResource
 		Material = material;
 		vertexBuffer = new Buffer<Vertex>(Vertices.ToArray(), VertexBufferObjectUsage.StaticDraw);
 		indexBuffer = new Buffer<uint>(Indices.ToArray(), VertexBufferObjectUsage.StaticDraw);
-		vertexArray = new VertexArray<Vertex>(Vertex.VertexInfo);
-		vertexArray.LinkBuffers(vertexBuffer, indexBuffer);
+		vertexArray = VertexArray.CreateForVertexInfo(Vertex.VertexInfo, vertexBuffer, indexBuffer);
 	}
 
 	public Material Material { get; }

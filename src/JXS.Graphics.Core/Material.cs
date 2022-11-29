@@ -9,13 +9,13 @@ public partial record Material
 	public Material(ShaderProgram shaderProgram)
 	{
 		ShaderProgram = shaderProgram ?? throw new NullReferenceException();
-		registrations = new MaterialRegistration[ShaderProgram.GetActiveUniformCount()];
+		registrations = new MaterialRegistration[ShaderProgram.ActiveUniformCount];
 	}
 
 	public Material(Material parent)
 	{
 		ShaderProgram = parent.ShaderProgram;
-		registrations = new MaterialRegistration[ShaderProgram.GetActiveUniformCount()];
+		registrations = new MaterialRegistration[ShaderProgram.ActiveUniformCount];
 	}
 
 	public ShaderProgram ShaderProgram { get; }

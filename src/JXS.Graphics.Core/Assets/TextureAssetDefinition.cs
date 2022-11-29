@@ -1,8 +1,6 @@
 ﻿using JXS.Assets.Core;
-using JXS.Graphics.Core;
-using OpenTK.Graphics.OpenGL;
 
-namespace JXS.Graphics.Utils.Assets;
+namespace JXS.Graphics.Core.Assets;
 
 public record TextureAssetDefinition(string Path) : AssetDefinition<Texture>(Path)
 {
@@ -10,5 +8,11 @@ public record TextureAssetDefinition(string Path) : AssetDefinition<Texture>(Pat
 	public TextureMinFilter MinFilter { get; init; } = TextureMinFilter.Linear;
 	public TextureMagFilter MagFilter { get; init; } = TextureMagFilter.Linear;
 
-	public override Texture Load(AssetManager manager) => manager.LoadTexture(Path, MipMapLevels, MinFilter, MagFilter);
+	public void Deconstruct(out string path, out int mipMapLevels, out TextureMinFilter minFilter, out TextureMagFilter magFilter)
+	{
+		path = Path;
+		mipMapLevels = MipMapLevels;
+		minFilter = MinFilter;
+		magFilter = MagFilter;
+	}
 }

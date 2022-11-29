@@ -8,12 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\JXS.Assets.Core\JXS.Assets.Core.csproj" />
-        <ProjectReference Include="..\JXS.Graphics.Renderer\JXS.Graphics.Renderer.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="StbImageSharp" Version="2.27.13" />
+      <ProjectReference Include="..\JXS.Graphics.Core\JXS.Graphics.Core.csproj" />
     </ItemGroup>
 
 </Project>
