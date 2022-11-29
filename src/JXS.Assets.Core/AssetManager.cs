@@ -47,9 +47,8 @@ public sealed class AssetManager : IDisposable
 		}
 	}
 
-	public bool TryLoadAsset<TAssetType, TAssetDefinition>(TAssetDefinition definition,
+	public bool TryLoadAsset<TAssetType>(AssetDefinition<TAssetType> definition,
 		[NotNullWhen(true)] out TAssetType? asset)
-		where TAssetDefinition : AssetDefinition<TAssetType>
 	{
 		lock (assetLoaders)
 		{
@@ -63,6 +62,30 @@ public sealed class AssetManager : IDisposable
 
 			asset = default;
 			return false;
+		}
+	}
+
+	public bool CanLoadAsset<TAssetType>(AssetDefinition<TAssetType> assetDefinition)
+	{
+		lock (assetLoaders)
+		{
+			return assetLoaders.Any(assetLoader => assetLoader.CanLoadAsset(assetDefinition));
+		}
+	}
+
+	public bool CanLoadAssetType<TAssetType>()
+	{
+		lock (assetLoaders)
+		{
+			return assetLoaders.Any(assetLoader => assetLoader.CanLoadAssetType<TAssetType>());
+		}
+	}
+
+	public bool CanLoadAssetType(Type assetType)
+	{
+		lock (assetLoaders)
+		{
+			return assetLoaders.Any(assetLoader => assetLoader.CanLoadAssetType(assetType));
 		}
 	}
 

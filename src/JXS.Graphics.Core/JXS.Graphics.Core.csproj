@@ -9,8 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="OpenTK" Version="5.0.0-pre.8"/>
-        <PackageReference Include="StbImageSharp" Version="2.27.13"/>
+        <PackageReference Include="OpenTK" Version="5.0.0-pre.8" />
+        <PackageReference Include="StbImageSharp" Version="2.27.13" />
     </ItemGroup>
 
     <ItemGroup>
@@ -38,7 +38,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\JXS.Assets.Core\JXS.Assets.Core.csproj"/>
+        <ProjectReference Include="..\JXS.Assets.Core\JXS.Assets.Core.csproj" />
+        <ProjectReference Include="..\JXS.Utils\JXS.Utils.csproj" />
     </ItemGroup>
 
 </Project>

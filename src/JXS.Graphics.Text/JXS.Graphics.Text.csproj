@@ -7,7 +7,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\JXS.Graphics.Core\JXS.Graphics.Core.csproj" />
+        <ProjectReference Include="..\JXS.Assets.Core\JXS.Assets.Core.csproj" />
+        <ProjectReference Include="..\JXS.Graphics.Core\JXS.Graphics.Core.csproj" />
+        <ProjectReference Include="..\JXS.Graphics.Generators\JXS.Graphics.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\JXS.Graphics.Renderer2D\JXS.Graphics.Renderer2D.csproj" />
+        <ProjectReference Include="..\JXS.Graphics.Utils\JXS.Graphics.Utils.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="Shaders\**\*" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="ScreenspaceText.Rendering.cs">
+        <DependentUpon>ScreenspaceText.cs</DependentUpon>
+      </Compile>
     </ItemGroup>
 
 </Project>

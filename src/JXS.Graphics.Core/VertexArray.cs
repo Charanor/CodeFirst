@@ -1,32 +1,37 @@
 ﻿namespace JXS.Graphics.Core;
 
-public class VertexArray<TVertex> : NativeResource where TVertex : unmanaged
+public class VertexArray : NativeResource
 {
-	private readonly VertexInfo vertexInfo;
 	private readonly VertexArrayHandle handle;
 
-	public VertexArray(VertexInfo vertexInfo)
+	public VertexArray()
 	{
-		this.vertexInfo = vertexInfo;
 		handle = CreateVertexArray();
-		foreach (var (location, componentCount, _, type, _) in vertexInfo.VertexAttributes)
-		{
-			var index = (uint)location;
-			EnableVertexArrayAttrib(handle, index);
-			VertexArrayAttribFormat(handle, index, componentCount, type, normalized: false, relativeoffset: 0);
-			VertexArrayAttribBinding(handle, index, index);
-		}
 	}
 
-	public void LinkBuffers(Buffer<TVertex> vertexBuffer, Buffer<uint> indexBuffer)
+	public void LinkVertexAttribute<TData>(VertexAttribute attribute, Buffer<TData> buffer, int stride)
+		where TData : unmanaged
 	{
-		var sizeInBytes = vertexInfo.SizeInBytes;
-		foreach (var (location, _, _, _, offset) in vertexInfo.VertexAttributes)
-		{
-			VertexArrayVertexBuffer(handle, (uint)location, vertexBuffer, new IntPtr(offset), sizeInBytes);
-		}
+		var (location, componentCount, _, type, offset) = attribute;
+		var index = (uint)location;
+		SetupArrayAttribute(index, componentCount, type);
+		LinkBuffer(buffer, index, offset, stride);
+	}
 
-		VertexArrayElementBuffer(handle, indexBuffer);
+	public void LinkBuffer<TData>(Buffer<TData> buffer, uint location, int offset, int stride)
+		where TData : unmanaged => VertexArrayVertexBuffer(handle, location, buffer, new IntPtr(offset), stride);
+
+	public void LinkElementBuffer(Buffer<uint> indexBuffer) => VertexArrayElementBuffer(handle, indexBuffer);
+
+	public void LinkElementBuffer(Buffer<byte> indexBuffer) => VertexArrayElementBuffer(handle, indexBuffer);
+
+	public void LinkElementBuffer(Buffer<ushort> indexBuffer) => VertexArrayElementBuffer(handle, indexBuffer);
+
+	public void SetupArrayAttribute(uint index, int componentCount, VertexAttribType type)
+	{
+		EnableVertexArrayAttrib(handle, index);
+		VertexArrayAttribFormat(handle, index, componentCount, type, normalized: false, relativeoffset: 0);
+		VertexArrayAttribBinding(handle, index, index);
 	}
 
 	public void Bind()
@@ -45,5 +50,21 @@ public class VertexArray<TVertex> : NativeResource where TVertex : unmanaged
 	protected override void DisposeNativeResources()
 	{
 		DeleteVertexArray(handle);
+	}
+
+	public static VertexArray CreateForVertexInfo<TVertex>(VertexInfo vertexInfo, Buffer<TVertex> vertexBuffer,
+		Buffer<uint> indexBuffer)
+		where TVertex : unmanaged
+	{
+		var vertexArray = new VertexArray();
+
+		var sizeInBytes = vertexInfo.SizeInBytes;
+		foreach (var attribute in vertexInfo.VertexAttributes)
+		{
+			vertexArray.LinkVertexAttribute(attribute, vertexBuffer, sizeInBytes);
+		}
+
+		vertexArray.LinkElementBuffer(indexBuffer);
+		return vertexArray;
 	}
 }

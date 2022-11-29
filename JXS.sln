@@ -10,7 +10,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Ecs.Examples", "src\JXS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Graphics.Core", "src\JXS.Graphics.Core\JXS.Graphics.Core.csproj", "{4B376187-EC70-4972-A07C-7AB2E7EFF20F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Graphics.Renderer", "src\JXS.Graphics.Renderer\JXS.Graphics.Renderer.csproj", "{5E80D28F-77D9-478A-817C-FD8715DE4A03}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Graphics.Renderer2D", "src\JXS.Graphics.Renderer2D\JXS.Graphics.Renderer2D.csproj", "{5E80D28F-77D9-478A-817C-FD8715DE4A03}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Graphics.Utils", "src\JXS.Graphics.Utils\JXS.Graphics.Utils.csproj", "{C240A3E2-75D7-4908-BFE3-703C96B8F64C}"
 EndProject
@@ -21,6 +21,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Assets.Core", "src\JXS.Assets.Core\JXS.Assets.Core.csproj", "{1317C20A-5503-4411-BAFD-F13BCF09E9C5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Graphics.Text", "src\JXS.Graphics.Text\JXS.Graphics.Text.csproj", "{82B0A286-BCDD-4F2E-A685-C62EEE6C22DF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Graphics.Generators", "src\JXS.Graphics.Generators\JXS.Graphics.Generators.csproj", "{88F7C163-83B2-4340-8A3F-56EC1A728B24}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -68,5 +70,9 @@ Global
 		{1317C20A-5503-4411-BAFD-F13BCF09E9C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{82B0A286-BCDD-4F2E-A685-C62EEE6C22DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{82B0A286-BCDD-4F2E-A685-C62EEE6C22DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88F7C163-83B2-4340-8A3F-56EC1A728B24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88F7C163-83B2-4340-8A3F-56EC1A728B24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88F7C163-83B2-4340-8A3F-56EC1A728B24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88F7C163-83B2-4340-8A3F-56EC1A728B24}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

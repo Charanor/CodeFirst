@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.ComponentModel;
+using OpenTK.Mathematics;
 
 namespace JXS.Graphics.Core;
 
@@ -23,35 +24,57 @@ public abstract class Texture : NativeResource
 			throw new InvalidEnumArgumentException(nameof(target), (int)target, typeof(TextureTarget));
 		}
 
-		Target = target;
-		Handle = CreateTexture(Target);
-		Data = data.ToArray().ToImmutableArray();
-
 		fixed (byte* ptr = data)
 		{
-			// ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
+			// ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
 			switch (target)
 			{
 				case TextureTarget.Texture1d:
+					EnsureValidDimensions(width);
 					TextureStorage1D(this, mipMapLevels, internalFormat, width);
 					TextureSubImage1D(this, level: 0, xoffset: 0, width, format, type, ptr);
 					break;
 				case TextureTarget.Texture2d:
+					EnsureValidDimensions(width, height);
 					TextureStorage2D(this, mipMapLevels, internalFormat, width, height);
 					TextureSubImage2D(this, level: 0, xoffset: 0, yoffset: 0, width, height, format, type, ptr);
 					break;
 				case TextureTarget.Texture3d:
+					EnsureValidDimensions(width, height, depth);
 					TextureStorage3D(this, mipMapLevels, internalFormat, width, height, depth);
 					TextureSubImage3D(this, level: 0, xoffset: 0, yoffset: 0, zoffset: 0, width, height, depth, format,
 						type, ptr);
 					break;
+				default:
+					if (!Enum.IsDefined(target))
+					{
+						// Invalid enum value
+						throw new InvalidEnumArgumentException(nameof(target), (int)target, typeof(TextureTarget));
+					}
+
+					// We simply can not process this type of texture
+					throw new InvalidEnumArgumentException($"Unable to create texture for {nameof(TextureTarget)}.{Enum.GetName(target)} = ({target}): Unsupported target.");
 			}
 		}
+
+		Target = target;
+		Handle = CreateTexture(Target);
+		Data = data.ToArray().ToImmutableArray();
+
+		Width = width;
+		Height = height;
+		Depth = depth;
+		Dimensions = new Vector3i(width, height, depth);
 	}
 
 	public TextureHandle Handle { get; }
 	public TextureTarget Target { get; }
 	public ImmutableArray<byte> Data { get; }
+
+	public int Width { get; }
+	public int Height { get; }
+	public int Depth { get; }
+	public Vector3i Dimensions { get; }
 
 	public TextureMinFilter MinFilter
 	{
@@ -186,6 +209,24 @@ public abstract class Texture : NativeResource
 	public static bool operator ==(Texture? left, Texture? right) => Equals(left, right);
 
 	public static bool operator !=(Texture? left, Texture? right) => !Equals(left, right);
+
+	private static void EnsureValidDimensions(int width, int? height = null, int? depth = null)
+	{
+		if (width <= 0)
+		{
+			throw new ArgumentOutOfRangeException(nameof(width));
+		}
+
+		if (height is <= 0)
+		{
+			throw new ArgumentOutOfRangeException(nameof(height));
+		}
+
+		if (depth is <= 0)
+		{
+			throw new ArgumentOutOfRangeException(nameof(depth));
+		}
+	}
 
 	public class TextureBinding : IDisposable
 	{
