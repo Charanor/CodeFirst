@@ -9,17 +9,17 @@ public class Scene : IEnumerable<Component>
 	public static readonly string UIPrimaryAction = "ui_primary";
 	public static readonly string UISecondaryAction = "ui_secondary";
 
-	private readonly IGraphicsProvider graphicsProvider;
-	private readonly IInputProvider inputProvider;
-
 	private readonly List<Component> components;
 
 	public Scene(IGraphicsProvider graphicsProvider, IInputProvider inputProvider)
 	{
-		this.graphicsProvider = graphicsProvider;
-		this.inputProvider = inputProvider;
+		GraphicsProvider = graphicsProvider;
+		InputProvider = inputProvider;
 		components = new List<Component>();
 	}
+
+	public IInputProvider InputProvider { get; init; }
+	public IGraphicsProvider GraphicsProvider { get; init; }
 
 	public Vector2 Size { get; set; } = new(float.NaN, float.NaN);
 
@@ -30,13 +30,13 @@ public class Scene : IEnumerable<Component>
 
 	public void Update(float delta)
 	{
-		if (inputProvider.JustPressed(UIPrimaryAction))
+		if (InputProvider.JustPressed(UIPrimaryAction))
 		{
-			var mousePos = inputProvider.MousePosition;
+			var mousePos = InputProvider.MousePosition;
 			var component = Hit(mousePos);
 			if (component is null)
 			{
-				inputProvider.KeyboardFocus = null;
+				InputProvider.KeyboardFocus = null;
 			}
 		}
 
@@ -48,15 +48,24 @@ public class Scene : IEnumerable<Component>
 
 	public void Draw()
 	{
-		graphicsProvider.Begin();
+		GraphicsProvider.Begin();
 		foreach (var component in components.Where(c => c.Visible))
 		{
 			component.ApplyStyle();
 			component.CalculateLayout(Size.X, Size.Y);
-			component.Draw(graphicsProvider);
+			component.Draw(GraphicsProvider);
 		}
 
-		graphicsProvider.End();
+		GraphicsProvider.End();
+	}
+
+	public void __DELETE__ME_CalculateLayout()
+	{
+		foreach (var component in components.Where(c => c.Visible))
+		{
+			component.ApplyStyle();
+			component.CalculateLayout(Size.X, Size.Y);
+		}
 	}
 
 	public void AddComponent<TComponent>(TComponent component) where TComponent : Component

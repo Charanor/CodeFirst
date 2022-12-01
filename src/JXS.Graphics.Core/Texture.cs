@@ -24,6 +24,15 @@ public abstract class Texture : NativeResource
 			throw new InvalidEnumArgumentException(nameof(target), (int)target, typeof(TextureTarget));
 		}
 
+		Target = target;
+		Handle = CreateTexture(Target);
+		Data = data.ToArray().ToImmutableArray();
+
+		Width = width;
+		Height = height;
+		Depth = depth;
+		Dimensions = new Vector3i(width, height, depth);
+
 		fixed (byte* ptr = data)
 		{
 			// ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
@@ -56,15 +65,6 @@ public abstract class Texture : NativeResource
 					throw new InvalidEnumArgumentException($"Unable to create texture for {nameof(TextureTarget)}.{Enum.GetName(target)} = ({target}): Unsupported target.");
 			}
 		}
-
-		Target = target;
-		Handle = CreateTexture(Target);
-		Data = data.ToArray().ToImmutableArray();
-
-		Width = width;
-		Height = height;
-		Depth = depth;
-		Dimensions = new Vector3i(width, height, depth);
 	}
 
 	public TextureHandle Handle { get; }
@@ -228,16 +228,10 @@ public abstract class Texture : NativeResource
 		}
 	}
 
-	public class TextureBinding : IDisposable
+	public sealed class TextureBinding : IDisposable
 	{
 		private readonly Texture? texture;
 		private bool isDisposed;
-
-		public TextureBinding()
-		{
-			texture = null;
-			Unit = 0; // 0 is an invalid unit
-		}
 
 		public TextureBinding(Texture texture, TextureUnit unit)
 		{
@@ -255,7 +249,8 @@ public abstract class Texture : NativeResource
 			{
 				return;
 			}
-
+			
+			GC.SuppressFinalize(this);
 			isDisposed = true;
 			if (texture == null || !Enum.IsDefined(Unit))
 			{

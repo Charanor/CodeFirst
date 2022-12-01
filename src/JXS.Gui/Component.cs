@@ -9,17 +9,16 @@ public abstract class Component
 	protected internal readonly YogaNode Node;
 	private Scene? scene;
 
-	protected Component(Style? style, string? id, IInputProvider inputProvider)
+	protected Component(string? id = default, Style? style = default)
 	{
-		Style = style ?? new Style();
 		Id = id;
-		InputProvider = inputProvider;
+		Style = style ?? new Style();
 		Node = new YogaNode();
 	}
 
 	public string? Id { get; init; }
-	
-	protected IInputProvider InputProvider { get; }
+
+	protected IInputProvider InputProvider => Scene.InputProvider;
 
 	public bool Visible => Style.Display != YogaDisplay.None;
 
@@ -48,10 +47,9 @@ public abstract class Component
 		{
 			var x = Parent is null ? Node.LayoutX : Node.LayoutX + Parent.CalculatedBounds.X;
 			var y = Parent is null ? Node.LayoutY : Node.LayoutY + Parent.CalculatedBounds.Y;
-			return new Box2(x, y, Node.LayoutWidth, Node.LayoutHeight);
+			return  Box2.FromSize(new Vector2(x, y), new Vector2(Node.LayoutWidth, Node.LayoutHeight));
 		}
 	}
-
 
 	/// <summary>
 	///     Updates this component.
@@ -69,21 +67,14 @@ public abstract class Component
 	{
 		if (Style.Overflow == YogaOverflow.Hidden)
 		{
-			var scissor = CalculatedBounds.Floor();
-			graphicsProvider.AddScissor(scissor);
-			graphicsProvider.DrawRect(CalculatedBounds, Style.BackgroundColor);
-			graphicsProvider.RemoveScissor(scissor);
+			// TODO: Do something
 		}
-		else
-		{
-			graphicsProvider.DrawRect(CalculatedBounds, Style.BackgroundColor);
-		}
+		graphicsProvider.DrawRect(CalculatedBounds, Style.BackgroundColor);
 	}
 
 	/// <summary>
 	///     Calculates the layout of this component. Get the newly calculated bounds with <seealso cref="CalculatedBounds" />.
 	/// </summary>
-	/// <remarks>Automatically called during <seealso cref="Draw" />.</remarks>
 	public void CalculateLayout(float sceneWidth = float.NaN, float sceneHeight = float.NaN)
 	{
 		Node.CalculateLayout(sceneWidth, sceneHeight);
@@ -137,5 +128,4 @@ public abstract class Component
 		Visible && position.X >= CalculatedBounds.X &&
 		position.X <= CalculatedBounds.X + CalculatedBounds.Width &&
 		position.Y >= CalculatedBounds.Y && position.Y <= CalculatedBounds.Y + CalculatedBounds.Height;
-
 }

@@ -12,6 +12,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\JXS.Graphics.Core\JXS.Graphics.Core.csproj" />
+      <ProjectReference Include="..\JXS.Graphics.Text\JXS.Graphics.Text.csproj" />
+      <ProjectReference Include="..\JXS.Input.Core\JXS.Input.Core.csproj" />
       <ProjectReference Include="..\JXS.Utils\JXS.Utils.csproj" />
     </ItemGroup>
 

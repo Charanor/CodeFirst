@@ -2,12 +2,16 @@ namespace JXS.Gui.Components;
 
 public class KeyboardUnfocuser : Pressable
 {
-    public KeyboardUnfocuser(Style? style, string? id, IInputProvider inputProvider) : base(style, id, inputProvider)
-    {
-        OnFullPress += (_, args) =>
-        {
-            if (args.PressEvent != PressEvent.Primary) return;
-            inputProvider.KeyboardFocus = null;
-        };
-    }
+	public KeyboardUnfocuser(string? id = default, Style? style = default) : base(id, style)
+	{
+		OnFullPress += (_, args) =>
+		{
+			if (args.PressEvent != PressEvent.Primary)
+			{
+				return;
+			}
+
+			InputProvider.KeyboardFocus = null;
+		};
+	}
 }

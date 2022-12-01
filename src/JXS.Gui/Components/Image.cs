@@ -5,28 +5,26 @@ namespace JXS.Gui.Components;
 
 public class Image : Component
 {
-    public Image(Texture2D? texture, Style? style, string? id, IInputProvider inputProvider) : base(style, id, inputProvider)
-    {
-        Texture = texture;
-    }
+	public Image(string? id = default, Texture2D? texture = default, Style? style = default) : base(id, style)
+	{
+		Texture = texture;
+	}
 
-    public Texture2D? Texture { get; set; }
+	public Texture2D? Texture { get; set; }
 
-    public override void Draw(IGraphicsProvider graphicsProvider)
-    {
-        base.Draw(graphicsProvider);
-        if (Texture is null) return;
+	public override void Draw(IGraphicsProvider graphicsProvider)
+	{
+		base.Draw(graphicsProvider);
+		if (Texture is null)
+		{
+			return;
+		}
 
-        if (Style.Overflow == YogaOverflow.Hidden)
-        {
-            var scissor = CalculatedBounds.Floor();
-            graphicsProvider.AddScissor(scissor);
-            graphicsProvider.DrawImage(Texture, CalculatedBounds);
-            graphicsProvider.RemoveScissor(scissor);
-        }
-        else
-        {
-            graphicsProvider.DrawImage(Texture, CalculatedBounds);
-        }
-    }
+		if (Style.Overflow == YogaOverflow.Hidden)
+		{
+			// TODO: Do something
+		}
+
+		graphicsProvider.DrawImage(CalculatedBounds, Texture);
+	}
 }

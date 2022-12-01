@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Graphics.Generators", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Gui", "src\JXS.Gui\JXS.Gui.csproj", "{EE12E954-7905-4389-B5B0-BFAD508179F7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Gui.Demo", "src\JXS.Gui.Demo\JXS.Gui.Demo.csproj", "{A19D9E63-51D8-444E-9708-33710789123E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,5 +70,17 @@ Global
 		{7CC0C96B-5E73-4493-8C57-DDCFFF31AF81}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7CC0C96B-5E73-4493-8C57-DDCFFF31AF81}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7CC0C96B-5E73-4493-8C57-DDCFFF31AF81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1317C20A-5503-4411-BAFD-F13BCF09E9C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1317C20A-5503-4411-BAFD-F13BCF09E9C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88F7C163-83B2-4340-8A3F-56EC1A728B24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88F7C163-83B2-4340-8A3F-56EC1A728B24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82B0A286-BCDD-4F2E-A685-C62EEE6C22DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82B0A286-BCDD-4F2E-A685-C62EEE6C22DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE12E954-7905-4389-B5B0-BFAD508179F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE12E954-7905-4389-B5B0-BFAD508179F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A19D9E63-51D8-444E-9708-33710789123E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A19D9E63-51D8-444E-9708-33710789123E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A19D9E63-51D8-444E-9708-33710789123E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A19D9E63-51D8-444E-9708-33710789123E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

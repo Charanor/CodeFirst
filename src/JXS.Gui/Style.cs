@@ -78,24 +78,17 @@ public record Style
 	public YogaAlign AlignSelf { get; init; } = YogaAlign.Auto;
 
 	public YogaValue Margin { get; init; } = YogaValue.Undefined();
-
 	public YogaValue MarginLeft { get; init; } = YogaValue.Undefined();
-
 	public YogaValue MarginRight { get; init; } = YogaValue.Undefined();
-
 	public YogaValue MarginTop { get; init; } = YogaValue.Undefined();
-
 	public YogaValue MarginBottom { get; init; } = YogaValue.Undefined();
 	public YogaValue MarginVertical { get; init; } = YogaValue.Undefined();
 	public YogaValue MarginHorizontal { get; init; } = YogaValue.Undefined();
+
 	public YogaValue Padding { get; init; } = YogaValue.Undefined();
-
 	public YogaValue PaddingLeft { get; init; } = YogaValue.Undefined();
-
 	public YogaValue PaddingRight { get; init; } = YogaValue.Undefined();
-
 	public YogaValue PaddingTop { get; init; } = YogaValue.Undefined();
-
 	public YogaValue PaddingBottom { get; init; } = YogaValue.Undefined();
 	public YogaValue PaddingVertical { get; init; } = YogaValue.Undefined();
 	public YogaValue PaddingHorizontal { get; init; } = YogaValue.Undefined();

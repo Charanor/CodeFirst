@@ -13,7 +13,7 @@ public class Pressable : View
 
     private readonly ISet<PressEvent> pressedDown;
 
-    public Pressable(Style? style, string? id, IInputProvider inputProvider) : base(style, id, inputProvider)
+    public Pressable(string? id = default, Style? style = default) : base(id, style)
     {
         pressedDown = new HashSet<PressEvent>();
     }

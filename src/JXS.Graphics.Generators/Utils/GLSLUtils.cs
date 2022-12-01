@@ -40,11 +40,11 @@ public static class GLSLUtils
 	{
 		null => throw new ArgumentNullException(nameof(glslType)),
 		"" => throw new ArgumentException($"{nameof(glslType)} cannot be empty", nameof(glslType)),
+		"int" or "float" or "bool" => glslType,
 		_ when glslType.StartsWith("vec") => glslType.Replace(oldValue: "vec", newValue: "Vector"),
 		_ when glslType.StartsWith("mat") => glslType.Replace(oldValue: "mat", newValue: "Matrix"),
 		"sampler2D" => $"{GRAPHICS_CORE_NAMESPACE}.Texture2D",
 		"samplerCube" => "int", // TODO: Replace "int" with "CubeTexture" or something
-		"int" or "float" => glslType,
 		_ => throw new ArgumentException($"Can not convert GLSL type {glslType} to OpenTK type", nameof(glslType))
 	};
 
