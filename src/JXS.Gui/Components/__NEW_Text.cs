@@ -148,20 +148,18 @@ public class __NEW_Text : Component
 			dirty = false;
 		}
 
-		var position = CalculatedBounds.Location;
 		var textAreaSize = CalculatedBounds.Size;
 		var textSize = font.ScalePixelsToFontSize(TextSize, Style.FontSize);
-		position.Y += font.ScaleEmToFontSize(font.Metrics.LineHeight, Style.FontSize) * (textRows.Count - 1);
 
-		// Bottom align is default, no need to check for it
-		if (Style.TextAlign.HasFlag(TextAlign.Top))
+		var position = CalculatedBounds.Location;
+		position.Y += font.ScaleEmToFontSize(font.Metrics.LineHeight, Style.FontSize) * (textRows.Count - 1);
+		var emptyVerticalSpace = textAreaSize.Y - textSize.Y;
+		position.Y += Style.TextAlign switch
 		{
-			position.Y += textAreaSize.Y - textSize.Y;
-		}
-		else if (Style.TextAlign.HasFlag(TextAlign.VerticalCenter))
-		{
-			position.Y += (textAreaSize.Y - textSize.Y) / 2;
-		}
+			var align when align.HasFlag(TextAlign.Top) => emptyVerticalSpace,
+			var align when align.HasFlag(TextAlign.VerticalCenter) => emptyVerticalSpace / 2f,
+			_ => 0 // Bottom align is default, no need to check for it
+		};
 
 		if (Style.Overflow == YogaOverflow.Hidden)
 		{
@@ -179,17 +177,14 @@ public class __NEW_Text : Component
 			var offsetY = 0f;
 			foreach (var row in textRows)
 			{
-				var positionOffset = new Vector2(x: 0, offsetY);
-				// Left align is default, no need to check for it
-				var emptySpace = textAreaSize.X - font.ScalePixelsToFontSize(row.Size.X, Style.FontSize);
-				if (Style.TextAlign.HasFlag(TextAlign.Right))
+				var emptyHorizontalSpace = textAreaSize.X - font.ScalePixelsToFontSize(row.Size.X, Style.FontSize);
+				var offsetX = Style.TextAlign switch
 				{
-					positionOffset.X += emptySpace;
-				}
-				else if (Style.TextAlign.HasFlag(TextAlign.HorizontalCenter))
-				{
-					positionOffset.X += emptySpace / 2f;
-				}
+					var align when align.HasFlag(TextAlign.Right) => emptyHorizontalSpace,
+					var align when align.HasFlag(TextAlign.HorizontalCenter) => emptyHorizontalSpace / 2f,
+					_ => 0 // Left align is default, no need to check for it
+				};
+				var positionOffset = new Vector2(offsetX, offsetY);
 
 				graphicsProvider.DrawText(Font, row, Style.FontSize, position + positionOffset, Style.FontColor);
 				offsetY -= font.ScalePixelsToFontSize(row.Size.Y, Style.FontSize);
