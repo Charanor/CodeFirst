@@ -22,9 +22,15 @@ public class Image : Component
 
 		if (Style.Overflow == YogaOverflow.Hidden)
 		{
-			// TODO: Do something
+			graphicsProvider.BeginOverflow();
+			{
+				graphicsProvider.DrawImage(CalculatedBounds, Texture);
+			}
+			graphicsProvider.EndOverflow();
 		}
-
-		graphicsProvider.DrawImage(CalculatedBounds, Texture);
+		else
+		{
+			graphicsProvider.DrawImage(CalculatedBounds, Texture);
+		}
 	}
 }

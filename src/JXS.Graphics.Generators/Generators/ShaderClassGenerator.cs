@@ -22,10 +22,11 @@ public class ShaderClassGenerator
 
 	private static readonly ImmutableArray<string> Namespaces = new[]
 	{
-		"JXS.Graphics.Core",
 		"System.Collections.Generic",
+		"System.CodeDom.Compiler",
+		"JXS.Graphics.Core",
 		"OpenTK.Mathematics",
-		"System.CodeDom.Compiler"
+		"OpenTK.Graphics.OpenGL"
 	}.Concat(GLSLUtils.Namespaces).Distinct().ToImmutableArray();
 
 	private readonly string className;
@@ -69,6 +70,7 @@ public class ShaderClassGenerator
 			.Where(member => member is { StorageType: GLSLStorageType.Uniform, Identifier: not null, Type: not null })
 			.Distinct(GLSLMemberComparer.Instance);
 		var uniformMembers = new List<(string LocationName, string UniformName)>();
+		var textureSlot = 0;
 		foreach (var uniform in uniforms)
 		{
 			GenerateForMember(uniform);
@@ -119,7 +121,18 @@ public class ShaderClassGenerator
 						}
 						classBuilder.EndBlock();
 						classBuilder.IndentedLn($"{identifier} = value;");
-						classBuilder.IndentedLn($"SetUniform({locationFieldName}, value);");
+						if (type.StartsWith("sampler"))
+						{
+							// This is a texture
+							classBuilder.IndentedLn($"SetUniform({locationFieldName}, {textureSlot});");
+							classBuilder.IndentedLn($"GL.ActiveTexture(TextureUnit.Texture{textureSlot});");
+							classBuilder.IndentedLn("GL.BindTexture(value.Target, value);");
+							textureSlot += 1;
+						}
+						else
+						{
+							classBuilder.IndentedLn($"SetUniform({locationFieldName}, value);");
+						}
 					}
 					classBuilder.EndBlock();
 				}

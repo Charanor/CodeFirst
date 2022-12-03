@@ -187,7 +187,7 @@ public class ShaderProgram : NativeResource
 		if (success == GL_FALSE)
 		{
 			GetShaderInfoLog(shaderHandle, out var infoLog);
-			throw new ShaderCompilationException(infoLog);
+			throw new ShaderCompilationException($"Shader: {Enum.GetName(shaderType)}, error: {infoLog}");
 		}
 
 		return shaderHandle;

@@ -31,15 +31,27 @@ public class View : Component, IEnumerable<Component>
 
 		if (Style.Overflow == YogaOverflow.Hidden)
 		{
-			// TODO: Do something
+			graphicsProvider.BeginOverflow();
+			{
+				DrawChildren();
+			}
+			graphicsProvider.EndOverflow();
+		}
+		else
+		{
+			DrawChildren();
 		}
 
-		foreach (var child in children.Where(c => c.Visible))
+
+		void DrawChildren()
 		{
-			child.Draw(graphicsProvider);
+			foreach (var child in children.Where(c => c.Visible))
+			{
+				child.Draw(graphicsProvider);
+			}
 		}
 	}
-	
+
 
 	public virtual void AddChild(Component component)
 	{

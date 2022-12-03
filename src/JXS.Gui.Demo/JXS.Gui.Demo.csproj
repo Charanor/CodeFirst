@@ -18,4 +18,15 @@
         <AdditionalFiles Include="Shaders\**\*" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="Fonts\IMMORTAL.mtsdf.json" />
+      <Content Include="Fonts\IMMORTAL.mtsdf.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Fonts\IMMORTAL.mtsdf.png" />
+      <Content Include="Fonts\IMMORTAL.mtsdf.png">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>

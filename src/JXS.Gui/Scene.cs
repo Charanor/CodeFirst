@@ -6,9 +6,6 @@ namespace JXS.Gui;
 
 public class Scene : IEnumerable<Component>
 {
-	public static readonly string UIPrimaryAction = "ui_primary";
-	public static readonly string UISecondaryAction = "ui_secondary";
-
 	private readonly List<Component> components;
 
 	public Scene(IGraphicsProvider graphicsProvider, IInputProvider inputProvider)
@@ -30,7 +27,7 @@ public class Scene : IEnumerable<Component>
 
 	public void Update(float delta)
 	{
-		if (InputProvider.JustPressed(UIPrimaryAction))
+		if (InputProvider.JustPressed(InputAction.Primary))
 		{
 			var mousePos = InputProvider.MousePosition;
 			var component = Hit(mousePos);
@@ -57,15 +54,6 @@ public class Scene : IEnumerable<Component>
 		}
 
 		GraphicsProvider.End();
-	}
-
-	public void __DELETE__ME_CalculateLayout()
-	{
-		foreach (var component in components.Where(c => c.Visible))
-		{
-			component.ApplyStyle();
-			component.CalculateLayout(Size.X, Size.Y);
-		}
 	}
 
 	public void AddComponent<TComponent>(TComponent component) where TComponent : Component
@@ -139,7 +127,7 @@ public class Scene : IEnumerable<Component>
 				return false;
 			}
 
-			if (!(component is View view))
+			if (component is not View view)
 			{
 				continue;
 			}

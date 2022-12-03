@@ -20,10 +20,4 @@
         <AdditionalFiles Include="Shaders\**\*" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Compile Update="ScreenspaceText.Rendering.cs">
-        <DependentUpon>ScreenspaceText.cs</DependentUpon>
-      </Compile>
-    </ItemGroup>
-
 </Project>

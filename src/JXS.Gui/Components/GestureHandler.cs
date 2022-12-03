@@ -1,4 +1,5 @@
 using JXS.Utils.Events;
+using OpenTK.Mathematics;
 
 namespace JXS.Gui.Components;
 
@@ -56,7 +57,7 @@ public class GestureHandler : View
 			return;
 		}
 
-		var mousePos = InputProvider.MousePosition;
+		var mousePos = InputProvider?.MousePosition ?? Vector2.Zero;
 		var component = Scene!.Hit(mousePos);
 		var hitsThisOrChild = component is not null && (component == this || HasChild(component));
 

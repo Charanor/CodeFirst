@@ -18,7 +18,7 @@ public abstract class Component
 
 	public string? Id { get; init; }
 
-	protected IInputProvider InputProvider => Scene.InputProvider;
+	protected IInputProvider? InputProvider => Scene?.InputProvider;
 
 	public bool Visible => Style.Display != YogaDisplay.None;
 
@@ -67,7 +67,11 @@ public abstract class Component
 	{
 		if (Style.Overflow == YogaOverflow.Hidden)
 		{
-			// TODO: Do something
+			graphicsProvider.BeginOverflow();
+			{
+				graphicsProvider.DrawRect(CalculatedBounds, Style.BackgroundColor);
+			}
+			graphicsProvider.EndOverflow();
 		}
 		graphicsProvider.DrawRect(CalculatedBounds, Style.BackgroundColor);
 	}

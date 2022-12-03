@@ -1,6 +1,10 @@
 ﻿using System.Runtime.InteropServices;
 using Facebook.Yoga;
+using JXS.Assets.Core;
 using JXS.Graphics.Core;
+using JXS.Graphics.Core.Assets;
+using JXS.Graphics.Text.Assets;
+using JXS.Graphics.Utils;
 using JXS.Gui.Components;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
@@ -11,10 +15,14 @@ namespace JXS.Gui.Demo;
 
 public class Demo : GameWindow
 {
-	private const int PADDING = 20; // px
+	private const int PADDING = 50; // px
+
+	private static readonly TextureAssetDefinition ImmortalFontAtlas = new("Fonts/IMMORTAL.mtsdf.png");
+	private static readonly FontAssetDefinition ImmortalFont = new(Path: "Fonts/IMMORTAL.mtsdf.json", ImmortalFontAtlas);
 
 	private readonly Camera camera;
 	private readonly Scene scene;
+	private readonly AssetManager assetManager;
 
 	private Texture2D? texture;
 
@@ -32,6 +40,10 @@ public class Demo : GameWindow
 			Size = windowSize
 		};
 
+		assetManager = new AssetManager();
+		assetManager.AddAssetLoader(new TextureAssetLoader());
+		assetManager.AddAssetLoader(new FontAssetLoader(assetManager));
+
 		GL.Enable(EnableCap.DebugOutput);
 		GL.Enable(EnableCap.DebugOutputSynchronous);
 		GL.DebugMessageCallback(
@@ -45,45 +57,45 @@ public class Demo : GameWindow
 	{
 		base.OnLoad();
 
-		Color4<Rgba>[] colors =
+		if (!assetManager.TryLoadAsset(ImmortalFont, out var font))
+		{
+			throw new NullReferenceException();
+		}
+
+		var bytes = new[]
 		{
 			Color4.Red,
 			Color4.Green,
 			Color4.Green,
 			Color4.Red
+		}.ToByteArray();
+
+		texture = new Texture2D(bytes, width: 2, height: 2)
+		{
+			MinFilter = TextureMinFilter.Nearest,
+			MagFilter = TextureMagFilter.Nearest
 		};
-		var bytes = colors.SelectMany(color =>
+
+		var text = new __NEW_Text(font, value: "abcd efgh ijkl mnop qrst uvw xyz ABCD EFGH IJKL MNOP QRST UVW XYZ")
 		{
-			var (r, g, b, a) = color;
-			return BitConverter.GetBytes(r)
-				.Concat(BitConverter.GetBytes(g))
-				.Concat(BitConverter.GetBytes(b))
-				.Concat(BitConverter.GetBytes(a));
-		}).ToArray();
-		texture = new Texture2D(bytes, width: 2, height: 2);
-		var root = new View(id: "root", new Style
-		{
-			Width = YogaValue.Percent(100),
-			Height = YogaValue.Percent(100),
-			JustifyContent = YogaJustify.Center,
-			AlignItems = YogaAlign.Center,
-			BackgroundColor = Color4.Orange
-		});
-		var center = new Image(id: "center", texture, new Style
-		{
-			Width = 100,
-			Height = 100,
-			BackgroundColor = Color4.Blue
-		});
-		root.AddChild(center);
-		scene.AddComponent(root);
-		scene.__DELETE__ME_CalculateLayout();
+			Style = new TextStyle
+			{
+				Width = YogaValue.Percent(100),
+				Height = YogaValue.Percent(100),
+				FontSize = 100,
+				BackgroundColor = Color4.White,
+				FontColor = Color4.Black,
+				TextAlign = TextAlign.Middle,
+			}
+		};
+		scene.AddComponent(text);
 	}
 
 	protected override void OnUnload()
 	{
 		base.OnUnload();
 		texture?.Dispose();
+		assetManager.Dispose();
 	}
 
 	protected override void OnUpdateFrame(FrameEventArgs args)
@@ -95,7 +107,6 @@ public class Demo : GameWindow
 	protected override void OnRenderFrame(FrameEventArgs args)
 	{
 		base.OnRenderFrame(args);
-		GL.Disable(EnableCap.DepthTest);
 		GL.ClearColor(red: 0, green: 0, blue: 0, alpha: 1);
 		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 

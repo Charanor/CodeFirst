@@ -2,7 +2,7 @@
 
 in vec2 texCoords;
 
-out vec4 fragmentColor;
+out vec4 FragColor;
 
 uniform sampler2D fontAtlas;
 
@@ -11,7 +11,9 @@ uniform float distanceFieldRange;
 uniform vec4 backgroundColor;
 uniform vec4 foregroundColor;
 
-float median(vec3 input);
+uniform bool debug;
+
+float median(vec3 vector);
 float calculateScreenPixelRange();
 
 void main() {
@@ -22,11 +24,15 @@ void main() {
     float screenDistance = calculateScreenPixelRange() * (signedDistance - 0.5);
     float opacity = clamp(screenDistance + 0.5, 0.0, 1.0);
 
-    fragmentColor = mix(backgroundColor, foregroundColor, opacity);
+    vec4 bg = backgroundColor;
+    if(debug) {
+        bg = vec4(0, 1, 0, 1);
+    }
+    FragColor = mix(bg, foregroundColor, opacity);
 }
 
-float median(vec3 input) {
-    return max(min(input.r, input.g), min(max(input.r, input.g), input.b));
+float median(vec3 vector) {
+    return max(min(vector.r, vector.g), min(max(vector.r, vector.g), vector.b));
 }
 
 float calculateScreenPixelRange() {

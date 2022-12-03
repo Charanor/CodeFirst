@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using OpenTK.Mathematics;
+﻿using OpenTK.Mathematics;
 
 namespace JXS.Graphics.Text.Layout;
 
@@ -55,8 +54,6 @@ public class TextLayout
 		var previousRowEndIndex = 0;
 		var lastValidLineBreakIndex = 0;
 		var currentRowWidth = 0f;
-		FontGlyph? previousGlyph = null;
-
 		var glyphs = fontGlyphs.ToArray();
 		for (var i = 0; i < glyphs.Length; i++)
 		{
@@ -66,39 +63,62 @@ public class TextLayout
 				lastValidLineBreakIndex = i;
 			}
 
-			var kerning = previousGlyph == null ? 0 : font.GetKerningBetween(previousGlyph, glyph);
-			var fullGlyphWidth = glyph.Size.X + glyph.Advance + kerning;
-
-			var glyphsSinceLastLineBreak = i - lastValidLineBreakIndex;
-			if (currentRowWidth + fullGlyphWidth > maxWidth && glyphsSinceLastLineBreak > 0)
+			var advance = font.ScaleEmToPixelSize(glyph.Advance);
+			if (currentRowWidth + advance >= maxWidth && previousRowEndIndex != lastValidLineBreakIndex)
 			{
 				// Line break
-				var glyphsInRow = glyphs.Take(new Range(previousRowEndIndex, lastValidLineBreakIndex));
-				var row = new TextRow(font, glyphsInRow);
-				Debug.Assert(row.Size.X <= maxWidth);
+				var endIndex = previousRowEndIndex == lastValidLineBreakIndex ? i : lastValidLineBreakIndex;
+				var glyphsInRow = glyphs.Take(new Range(previousRowEndIndex, endIndex));
+				var row = new TextRow(font, TrimStart(glyphsInRow, strategy));
 				newRows.Add(row);
-				previousRowEndIndex = lastValidLineBreakIndex;
-				i = lastValidLineBreakIndex; // Note that we will immediately increment "i" at the end of the loop.
+				previousRowEndIndex = endIndex;
+				i = endIndex; // Note that we will immediately increment "i" at the end of the loop.
+				currentRowWidth = 0;
 			}
 			else
 			{
-				currentRowWidth += fullGlyphWidth;
+				currentRowWidth += advance;
 			}
 		}
 
+		var finalGlyphs = glyphs.Skip(previousRowEndIndex);
+		var finalRow = new TextRow(font, TrimStart(finalGlyphs, strategy));
+		newRows.Add(finalRow);
 		return newRows;
 	}
+
+	private IEnumerable<FontGlyph> TrimStart(IEnumerable<FontGlyph> glyphs, TextBreakStrategy strategy)
+	{
+		return glyphs.SkipWhile(glyph => strategy.ShouldLineBreakOn((char)glyph.Code));
+	}
+
+	public Vector2 CalculateTextSize(string text, float maxWidth = float.PositiveInfinity,
+		TextBreakStrategy textBreakStrategy = TextBreakStrategy.Whitespace) =>
+		CalculateTextSize(TextToGlyphs(text), maxWidth, textBreakStrategy);
 
 	public Vector2 CalculateTextSize(IEnumerable<FontGlyph> text, float maxWidth = float.PositiveInfinity,
 		TextBreakStrategy textBreakStrategy = TextBreakStrategy.Whitespace)
 	{
 		var rows = LineBreak(text, maxWidth, textBreakStrategy);
+		return CalculateTextSize(rows);
+	}
+
+	public Vector2 CalculateTextSize(IEnumerable<TextRow> rows, bool skipFirstLine = false)
+	{
 		var sizes = rows.Select(row => row.Size);
 
 		var width = 0f;
 		var height = 0f;
+
+		var isFirst = true;
 		foreach (var (x, y) in sizes)
 		{
+			if (isFirst && skipFirstLine)
+			{
+				isFirst = false;
+				continue;
+			}
+
 			width = Math.Max(width, x);
 			height += y;
 		}

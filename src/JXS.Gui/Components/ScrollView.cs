@@ -69,7 +69,7 @@ public class ScrollView : View
 
 		horizontalScrollBar.OnPressDown += (_, args) =>
 		{
-			if (args.PressEvent != Pressable.PressEvent.Primary)
+			if (args.PressEvent != InputAction.Primary)
 			{
 				return;
 			}
@@ -83,7 +83,7 @@ public class ScrollView : View
 		};
 		verticalScrollBar.OnPressDown += (_, args) =>
 		{
-			if (args.PressEvent != Pressable.PressEvent.Primary)
+			if (args.PressEvent != InputAction.Primary)
 			{
 				return;
 			}
@@ -143,13 +143,13 @@ public class ScrollView : View
 			Top = knobOffset.Y
 		};
 
-		if (InputProvider.JustReleased(Scene.UIPrimaryAction))
+		if (InputProvider?.JustReleased(InputAction.Primary) ?? false)
 		{
 			scrollingHorizontal = false;
 			scrollingVertical = false;
 		}
 
-		var mousePos = InputProvider.MousePosition;
+		var mousePos = InputProvider?.MousePosition ?? Vector2.Zero;
 		var mousePosDelta = mousePos - prevMousePos;
 		if (scrollingHorizontal)
 		{
