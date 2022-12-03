@@ -5,6 +5,7 @@
 		"utils",
 		"windowing",
 		"input",
+		"gui",
 		"assets"
 	]
 }

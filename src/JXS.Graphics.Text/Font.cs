@@ -48,6 +48,38 @@ public class Font : IDisposable
 		Shader.Dispose();
 	}
 
+	public float ScalePixelsToEm(float pixelValue) => pixelValue / Atlas.CharacterPixelSize;
+
+	public float ScaleEmToPixelSize(float emValue) => ScaleEmToFontSize(emValue, Atlas.CharacterPixelSize);
+	public Vector2 ScaleEmToPixelSize(Vector2 emValue) => ScaleEmToFontSize(emValue, Atlas.CharacterPixelSize);
+	public Box2 ScaleEmToPixelSize(Box2 emValue) => ScaleEmToFontSize(emValue, Atlas.CharacterPixelSize);
+
+	public float ScaleEmToFontSize(float emValue, float fontSize) => emValue * fontSize;
+
+	public Vector2 ScaleEmToFontSize(Vector2 emValueVector, float fontSize) => new(
+		ScaleEmToFontSize(emValueVector.X, fontSize),
+		ScaleEmToFontSize(emValueVector.Y, fontSize)
+	);
+
+	public Box2 ScaleEmToFontSize(Box2 emValueBox, float fontSize) => new(
+		ScaleEmToFontSize(emValueBox.Min, fontSize),
+		ScaleEmToFontSize(emValueBox.Max, fontSize)
+	);
+
+	public float ScalePixelsToFontSize(float pixelValue, float fontSize) =>
+		ScaleEmToFontSize(ScalePixelsToEm(pixelValue), fontSize);
+
+	public Vector2 ScalePixelsToFontSize(Vector2 pixelValueVector, float fontSize) => new(
+		ScalePixelsToFontSize(pixelValueVector.X, fontSize),
+		ScalePixelsToFontSize(pixelValueVector.Y, fontSize)
+	);
+
+	public Box2 ScalePixelsToFontSize(Box2 pixelValueBox, float fontSize) => new(
+		ScalePixelsToFontSize(pixelValueBox.Min, fontSize),
+		ScalePixelsToFontSize(pixelValueBox.Max, fontSize)
+	);
+
+
 	public bool SupportsCharacter(int code) => glyphMap.ContainsKey(code);
 	public bool SupportsCharacter(char character) => SupportsCharacter(ToCode(character));
 	public bool SupportsCharacter(string character) => SupportsCharacter(ToCode(character));

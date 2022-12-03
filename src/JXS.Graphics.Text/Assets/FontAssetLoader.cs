@@ -25,13 +25,15 @@ public class FontAssetLoader : CachedAssetLoader<Font, FontAssetDefinition>
 
 		var fileContents = File.ReadAllText(path);
 		Debug.Assert(assetManager.TryLoadAsset(definition.TextureAtlasAsset, out var textureAtlas));
+		var atlas2D = textureAtlas as Texture2D;
+		Debug.Assert(atlas2D != null);
 
 		// For now we only allow JSON, so no need to check the type
 		// TODO: Add CSV parser
-		return LoadJsonFont(fontName, fileContents, textureAtlas);
+		return LoadJsonFont(fontName, fileContents, atlas2D);
 	}
 
-	private Font LoadJsonFont(string fontName, string fileContents, Texture textureAtlas)
+	private Font LoadJsonFont(string fontName, string fileContents, Texture2D textureAtlas)
 	{
 		// For now we only support MTSDF files
 		// TODO: Add support for other file types
@@ -41,7 +43,7 @@ public class FontAssetLoader : CachedAssetLoader<Font, FontAssetDefinition>
 			PropertyNameCaseInsensitive = true
 		});
 		Debug.Assert(mtsdfFontFile != null);
-		Debug.Assert(textureAtlas.Dimensions.Xz == new Vector2i(mtsdfFontFile.Atlas.Width, mtsdfFontFile.Atlas.Height));
+		Debug.Assert(textureAtlas.Dimensions.Xy == new Vector2i(mtsdfFontFile.Atlas.Width, mtsdfFontFile.Atlas.Height));
 
 		var characterPixelSize = mtsdfFontFile.Atlas.Size;
 		var distanceRange = mtsdfFontFile.Atlas.DistanceRange;
@@ -51,7 +53,7 @@ public class FontAssetLoader : CachedAssetLoader<Font, FontAssetDefinition>
 		var characterSet = mtsdfFontFile.Glyphs.Select(glyph => new FontGlyph(glyph.Unicode,
 			glyph.AtlasBounds?.Position ?? Vector2.Zero, glyph.AtlasBounds?.Size ?? Vector2.Zero, glyph.Advance,
 			glyph.PlaneBounds?.Boxed ?? Box2.Empty));
-		var kernings = mtsdfFontFile.Kernings.Select(kerning =>
+		var kernings = mtsdfFontFile.Kerning.Select(kerning =>
 			new FontGlyphKerning(kerning.Unicode1, kerning.Unicode2, kerning.Advance));
 
 		return new Font(fontName, fontAtlas, metrics, characterSet, kernings);
@@ -71,7 +73,7 @@ public class FontAssetLoader : CachedAssetLoader<Font, FontAssetDefinition>
 	protected override bool IsValidAsset(Font asset) => !asset.Atlas.Texture.IsDisposed;
 
 	private record MtsdfFontFile(MtsdfFontFile.MtsdfAtlas Atlas, MtsdfFontFile.MtsdfMetrics Metrics,
-		IEnumerable<MtsdfFontFile.MtsdfGlyph> Glyphs, IEnumerable<MtsdfFontFile.MtsdfKerning> Kernings)
+		IEnumerable<MtsdfFontFile.MtsdfGlyph> Glyphs, IEnumerable<MtsdfFontFile.MtsdfKerning> Kerning)
 	{
 		public record MtsdfAtlas(string Type, int DistanceRange, float Size, int Width, int Height, string YOrigin);
 

@@ -43,8 +43,8 @@ public class ShaderProgram : NativeResource
 		DetachShader(handle, fragmentShaderId);
 		DeleteShader(fragmentShaderId);
 
-		(uniformNameMapper, uniformLocationMapper) = CreateUniformMappers();
 		GetProgrami(handle, ProgramPropertyARB.ActiveUniforms, ref activeUniformCount);
+		(uniformNameMapper, uniformLocationMapper) = CreateUniformMappers();
 	}
 
 	public int ActiveUniformCount => activeUniformCount;
@@ -73,6 +73,7 @@ public class ShaderProgram : NativeResource
 	}
 
 	// Integer operations
+	public void SetUniform(int location, bool value) => SetUniform(location, value ? 1 : 0);
 	public void SetUniform(int location, int value) => ProgramUniform1i(handle, location, value);
 	public void SetUniform(int location, TextureHandle value) => SetUniform(location, value.Handle);
 	public void SetUniform(int location, ReadOnlySpan<int> values) => ProgramUniform1iv(handle, location, values);
@@ -186,7 +187,7 @@ public class ShaderProgram : NativeResource
 		if (success == GL_FALSE)
 		{
 			GetShaderInfoLog(shaderHandle, out var infoLog);
-			throw new ShaderCompilationException(infoLog);
+			throw new ShaderCompilationException($"Shader: {Enum.GetName(shaderType)}, error: {infoLog}");
 		}
 
 		return shaderHandle;
