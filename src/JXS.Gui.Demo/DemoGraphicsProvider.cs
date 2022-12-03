@@ -140,108 +140,24 @@ public class DemoGraphicsProvider : IGraphicsProvider, IDisposable
 		ActiveShader = prevShader;
 	}
 
-	public void DrawText(Font font, IEnumerable<TextRow> rows, int size, Vector2 position, Color4<Rgba> color)
+	public void DrawText(Font font, TextRow row, int fontSize, Vector2 position, Color4<Rgba> color)
 	{
-		if (font.Atlas.Texture is not Texture2D atlas2D)
-		{
-			// TODO: Maybe throw?
-			return;
-		}
-
 		var prevShader = ActiveShader;
 		var fontShader = font.Shader;
+		fontShader.FontAtlas = font.Atlas.Texture;
+		fontShader.BackgroundColor = Vector4.Zero;
+		fontShader.ForegroundColor = color.ToVector4();
+		fontShader.DistanceFieldRange = font.Atlas.DistanceRange;
+		fontShader.ProjectionMatrix = camera.Projection;
+		fontShader.ViewMatrix = camera.View;
 		ActiveShader = fontShader;
 		{
-			fontShader.FontAtlas = atlas2D;
-			fontShader.BackgroundColor = Vector4.Zero;
-			fontShader.ForegroundColor = color.ToVector4();
-			fontShader.DistanceFieldRange = font.Atlas.DistanceRange;
-			fontShader.ProjectionMatrix = camera.Projection;
-			fontShader.ViewMatrix = camera.View;
-
-			var virtualCursor = position - new Vector2(x: 0, font.ScaleEmToFontSize(font.Metrics.Descender, size));
-			foreach (var line in rows)
-			{
-				FontGlyph? previousGlyph = null;
-				foreach (var glyph in line.Glyphs)
-				{
-					virtualCursor = DrawGlyph(font, size, glyph, previousGlyph, virtualCursor);
-					previousGlyph = glyph;
-				}
-
-				virtualCursor = new Vector2(
-					position.X, // Always start back at the start position in the X axis
-					virtualCursor.Y - font.ScalePixelsToFontSize(line.Size.Y, size)
-				);
-			}
-		}
-		ActiveShader = prevShader;
-	}
-
-	public void DrawText(Font font, TextRow row, int size, Vector2 position, Color4<Rgba> color)
-	{
-		if (font.Atlas.Texture is not Texture2D atlas2D)
-		{
-			// TODO: Maybe throw?
-			return;
-		}
-
-		var prevShader = ActiveShader;
-		var fontShader = font.Shader;
-		ActiveShader = fontShader;
-		{
-			fontShader.FontAtlas = atlas2D;
-			fontShader.BackgroundColor = Vector4.Zero;
-			fontShader.ForegroundColor = color.ToVector4();
-			fontShader.DistanceFieldRange = font.Atlas.DistanceRange;
-			fontShader.ProjectionMatrix = camera.Projection;
-			fontShader.ViewMatrix = camera.View;
-
-			var virtualCursor = position - new Vector2(x: 0, font.ScaleEmToFontSize(font.Metrics.Descender, size));
+			var virtualCursor = position - new Vector2(x: 0, font.ScaleEmToFontSize(font.Metrics.Descender, fontSize));
 			FontGlyph? previousGlyph = null;
 			foreach (var glyph in row.Glyphs)
 			{
-				virtualCursor = DrawGlyph(font, size, glyph, previousGlyph, virtualCursor);
+				virtualCursor = DrawGlyph(font, fontSize, glyph, previousGlyph, virtualCursor);
 				previousGlyph = glyph;
-			}
-		}
-		ActiveShader = prevShader;
-	}
-
-	public void DrawText(Font font, string text, int size, Vector2 position, Color4<Rgba> color, float maxTextWidth)
-	{
-		if (font.Atlas.Texture is not Texture2D atlas2D)
-		{
-			// TODO: Maybe throw?
-			return;
-		}
-
-
-		var prevShader = ActiveShader;
-		var fontShader = font.Shader;
-		ActiveShader = fontShader;
-		{
-			fontShader.FontAtlas = atlas2D;
-			fontShader.BackgroundColor = Color4.White.ToVector4();
-			fontShader.ForegroundColor = color.ToVector4();
-			fontShader.DistanceFieldRange = font.Atlas.DistanceRange;
-			fontShader.ProjectionMatrix = camera.Projection;
-			fontShader.ViewMatrix = camera.View;
-
-			var layout = new TextLayout(font);
-			var lines = layout.LineBreak(text, maxTextWidth * size);
-
-			var virtualCursor = position;
-			foreach (var line in lines)
-			{
-				FontGlyph? previousGlyph = null;
-				foreach (var glyph in line.Glyphs)
-				{
-					virtualCursor = DrawGlyph(font, size, glyph, previousGlyph, virtualCursor);
-					previousGlyph = glyph;
-				}
-
-				virtualCursor += new Vector2(x: 0, line.Size.Y);
 			}
 		}
 		ActiveShader = prevShader;

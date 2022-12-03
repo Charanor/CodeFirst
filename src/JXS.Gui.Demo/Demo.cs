@@ -84,8 +84,7 @@ public class Demo : GameWindow
 				Height = YogaValue.Percent(100),
 				FontSize = 100,
 				BackgroundColor = Color4.White,
-				FontColor = Color4.Black,
-				TextAlign = TextAlign.Middle,
+				FontColor = Color4.Red,
 			}
 		};
 		scene.AddComponent(text);

@@ -25,13 +25,15 @@ public class FontAssetLoader : CachedAssetLoader<Font, FontAssetDefinition>
 
 		var fileContents = File.ReadAllText(path);
 		Debug.Assert(assetManager.TryLoadAsset(definition.TextureAtlasAsset, out var textureAtlas));
+		var atlas2D = textureAtlas as Texture2D;
+		Debug.Assert(atlas2D != null);
 
 		// For now we only allow JSON, so no need to check the type
 		// TODO: Add CSV parser
-		return LoadJsonFont(fontName, fileContents, textureAtlas);
+		return LoadJsonFont(fontName, fileContents, atlas2D);
 	}
 
-	private Font LoadJsonFont(string fontName, string fileContents, Texture textureAtlas)
+	private Font LoadJsonFont(string fontName, string fileContents, Texture2D textureAtlas)
 	{
 		// For now we only support MTSDF files
 		// TODO: Add support for other file types

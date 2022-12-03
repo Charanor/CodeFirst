@@ -2,4 +2,4 @@
 
 namespace JXS.Graphics.Text;
 
-public record FontAtlas(Texture Texture, float CharacterPixelSize, float DistanceRange);
+public record FontAtlas(Texture2D Texture, float CharacterPixelSize, float DistanceRange);
