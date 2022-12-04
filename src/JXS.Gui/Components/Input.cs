@@ -20,14 +20,14 @@ public class Input : Pressable, IKeyboardFocusable
 		Padding = 6
 	};
 
-	private readonly __NEW_Text text;
+	private readonly Text text;
 	private string textContent = null!;
 	private TextStyle textStyle = new();
 	private TextStyle textPlaceholderStyle = new();
 
 	public Input(Font font, string initialTextContent = "", string placeholder = "")
 	{
-		text = new __NEW_Text(font, initialTextContent); // Text must be initialised before styles, otherwise NullRefEx
+		text = new Text(font, initialTextContent); // Text must be initialised before styles, otherwise NullRefEx
 
 		Style = DefaultStyle;
 		TextStyle = DefaultTextStyle;

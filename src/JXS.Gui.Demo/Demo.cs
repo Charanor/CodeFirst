@@ -86,7 +86,7 @@ public class Demo : GameWindow
 			MagFilter = TextureMagFilter.Nearest
 		};
 
-		var text = new __NEW_Text(font, value: "abcd efgh ijkl mnop qrst uvw xyz ABCD EFGH IJKL MNOP QRST UVW XYZ")
+		var text = new Text(font, value: "abcd efgh ijkl mnop qrst uvw xyz ABCD EFGH IJKL MNOP QRST UVW XYZ")
 		{
 			Style = new TextStyle
 			{
