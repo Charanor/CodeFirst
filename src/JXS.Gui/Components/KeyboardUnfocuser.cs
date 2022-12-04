@@ -6,7 +6,7 @@ public class KeyboardUnfocuser : Pressable
 	{
 		OnFullPress += (_, args) =>
 		{
-			if (args.PressEvent != InputAction.Primary)
+			if (args.PressEvent != GuiInputAction.Primary)
 			{
 				return;
 			}

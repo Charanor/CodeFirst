@@ -18,7 +18,9 @@ public class Demo : GameWindow
 	private const int PADDING = 50; // px
 
 	private static readonly TextureAssetDefinition ImmortalFontAtlas = new("Fonts/IMMORTAL.mtsdf.png");
-	private static readonly FontAssetDefinition ImmortalFont = new(Path: "Fonts/IMMORTAL.mtsdf.json", ImmortalFontAtlas);
+
+	private static readonly FontAssetDefinition
+		ImmortalFont = new(Path: "Fonts/IMMORTAL.mtsdf.json", ImmortalFontAtlas);
 
 	private readonly Camera camera;
 	private readonly Scene scene;
@@ -35,7 +37,7 @@ public class Demo : GameWindow
 			Position = new Vector3((windowSize.X - PADDING) / 2f, (windowSize.Y - PADDING) / 2f, z: 1)
 		};
 
-		scene = new Scene(new DemoGraphicsProvider(camera), new DemoInputProvider())
+		scene = new Scene(new DemoGraphicsProvider(camera), new DemoGuiInputProvider())
 		{
 			Size = windowSize
 		};
@@ -51,6 +53,14 @@ public class Demo : GameWindow
 			{
 				Console.WriteLine($"{source}, {type}, {id}, {severity}, {Marshal.PtrToStringAnsi(message, length)}");
 			}, IntPtr.Zero);
+
+		TextInput += e => { Console.WriteLine($"code: {e.Unicode}, str: {e.AsString}"); };
+
+		KeyDown += e =>
+		{
+			Console.WriteLine(
+				$"k: {e.Key}, alt: {e.Alt}, ctrl: {e.Control}, cmd: {e.Command}, shift: {e.Shift}, modifiers: {e.Modifiers}, repeat: {e.IsRepeat}, scanCode: {e.ScanCode}");
+		};
 	}
 
 	protected override void OnLoad()
@@ -84,7 +94,7 @@ public class Demo : GameWindow
 				Height = YogaValue.Percent(100),
 				FontSize = 100,
 				BackgroundColor = Color4.White,
-				FontColor = Color4.Red,
+				FontColor = Color4.Red
 			}
 		};
 		scene.AddComponent(text);

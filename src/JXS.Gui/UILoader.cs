@@ -21,7 +21,7 @@ public class UILoader
 	private static readonly IDictionary<string, Type> BuiltinComponents;
 
 	private readonly IGraphicsProvider graphicsProvider;
-	private readonly IInputProvider inputProvider;
+	private readonly IGuiInputProvider guiInputProvider;
 	private readonly IResourceProvider resourceProvider;
 
 	private Dictionary<string, Style> styles;
@@ -42,11 +42,11 @@ public class UILoader
 		}
 	}
 
-	public UILoader(IGraphicsProvider graphicsProvider, IInputProvider inputProvider,
+	public UILoader(IGraphicsProvider graphicsProvider, IGuiInputProvider guiInputProvider,
 		IResourceProvider resourceProvider)
 	{
 		this.graphicsProvider = graphicsProvider;
-		this.inputProvider = inputProvider;
+		this.guiInputProvider = guiInputProvider;
 		this.resourceProvider = resourceProvider;
 
 		styles = new Dictionary<string, Style>();
@@ -55,7 +55,7 @@ public class UILoader
 
 	public Scene LoadSceneFromXml(XDocument document)
 	{
-		var scene = new Scene(graphicsProvider, inputProvider);
+		var scene = new Scene(graphicsProvider, guiInputProvider);
 
 		var xRoot = document.Root;
 		if (xRoot is null)

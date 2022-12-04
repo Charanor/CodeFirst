@@ -5,11 +5,11 @@ namespace JXS.Gui.Components;
 
 public class Pressable : View
 {
-	private readonly ISet<InputAction> pressedDown;
+	private readonly ISet<GuiInputAction> pressedDown;
 
 	public Pressable(string? id = default, Style? style = default) : base(id, style)
 	{
-		pressedDown = new HashSet<InputAction>();
+		pressedDown = new HashSet<GuiInputAction>();
 	}
 
 	/// <summary>
@@ -38,7 +38,7 @@ public class Pressable : View
 		var hitsThisOrChild = hit is not null && (hit == this || HasChild(hit));
 		Vector2? hitPos = hit is null ? null : mousePos - hit.CalculatedBounds.Min;
 
-		foreach (var action in Enum.GetValues<InputAction>())
+		foreach (var action in Enum.GetValues<GuiInputAction>())
 		{
 			if ((InputProvider?.JustPressed(action) ?? false) && hitsThisOrChild)
 			{
@@ -66,26 +66,5 @@ public class Pressable : View
 		}
 	}
 
-	public class PressArgs : EventArgs
-	{
-		public PressArgs(Component? component, InputAction pressEvent, Vector2? position)
-		{
-			Component = component;
-			PressEvent = pressEvent;
-			Position = position;
-		}
-
-		/// <summary>
-		///     The component that was pressed down on / released over. Might be null.
-		/// </summary>
-		public Component? Component { get; }
-
-		public InputAction PressEvent { get; }
-
-		/// <summary>
-		///     The pressed/released position relative to the origin of <code>Component</code>. Null if <code>Component</code> is
-		///     null.
-		/// </summary>
-		public Vector2? Position { get; }
-	}
+	public record PressArgs(Component? Component, GuiInputAction PressEvent, Vector2? Position);
 }

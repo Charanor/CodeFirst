@@ -8,14 +8,14 @@ public class Scene : IEnumerable<Component>
 {
 	private readonly List<Component> components;
 
-	public Scene(IGraphicsProvider graphicsProvider, IInputProvider inputProvider)
+	public Scene(IGraphicsProvider graphicsProvider, IGuiInputProvider guiInputProvider)
 	{
 		GraphicsProvider = graphicsProvider;
-		InputProvider = inputProvider;
+		GuiInputProvider = guiInputProvider;
 		components = new List<Component>();
 	}
 
-	public IInputProvider InputProvider { get; init; }
+	public IGuiInputProvider GuiInputProvider { get; init; }
 	public IGraphicsProvider GraphicsProvider { get; init; }
 
 	public Vector2 Size { get; set; } = new(float.NaN, float.NaN);
@@ -27,13 +27,13 @@ public class Scene : IEnumerable<Component>
 
 	public void Update(float delta)
 	{
-		if (InputProvider.JustPressed(InputAction.Primary))
+		if (GuiInputProvider.JustPressed(GuiInputAction.Primary))
 		{
-			var mousePos = InputProvider.MousePosition;
+			var mousePos = GuiInputProvider.MousePosition;
 			var component = Hit(mousePos);
 			if (component is null)
 			{
-				InputProvider.KeyboardFocus = null;
+				GuiInputProvider.KeyboardFocus = null;
 			}
 		}
 

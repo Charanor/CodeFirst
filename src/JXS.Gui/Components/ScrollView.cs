@@ -69,7 +69,7 @@ public class ScrollView : View
 
 		horizontalScrollBar.OnPressDown += (_, args) =>
 		{
-			if (args.PressEvent != InputAction.Primary)
+			if (args.PressEvent != GuiInputAction.Primary)
 			{
 				return;
 			}
@@ -83,7 +83,7 @@ public class ScrollView : View
 		};
 		verticalScrollBar.OnPressDown += (_, args) =>
 		{
-			if (args.PressEvent != InputAction.Primary)
+			if (args.PressEvent != GuiInputAction.Primary)
 			{
 				return;
 			}
@@ -143,7 +143,7 @@ public class ScrollView : View
 			Top = knobOffset.Y
 		};
 
-		if (InputProvider?.JustReleased(InputAction.Primary) ?? false)
+		if (InputProvider?.JustReleased(GuiInputAction.Primary) ?? false)
 		{
 			scrollingHorizontal = false;
 			scrollingVertical = false;

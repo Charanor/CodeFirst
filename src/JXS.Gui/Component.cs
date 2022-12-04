@@ -18,7 +18,7 @@ public abstract class Component
 
 	public string? Id { get; init; }
 
-	protected IInputProvider? InputProvider => Scene?.InputProvider;
+	protected IGuiInputProvider? InputProvider => Scene?.GuiInputProvider;
 
 	public bool Visible => Style.Display != YogaDisplay.None;
 
