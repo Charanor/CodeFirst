@@ -1,6 +1,6 @@
 namespace JXS.Input.Core;
 
-internal record NegatedAxis : Axis
+internal class NegatedAxis : Axis
 {
 	private readonly Axis baseAxis;
 
@@ -11,9 +11,9 @@ internal record NegatedAxis : Axis
 
 	public override float Value => -baseAxis.Value;
 
-	public override void Update(float delta)
+	public override void Update(IInputProvider inputProvider, float delta)
 	{
-		base.Update(delta);
-		baseAxis.Update(delta);
+		base.Update(inputProvider, delta);
+		baseAxis.Update(inputProvider, delta);
 	}
 }

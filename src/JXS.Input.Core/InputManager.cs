@@ -1,52 +1,67 @@
-// using SDL2;
-
-using OpenTK.Mathematics;
-using OpenTK.Windowing.GraphicsLibraryFramework;
+﻿using System.Collections.Immutable;
 
 namespace JXS.Input.Core;
 
-public class InputManager
+public class InputManager<TInputState> where TInputState : struct, Enum
 {
-	public static readonly InputManager Instance = new();
+	private readonly IDictionary<TInputState, HashSet<InputSystem>> systemMap;
 
-	private readonly IDictionary<string, MultiAxis> axes;
-
-	private InputManager()
+	public InputManager()
 	{
-		axes = new Dictionary<string, MultiAxis>();
+		systemMap = new Dictionary<TInputState, HashSet<InputSystem>>();
 	}
 
-	internal KeyboardState? KeyboardState { get; private set; }
-	internal MouseState? MouseState { get; private set; }
+	public TInputState State { get; set; }
 
-	public MultiAxis this[string name]
+	public void RegisterInputSystemForStates(InputSystem inputSystem, TInputState firstState,
+		params TInputState[] states)
 	{
-		get
+		RegisterForState(firstState);
+		foreach (var state in states)
 		{
-			if (!axes.ContainsKey(name))
+			RegisterForState(state);
+		}
+
+		void RegisterForState(TInputState state)
+		{
+			if (!systemMap.TryGetValue(state, out var inputSystems))
 			{
-				axes[name] = new MultiAxis();
+				inputSystems = new HashSet<InputSystem>();
+				systemMap.Add(state, inputSystems);
 			}
 
-			return axes[name];
+			inputSystems.Add(inputSystem);
 		}
-
-		set => axes[name] = value;
 	}
 
-	public void Update(float delta, MouseState mouseState, KeyboardState keyboardState)
+	public bool UnregisterInputSystemFromState(TInputState state, InputSystem inputSystem) =>
+		systemMap.TryGetValue(state, out var inputSystems) && inputSystems.Remove(inputSystem);
+
+	public IEnumerable<InputSystem> GetSystemsForState(TInputState state)
 	{
-		MouseState = mouseState;
-		KeyboardState = keyboardState;
-		foreach (var axis in axes.Values)
+		if (systemMap.TryGetValue(state, out var systems))
 		{
-			axis.Update(delta);
+			return systems;
+		}
+
+		return ImmutableHashSet<InputSystem>.Empty;
+	}
+
+	public void Update(float delta, IInputProvider inputProvider)
+	{
+		foreach (var (state, inputSystems) in systemMap)
+		{
+			foreach (var inputSystem in inputSystems)
+			{
+				inputSystem.Enabled = State.HasFlag(state);
+				inputSystem.Update(delta, inputProvider);
+			}
 		}
 	}
 
-	public Vector2 GetMousePos() => new(MouseState?.X ?? 0, MouseState?.Y ?? 0);
-
-	public Axis? GetAxisObject(string name) => axes.TryGetValue(name, out var axis) ? axis : null;
+	public Axis? GetAxisObject(string name) => GetSystemsForState(State)
+		.Select(inputSystem => inputSystem.GetAxisObject(name))
+		.FirstOrDefault(axisObject => axisObject != null);
 
 	public float Axis(string name) => GetAxisObject(name)?.Value ?? 0;
 
@@ -55,21 +70,4 @@ public class InputManager
 	public bool JustPressed(string buttonName) => GetAxisObject(buttonName)?.JustPressed ?? false;
 
 	public bool JustReleased(string buttonName) => GetAxisObject(buttonName)?.JustReleased ?? false;
-
-	public void Define(string name, Axis axis) => this[name] += axis;
-
-	public void Define(string name, ModifierKey modifierKey) =>
-		this[name] += new ModifierAxis(modifierKey);
-
-	public void Define(string name, Keys keyboardButton, ModifierKey modifierKey = ModifierKey.None) =>
-		this[name] += new KeyboardButton(keyboardButton, modifierKey);
-
-	public void Define(string name, Buttons mouseButton, ModifierKey modifierKey = ModifierKey.None) =>
-		this[name] += new MouseButton(mouseButton, modifierKey);
-
-	public void Define(string name, ScrollDirection direction) => this[name] += new ScrollWheel(direction);
-
-	public void Define(string name, MouseDirection direction) => this[name] += new MouseMovement(direction);
-
-	public void Define(string name, Keys positive, Keys negative) => this[name] += new KeyboardAxis(positive, negative);
 }

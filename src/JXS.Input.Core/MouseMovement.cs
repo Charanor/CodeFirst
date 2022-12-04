@@ -2,19 +2,15 @@
 
 namespace JXS.Input.Core;
 
-public record MouseMovement : Axis
+public class MouseMovement : Axis
 {
-	private Vector2 prevValue;
-	private Vector2 value;
+	private Vector2 prevValue = new(float.NaN, float.NaN);
+	private Vector2 value = new(float.NaN, float.NaN);
 
 	public MouseMovement(MouseDirection axis)
 	{
 		Axis = axis;
-		prevValue = GetMousePosition();
-		value = prevValue;
 	}
-
-	public MouseDirection Axis { get; }
 
 	public override float Value => Axis switch
 	{
@@ -24,14 +20,22 @@ public record MouseMovement : Axis
 		_ => throw new ArgumentOutOfRangeException()
 	};
 
-	public override void Update(float delta)
+	public MouseDirection Axis { get; init; }
+
+	public override void Update(IInputProvider inputProvider, float delta)
 	{
-		base.Update(delta);
-		var currentValue = GetMousePosition();
-		var difference = currentValue - prevValue;
+		base.Update(inputProvider, delta);
+		var currentValue = GetMousePosition(inputProvider);
+		var difference = float.IsNaN(prevValue.X) || float.IsNaN(prevValue.Y) ? Vector2.Zero : currentValue - prevValue;
 		prevValue = currentValue;
 		value = difference;
 	}
 
-	private Vector2 GetMousePosition() => new(MouseState.X, MouseState.Y);
+	private Vector2 GetMousePosition(IInputProvider inputProvider) =>
+		new(inputProvider.MouseState.X, inputProvider.MouseState.Y);
+
+	public void Deconstruct(out MouseDirection axis)
+	{
+		axis = Axis;
+	}
 }

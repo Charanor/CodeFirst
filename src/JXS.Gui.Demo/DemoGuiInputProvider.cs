@@ -2,7 +2,7 @@
 
 namespace JXS.Gui.Demo;
 
-public class DemoInputProvider : IInputProvider
+public class DemoGuiInputProvider : IGuiInputProvider
 {
 	public IKeyboardFocusable? KeyboardFocus { get; set; }
 	public Vector2 MousePosition { get; }

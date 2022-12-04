@@ -1,6 +1,6 @@
 namespace JXS.Input.Core;
 
-public record MultiAxis : Axis
+public class MultiAxis : Axis
 {
 	private readonly IList<Axis> axes;
 
@@ -11,10 +11,10 @@ public record MultiAxis : Axis
 
 	public override float Value => Math.Max(Math.Min(axes.Sum(a => a.Value), 1), -1);
 
-	public override void Update(float delta)
+	public override void Update(IInputProvider inputProvider, float delta)
 	{
-		base.Update(delta);
-		foreach (var axis in axes) axis.Update(delta);
+		base.Update(inputProvider, delta);
+		foreach (var axis in axes) axis.Update(inputProvider, delta);
 	}
 
 	public static MultiAxis operator +(MultiAxis multiAxis, Axis axis)

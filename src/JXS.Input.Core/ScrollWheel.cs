@@ -1,34 +1,36 @@
 ﻿namespace JXS.Input.Core;
 
-public record ScrollWheel : Axis
+public class ScrollWheel : Axis
 {
-	private float value;
-	private float prevValue;
+	private float value = Single.NaN;
+	private float prevValue = Single.NaN;
 
 	public ScrollWheel(ScrollDirection direction = ScrollDirection.Vertical)
 	{
 		Direction = direction;
-		value = GetCurrentValue();
-		prevValue = value;
 	}
 
-	public ScrollDirection Direction { get; }
-
 	public override float Value => value;
+	public ScrollDirection Direction { get; init; }
 
-	public override void Update(float delta)
+	public override void Update(IInputProvider inputProvider, float delta)
 	{
-		base.Update(delta);
-		var currentValue = GetCurrentValue();
-		var difference = currentValue - prevValue;
+		base.Update(inputProvider, delta);
+		var currentValue = GetCurrentValue(inputProvider);
+		var difference = float.IsNaN(prevValue) ? 0 : currentValue - prevValue;
 		prevValue = currentValue;
 		value = difference;
 	}
 
-	private float GetCurrentValue() => Direction switch
+	private float GetCurrentValue(IInputProvider inputProvider) => Direction switch
 	{
-		ScrollDirection.Vertical => MouseState.Scroll.Y,
-		ScrollDirection.Horizontal => MouseState.Scroll.X,
+		ScrollDirection.Vertical => inputProvider.MouseState.Scroll.Y,
+		ScrollDirection.Horizontal => inputProvider.MouseState.Scroll.X,
 		_ => 0
 	};
+
+	public void Deconstruct(out ScrollDirection direction)
+	{
+		direction = Direction;
+	}
 }

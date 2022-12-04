@@ -2,10 +2,12 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace JXS.Input.Core;
 
-public record KeyboardButton : Axis
+public class KeyboardButton : Axis
 {
 	private readonly Keys key;
 	private readonly ModifierKey modifier;
+
+	private float value;
 
 	public KeyboardButton(Keys key, ModifierKey modifier = ModifierKey.None)
 	{
@@ -13,6 +15,12 @@ public record KeyboardButton : Axis
 		this.modifier = modifier;
 	}
 
-	public override float Value =>
-		KeyboardState.IsKeyDown(key) && modifier.IsDown(KeyboardState) ? 1 : 0;
+	public override float Value => value;
+
+	public override void Update(IInputProvider inputProvider, float delta)
+	{
+		base.Update(inputProvider, delta);
+		var keyboardState = inputProvider.KeyboardState;
+		value = keyboardState.IsKeyDown(key) && modifier.IsDown(keyboardState) ? 1 : 0;
+	}
 }

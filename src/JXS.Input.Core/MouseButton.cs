@@ -2,31 +2,38 @@ namespace JXS.Input.Core;
 
 using static OpenTK.Windowing.GraphicsLibraryFramework.MouseButton;
 
-public record MouseButton : Axis
+public class MouseButton : Axis
 {
-	private readonly Buttons buttons;
-	private readonly ModifierKey modifier;
+	private float value;
 
-	public MouseButton(Buttons buttons, ModifierKey modifier = ModifierKey.None)
+	public MouseButton(Buttons button, ModifierKey modifier = ModifierKey.None)
 	{
-		this.buttons = buttons;
-		this.modifier = modifier;
+		Button = button;
+		Modifier = modifier;
 	}
 
-	public override float Value
+	public override float Value => value;
+	public Buttons Button { get; init; }
+	public ModifierKey Modifier { get; init; }
+
+	public override void Update(IInputProvider inputProvider, float delta)
 	{
-		get
+		base.Update(inputProvider, delta);
+		var button = Button switch
 		{
-			var button = buttons switch
-			{
-				Buttons.Left => MouseState.IsButtonDown(Left),
-				Buttons.Right => MouseState.IsButtonDown(Right),
-				Buttons.Middle => MouseState.IsButtonDown(Middle),
-				Buttons.ExtraOne => MouseState.IsButtonDown(Button4),
-				Buttons.ExtraTwo => MouseState.IsButtonDown(Button5),
-				_ => throw new InvalidOperationException("Cannot fetch state for button " + buttons)
-			};
-			return button && modifier.IsDown(KeyboardState) ? 1 : 0;
-		}
+			Buttons.Left => inputProvider.MouseState.IsButtonDown(Left),
+			Buttons.Right => inputProvider.MouseState.IsButtonDown(Right),
+			Buttons.Middle => inputProvider.MouseState.IsButtonDown(Middle),
+			Buttons.ExtraOne => inputProvider.MouseState.IsButtonDown(Button4),
+			Buttons.ExtraTwo => inputProvider.MouseState.IsButtonDown(Button5),
+			_ => throw new InvalidOperationException("Cannot fetch state for button " + Button)
+		};
+		value = button && Modifier.IsDown(inputProvider.KeyboardState) ? 1 : 0;
+	}
+
+	public void Deconstruct(out Buttons button, out ModifierKey modifier)
+	{
+		button = Button;
+		modifier = Modifier;
 	}
 }

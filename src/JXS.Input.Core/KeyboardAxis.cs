@@ -2,10 +2,12 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace JXS.Input.Core;
 
-public record KeyboardAxis : Axis
+public class KeyboardAxis : Axis
 {
 	private readonly Keys negative;
 	private readonly Keys positive;
+
+	private float value;
 
 	public KeyboardAxis(Keys positive, Keys negative)
 	{
@@ -13,23 +15,17 @@ public record KeyboardAxis : Axis
 		this.negative = negative;
 	}
 
-	public override float Value
+	public override float Value => value;
+
+	public override void Update(IInputProvider inputProvider, float delta)
 	{
-		get
-		{
-			var posPressed = KeyboardState.IsKeyDown(positive);
-			var negPressed = KeyboardState.IsKeyDown(negative);
-			if (posPressed == negPressed)
-			{
-				return 0;
-			}
+		base.Update(inputProvider, delta);
+		var keyboardState = inputProvider.KeyboardState;
+		var posPressed = keyboardState.IsKeyDown(positive);
+		var negPressed = keyboardState.IsKeyDown(negative);
 
-			if (posPressed)
-			{
-				return 1;
-			}
-
-			return -1;
-		}
+		value = 0;
+		value += posPressed ? 1 : 0;
+		value += negPressed ? -1 : 0;
 	}
 }

@@ -1,7 +1,9 @@
 ﻿namespace JXS.Input.Core;
 
-public record Modifier : Axis
+public class Modifier : Axis
 {
+	private float value;
+
 	public Modifier(Axis axis, Axis modifierAxis)
 	{
 		Axis = axis;
@@ -14,36 +16,25 @@ public record Modifier : Axis
 		ModifierKey = modifierKey;
 	}
 
-	public Modifier(Axis axis, string axisName)
+	public Modifier(Axis axis, string axisName, InputSystem inputSystem)
 	{
 		Axis = axis;
-		ModifierAxis = new CopyNamedAxis(axisName);
+		ModifierAxis = new CopyNamedAxis(axisName, inputSystem);
 	}
 
-
-	public override float Value
-	{
-		get
-		{
-			var modifierAxisPressed = ModifierAxis?.Pressed ?? true;
-			var modifierKeyDown = ModifierKey?.IsDown(KeyboardState) ?? true;
-			if (modifierAxisPressed && modifierKeyDown)
-			{
-				return Axis.Value;
-			}
-
-			return 0;
-		}
-	}
+	public override float Value => value;
 
 	public Axis Axis { get; }
 	public Axis? ModifierAxis { get; }
 	public ModifierKey? ModifierKey { get; }
 
-	public override void Update(float delta)
+	public override void Update(IInputProvider inputProvider, float delta)
 	{
-		base.Update(delta);
-		Axis.Update(delta);
-		ModifierAxis?.Update(delta);
+		base.Update(inputProvider, delta);
+		Axis.Update(inputProvider, delta);
+		ModifierAxis?.Update(inputProvider, delta);
+		var modifierAxisPressed = ModifierAxis?.Pressed ?? true;
+		var modifierKeyDown = ModifierKey?.IsDown(inputProvider.KeyboardState) ?? true;
+		value = modifierAxisPressed && modifierKeyDown ? Axis.Value : 0;
 	}
 }

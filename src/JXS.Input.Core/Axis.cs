@@ -2,7 +2,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace JXS.Input.Core;
 
-public abstract record Axis
+public abstract class Axis
 {
 	private bool wasPressed;
 
@@ -12,15 +12,12 @@ public abstract record Axis
 	public bool JustPressed { get; private set; }
 	public bool JustReleased { get; private set; }
 
-	public virtual void Update(float delta)
+	public virtual void Update(IInputProvider inputProvider, float delta)
 	{
 		JustPressed = !wasPressed && Pressed;
 		JustReleased = wasPressed && !Pressed;
 		wasPressed = Pressed;
 	}
-
-	protected KeyboardState KeyboardState => InputManager.Instance.KeyboardState;
-	protected MouseState MouseState => InputManager.Instance.MouseState;
 
 	public static Axis Create(Keys keyboardButton)
 		=> new KeyboardButton(keyboardButton);
@@ -37,6 +34,6 @@ public abstract record Axis
 	public static Axis Create(MouseDirection direction)
 		=> new MouseMovement(direction);
 
-	public static Axis Copy(string axisName)
-		=> new CopyNamedAxis(axisName);
+	public static Axis Copy(string axisName, InputSystem inputSystem)
+		=> new CopyNamedAxis(axisName, inputSystem);
 }

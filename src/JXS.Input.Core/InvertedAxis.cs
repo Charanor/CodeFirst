@@ -1,12 +1,23 @@
 ﻿namespace JXS.Input.Core;
 
-public record InvertedAxis(Axis Axis) : Axis
+public class InvertedAxis : Axis
 {
-	public override float Value => Axis.Value != 0 ? 0 : 1;
-
-	public override void Update(float gameTime)
+	public InvertedAxis(Axis axis)
 	{
-		base.Update(gameTime);
-		Axis.Update(gameTime);
+		Axis = axis;
+	}
+
+	public override float Value => Axis.Value != 0 ? 0 : 1;
+	public Axis Axis { get; init; }
+
+	public override void Update(IInputProvider inputProvider, float gameTime)
+	{
+		base.Update(inputProvider, gameTime);
+		Axis.Update(inputProvider, gameTime);
+	}
+
+	public void Deconstruct(out Axis axis)
+	{
+		axis = Axis;
 	}
 }

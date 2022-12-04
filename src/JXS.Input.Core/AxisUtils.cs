@@ -16,8 +16,8 @@ public static class AxisUtils
 	public static Axis While(this Axis axis, Buttons modifierButton)
 		=> new Modifier(axis, new MouseButton(modifierButton));
 
-	public static Axis While(this Axis axis, string axisName)
-		=> new Modifier(axis, axisName);
+	public static Axis While(this Axis axis, string axisName, InputSystem inputSystem)
+		=> new Modifier(axis, axisName, inputSystem);
 
 	public static Axis WhileNot(this Axis axis, Axis modifierAxis)
 		=> new Modifier(axis, modifierAxis.Inverted());
@@ -25,8 +25,8 @@ public static class AxisUtils
 	public static Axis WhileNot(this Axis axis, ModifierKey modifierKey)
 		=> WhileNot(axis, new ModifierAxis(modifierKey));
 
-	public static Axis WhileNot(this Axis axis, string axisName)
-		=> new Modifier(axis, new CopyNamedAxis(axisName).Inverted());
+	public static Axis WhileNot(this Axis axis, string axisName, InputSystem inputSystem)
+		=> new Modifier(axis, new CopyNamedAxis(axisName, inputSystem).Inverted());
 
 	/// <summary>
 	///     Creates a new axis that acts as the unary operator "<c>-</c>" on the value returned by <paramref name="axis" />.
