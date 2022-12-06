@@ -33,10 +33,6 @@ public class GestureHandler : View
 {
 	private bool cursorInside;
 
-	public GestureHandler(string? id = default, Style? style = default) : base(id, style)
-	{
-	}
-
 	/// <summary>
 	///     Invoked when this gesture handler is "entered" by a user. E.g. by them hovering their cursor or
 	///     tab-selecting this component.

@@ -58,14 +58,16 @@ public record TextStyle : Style
 		};
 }
 
-public class Text : Component
+public class Text : Component<TextStyle>
 {
 	private readonly List<TextRow> textRows;
-	private TextLayout layout;
-	private bool dirty;
 
 	private Font font;
-	private TextStyle style;
+
+	private TextLayout layout;
+	// private TextStyle style = new();
+
+	private bool dirty = true;
 
 	private string textContent;
 
@@ -74,19 +76,10 @@ public class Text : Component
 		textRows = new List<TextRow>();
 		Font = this.font = font;
 		TextContent = textContent = value;
-		Style = style = new TextStyle();
 		layout ??= new TextLayout(font);
 	}
 
-	public new TextStyle Style
-	{
-		get => style;
-		set
-		{
-			style = value;
-			base.Style = value;
-		}
-	}
+	public override TextStyle Style { get; set; } = new();
 
 	public Font Font
 	{
@@ -147,9 +140,9 @@ public class Text : Component
 			dirty = false;
 		}
 
-		var textAreaSize = CalculatedBounds.Size;
 		var textSize = font.ScalePixelsToFontSize(TextSize, Style.FontSize);
 
+		var textAreaSize = CalculatedBounds.Size;
 		var position = CalculatedBounds.Location;
 		position.Y += font.ScaleEmToFontSize(font.Metrics.LineHeight, Style.FontSize) * (textRows.Count - 1);
 		var emptyVerticalSpace = textAreaSize.Y - textSize.Y;

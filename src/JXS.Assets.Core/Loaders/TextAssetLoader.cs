@@ -4,12 +4,10 @@ namespace JXS.Assets.Core.Loaders;
 
 public class TextAssetLoader : CachedAssetLoader<TextAsset, TextAssetDefinition>
 {
-	public static readonly string TextAssetFileExtension = ".txt";
-
 	public override bool CanLoadAsset(TextAssetDefinition assetDefinition)
 	{
 		var path = assetDefinition.Path;
-		return File.Exists(path) && Path.GetExtension(path) == TextAssetFileExtension;
+		return File.Exists(path);
 	}
 
 	protected override TextAsset LoadAsset(TextAssetDefinition definition) =>

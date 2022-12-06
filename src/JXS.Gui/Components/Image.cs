@@ -3,9 +3,9 @@ using JXS.Graphics.Core;
 
 namespace JXS.Gui.Components;
 
-public class Image : Component
+public class Image : Component<Style>
 {
-	public Image(string? id = default, Texture2D? texture = default, Style? style = default) : base(id, style)
+	public Image(Texture2D? texture = default)
 	{
 		Texture = texture;
 	}

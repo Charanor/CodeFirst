@@ -1,5 +1,6 @@
 // using SDL2;
 
+using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace JXS.Input.Core;
@@ -14,6 +15,8 @@ public class InputSystem
 	}
 
 	public bool Enabled { get; set; } = true;
+	
+	public Vector2 MousePosition { get; private set; }
 
 	public MultiAxis this[string name]
 	{
@@ -36,6 +39,8 @@ public class InputSystem
 		{
 			axis.Update(inputProvider, delta);
 		}
+
+		MousePosition = inputProvider.MouseState.Position;
 	}
 
 	public Axis? GetAxisObject(string name) => Enabled && axes.TryGetValue(name, out var axis) ? axis : null;

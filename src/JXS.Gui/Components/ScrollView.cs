@@ -20,43 +20,63 @@ public class ScrollView : View
 
 	private Vector2 actualContentSize;
 
-	public ScrollView(string? id = default, Style? style = default, Style? contentContainerStyle = default) : base(id, style)
+	public ScrollView()
 	{
 		// TODO: Move this to style object
 		const float knobSize = 15;
-		contentContainerStyle ??= new Style();
-		var verticalContent = new View(id: null, new Style
+		var verticalContent = new View
 		{
-			Flex = 1,
-			FlexDirection = YogaFlexDirection.Column,
-			JustifyContent = YogaJustify.SpaceBetween
-		});
-		contentContainerContainer = new View(id: null, new Style
+			Style = new Style
+			{
+				Flex = 1,
+				FlexDirection = YogaFlexDirection.Column,
+				JustifyContent = YogaJustify.SpaceBetween
+			}
+		};
+		contentContainerContainer = new View
 		{
-			Flex = 1,
-			Overflow = YogaOverflow.Hidden
-		});
-		contentContainer = new View(id: "Scroll_ContentContainer", contentContainerStyle);
-		verticalScrollBar = new Pressable(id: null, style: new Style
+			Style = new Style
+			{
+				Flex = 1,
+				Overflow = YogaOverflow.Hidden
+			}
+		};
+		contentContainer = new View
 		{
-			Width = knobSize
-		});
-		verticalKnob = new View(id: null, new Style
+			Id = "Scroll_ContentContainer"
+		};
+		verticalScrollBar = new Pressable
 		{
-			BackgroundColor = Color4.Lightblue,
-			Height = YogaValue.Percent(0),
-			Width = knobSize
-		});
-		horizontalScrollBar = new Pressable(id: null, style: new Style
+			Style = new Style
+			{
+				Width = knobSize
+			}
+		};
+		verticalKnob = new View
 		{
-			Height = knobSize
-		});
-		horizontalKnob = new View(id: null, new Style
+			Style = new Style
+			{
+				BackgroundColor = Color4.Lightblue,
+				Height = YogaValue.Percent(0),
+				Width = knobSize
+			}
+		};
+		horizontalScrollBar = new Pressable
 		{
-			BackgroundColor = Color4.Lightblue,
-			Width = YogaValue.Percent(0),
-			Height = knobSize
-		});
+			Style = new Style
+			{
+				Height = knobSize
+			}
+		};
+		horizontalKnob = new View
+		{
+			Style = new Style
+			{
+				BackgroundColor = Color4.Lightblue,
+				Width = YogaValue.Percent(0),
+				Height = knobSize
+			}
+		};
 
 		contentContainerContainer.AddChild(contentContainer);
 		verticalContent.AddChild(contentContainerContainer);

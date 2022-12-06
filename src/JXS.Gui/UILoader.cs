@@ -1,8 +1,13 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Xml.Linq;
+using JXS.Assets.Core;
 using JXS.Graphics.Core;
+using JXS.Graphics.Core.Assets;
+using JXS.Graphics.Text;
+using JXS.Graphics.Text.Assets;
 using JXS.Gui.Components;
 using JXS.Utils.Logging;
 
@@ -22,7 +27,7 @@ public class UILoader
 
 	private readonly IGraphicsProvider graphicsProvider;
 	private readonly IGuiInputProvider guiInputProvider;
-	private readonly IResourceProvider resourceProvider;
+	private readonly AssetManager assetManager;
 
 	private Dictionary<string, Style> styles;
 	private Dictionary<string, string> values;
@@ -43,11 +48,11 @@ public class UILoader
 	}
 
 	public UILoader(IGraphicsProvider graphicsProvider, IGuiInputProvider guiInputProvider,
-		IResourceProvider resourceProvider)
+		AssetManager assetManager)
 	{
 		this.graphicsProvider = graphicsProvider;
 		this.guiInputProvider = guiInputProvider;
-		this.resourceProvider = resourceProvider;
+		this.assetManager = assetManager;
 
 		styles = new Dictionary<string, Style>();
 		values = new Dictionary<string, string>();
@@ -127,14 +132,18 @@ public class UILoader
 				// Find all constructors that can be initialized with the given properties and order them by:
 				// First: The ones with the most given parameters
 				// Second: The ones with the highest number of parameters in total
-				var constructors = componentType.GetConstructors().OrderByDescending(c =>
-						c.GetParameters().Count(param => properties.ContainsKey(param.Name!.ToLowerInvariant())))
-					.ThenByDescending(c => c.GetParameters().Length).ToList();
+				var constructors = componentType
+					.GetConstructors()
+					.OrderByDescending(c => c.GetParameters()
+						.Count(param => properties.ContainsKey(param.Name!.ToLowerInvariant())))
+					.ThenByDescending(c => c.GetParameters().Length)
+					.ToList();
 
 				// Parameters that are not optional, not nullable, and not a value type must be initialized
-				constructorInfo = constructors.First(c =>
-					c.GetParameters().Where(p => !p.IsOptional && !IsNullable(p) && !p.ParameterType.IsValueType)
-						.All(p => properties.ContainsKey(p.Name!.ToLowerInvariant())));
+				constructorInfo = constructors.FirstOrDefault(c => c.GetParameters()
+					.Where(p => !p.IsOptional && !IsNullable(p) && !p.ParameterType.IsValueType)
+					.All(p => properties.ContainsKey(p.Name!.ToLowerInvariant()))
+				) ?? componentType.GetConstructor(Type.EmptyTypes) ?? throw new InvalidOperationException();
 			}
 			catch (InvalidOperationException)
 			{
@@ -168,22 +177,7 @@ public class UILoader
 					continue;
 				}
 
-				var type = parameterInfo.ParameterType;
-				if (type == typeof(Texture2D))
-				{
-					var texture = resourceProvider.Load<Texture2D>(property);
-					convertedParams[parameterInfo.Position] = texture;
-				}
-				else if (type.IsSubclassOf(typeof(Style)) || type == typeof(Style))
-				{
-					var style = GetStyle(property, type) ?? (Style)Activator.CreateInstance(type)!;
-					convertedParams[parameterInfo.Position] = style;
-				}
-				else
-				{
-					var conv = Convert.ChangeType(property, type);
-					convertedParams[parameterInfo.Position] = conv;
-				}
+				convertedParams[parameterInfo.Position] = ConvertProperty(parameterInfo.ParameterType, property);
 
 				Logger.Trace($@"Setting property {parameterInfo.Name} = {property}.");
 			}
@@ -192,12 +186,36 @@ public class UILoader
 			var unusedProperties = properties.Select(p => p.Key).Where(p => !parameterNames.Contains(p)).ToList();
 			if (unusedProperties.Count > 0)
 			{
-				Logger.Warn($"Properties ({string.Join(separator: ", ", unusedProperties)}) are unused.");
+				Logger.Trace($"Properties ({string.Join(separator: ", ", unusedProperties)}) not used in constructor.");
 			}
 
 			var component = (Component)Activator.CreateInstance(componentType,
 				BindingFlags.Default | BindingFlags.OptionalParamBinding, binder: null, convertedParams,
 				CultureInfo.CurrentCulture)!;
+
+			var writableProperties = componentType.GetProperties().Where(prop => prop.CanWrite).ToArray();
+			for (var i = unusedProperties.Count - 1; i >= 0; i--)
+			{
+				var propertyName = unusedProperties[i];
+				foreach (var propertyInfo in writableProperties)
+				{
+					if (!propertyInfo.Name.Equals(propertyName, StringComparison.InvariantCultureIgnoreCase))
+					{
+						continue;
+					}
+
+					Logger.Trace($"Wrote property {propertyName} to component.{propertyInfo.Name}.");
+					var value = properties[propertyName];
+					propertyInfo.SetValue(component, ConvertProperty(propertyInfo.PropertyType, value));
+					unusedProperties.RemoveAt(i);
+					break;
+				}
+			}
+
+			if (unusedProperties.Count > 0)
+			{
+				Logger.Trace($"Properties ({string.Join(separator: ", ", unusedProperties)}) are unused.");
+			}
 
 			if (parent is null)
 			{
@@ -213,6 +231,33 @@ public class UILoader
 				ProcessComponent(xChild, (View)component);
 			}
 		}
+	}
+
+	private object ConvertProperty(Type type, string property)
+	{
+		if (type == typeof(Texture2D))
+		{
+			var textureAsset = new TextureAssetDefinition(property);
+			Debug.Assert(assetManager.TryLoadAsset(textureAsset, out var texture));
+			return texture;
+		}
+
+		if (type == typeof(Font))
+		{
+			var fontAtlasAsset = new TextureAssetDefinition($"Fonts/{property}.mtsdf.png");
+			var fontAsset = new FontAssetDefinition($"Fonts/{property}.mtsdf.json", fontAtlasAsset);
+			Debug.Assert(assetManager.TryLoadAsset(fontAsset, out var font));
+			return font;
+		}
+
+		if (type.IsSubclassOf(typeof(Style)) || type == typeof(Style))
+		{
+			var style = GetStyle(property, type) ?? (Style)Activator.CreateInstance(type)!;
+			return style;
+		}
+
+		var conv = Convert.ChangeType(property, type);
+		return conv;
 	}
 
 	private Style? GetStyle(string styleId, Type styleType)

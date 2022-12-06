@@ -27,6 +27,10 @@
       <Content Include="Fonts\IMMORTAL.mtsdf.png">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
+      <None Remove="Layouts\TextExample.xml" />
+      <Content Include="Layouts\TextExample.xml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

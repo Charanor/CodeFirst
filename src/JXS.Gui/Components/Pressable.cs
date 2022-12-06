@@ -7,7 +7,7 @@ public class Pressable : View
 {
 	private readonly ISet<GuiInputAction> pressedDown;
 
-	public Pressable(string? id = default, Style? style = default) : base(id, style)
+	public Pressable()
 	{
 		pressedDown = new HashSet<GuiInputAction>();
 	}

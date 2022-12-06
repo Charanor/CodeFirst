@@ -4,11 +4,11 @@ using OpenTK.Mathematics;
 
 namespace JXS.Gui.Components;
 
-public class View : Component, IEnumerable<Component>
+public class View : Component<Style>, IEnumerable<Component>
 {
 	private readonly List<Component> children;
 
-	public View(string? id = default, Style? style = default) : base(id, style)
+	public View()
 	{
 		children = new List<Component>();
 	}

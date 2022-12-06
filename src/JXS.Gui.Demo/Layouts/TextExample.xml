@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Scene>
+    <Draw>
+        <View Style="Container">
+            <Text Id="Name" Font="IMMORTAL" Style="NameText">???</Text>
+            <View Style="Divider"/>
+            <Text Id="Time" Font="IMMORTAL" Style="TimeText">????, Day ???, ??:??</Text>
+        </View>
+    </Draw>
+
+    <Styles>
+        <Style Id="Container"
+               Flex="1"
+               FlexDirection="Column"
+               BackgroundColor="Red"
+        />
+        <Style Id="NameText"
+               Flex="1"
+               TextAlign="Middle"
+               BackgroundColor="Green"
+        />
+        <Style Id="TimeText"
+               Flex="1"
+               TextAlign="VerticalCenter"
+               BackgroundColor="Blue"
+        />
+        <Style Id="Divider"
+               Height="10"
+               MarginVertical="4"
+               AlignSelf="Stretch"
+               BackgroundColor="Orange"
+        />
+    </Styles>
+</Scene>

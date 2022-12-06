@@ -9,18 +9,18 @@ public abstract class Component
 	protected internal readonly YogaNode Node;
 	private Scene? scene;
 
-	protected Component(string? id = default, Style? style = default)
+	protected Component()
 	{
-		Id = id;
-		Style = style ?? new Style();
 		Node = new YogaNode();
 	}
+
+	public abstract bool Visible { get; }
+	public abstract YogaOverflow Overflow { get; }
+	public abstract Color4<Rgba> BackgroundColor { get; }
 
 	public string? Id { get; init; }
 
 	protected IGuiInputProvider? InputProvider => Scene?.GuiInputProvider;
-
-	public bool Visible => Style.Display != YogaDisplay.None;
 
 	/// <summary>
 	///     The parent of this Component (if any).
@@ -34,11 +34,6 @@ public abstract class Component
 	}
 
 	/// <summary>
-	///     The Style of this component.
-	/// </summary>
-	public Style Style { get; set; }
-
-	/// <summary>
 	///     The bounds (x, y, width, height) of this component as calculated by <seealso cref="CalculateLayout" />.
 	/// </summary>
 	public Box2 CalculatedBounds
@@ -47,9 +42,11 @@ public abstract class Component
 		{
 			var x = Parent is null ? Node.LayoutX : Node.LayoutX + Parent.CalculatedBounds.X;
 			var y = Parent is null ? Node.LayoutY : Node.LayoutY + Parent.CalculatedBounds.Y;
-			return  Box2.FromSize(new Vector2(x, y), new Vector2(Node.LayoutWidth, Node.LayoutHeight));
+			return Box2.FromSize(new Vector2(x, y), new Vector2(Node.LayoutWidth, Node.LayoutHeight));
 		}
 	}
+
+	public abstract void ApplyStyle();
 
 	/// <summary>
 	///     Updates this component.
@@ -65,15 +62,16 @@ public abstract class Component
 	/// <param name="graphicsProvider"></param>
 	public virtual void Draw(IGraphicsProvider graphicsProvider)
 	{
-		if (Style.Overflow == YogaOverflow.Hidden)
+		if (Overflow == YogaOverflow.Hidden)
 		{
 			graphicsProvider.BeginOverflow();
 			{
-				graphicsProvider.DrawRect(CalculatedBounds, Style.BackgroundColor);
+				graphicsProvider.DrawRect(CalculatedBounds, BackgroundColor);
 			}
 			graphicsProvider.EndOverflow();
 		}
-		graphicsProvider.DrawRect(CalculatedBounds, Style.BackgroundColor);
+
+		graphicsProvider.DrawRect(CalculatedBounds, BackgroundColor);
 	}
 
 	/// <summary>
@@ -82,48 +80,6 @@ public abstract class Component
 	public void CalculateLayout(float sceneWidth = float.NaN, float sceneHeight = float.NaN)
 	{
 		Node.CalculateLayout(sceneWidth, sceneHeight);
-	}
-
-	public virtual void ApplyStyle()
-	{
-		ApplyStyle(Style);
-	}
-
-	protected void ApplyStyle(Style style)
-	{
-		Node.PositionType = style.Position;
-		Node.Display = style.Display;
-		Node.Overflow = style.Overflow;
-		Node.Flex = style.Flex;
-		Node.FlexDirection = style.FlexDirection;
-		Node.JustifyContent = style.JustifyContent;
-		Node.AlignContent = style.AlignContent;
-		Node.AlignItems = style.AlignItems;
-		Node.AlignSelf = style.AlignSelf;
-		Node.Margin = style.Margin;
-		Node.MarginLeft = style.MarginLeft;
-		Node.MarginRight = style.MarginRight;
-		Node.MarginTop = style.MarginTop;
-		Node.MarginBottom = style.MarginBottom;
-		Node.MarginVertical = style.MarginVertical;
-		Node.MarginHorizontal = style.MarginHorizontal;
-		Node.Padding = style.Padding;
-		Node.PaddingLeft = style.PaddingLeft;
-		Node.PaddingRight = style.PaddingRight;
-		Node.PaddingTop = style.PaddingTop;
-		Node.PaddingBottom = style.PaddingBottom;
-		Node.PaddingVertical = style.PaddingVertical;
-		Node.PaddingHorizontal = style.PaddingHorizontal;
-		Node.Width = style.Width;
-		Node.Height = style.Height;
-		Node.Left = style.Left;
-		Node.Right = style.Right;
-		Node.Top = style.Top;
-		Node.Bottom = style.Bottom;
-		Node.MinWidth = style.MinWidth;
-		Node.MinHeight = style.MinHeight;
-		Node.MaxWidth = style.MaxWidth;
-		Node.MaxHeight = style.MaxHeight;
 	}
 
 	public virtual Component? Hit(Vector2 position) => HitsThis(position) ? this : null;

@@ -1,6 +1,9 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Xml.Linq;
 using Facebook.Yoga;
 using JXS.Assets.Core;
+using JXS.Assets.Core.Loaders;
 using JXS.Graphics.Core;
 using JXS.Graphics.Core.Assets;
 using JXS.Graphics.Text.Assets;
@@ -17,16 +20,11 @@ public class Demo : GameWindow
 {
 	private const int PADDING = 50; // px
 
-	private static readonly TextureAssetDefinition ImmortalFontAtlas = new("Fonts/IMMORTAL.mtsdf.png");
-
-	private static readonly FontAssetDefinition
-		ImmortalFont = new(Path: "Fonts/IMMORTAL.mtsdf.json", ImmortalFontAtlas);
+	private static readonly TextAssetDefinition TextExampleGuiLayout = new("Layouts/TextExample.xml");
 
 	private readonly Camera camera;
 	private readonly Scene scene;
 	private readonly AssetManager assetManager;
-
-	private Texture2D? texture;
 
 	public Demo(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings) : base(
 		gameWindowSettings, nativeWindowSettings)
@@ -37,14 +35,17 @@ public class Demo : GameWindow
 			Position = new Vector3((windowSize.X - PADDING) / 2f, (windowSize.Y - PADDING) / 2f, z: 1)
 		};
 
-		scene = new Scene(new DemoGraphicsProvider(camera), new DemoGuiInputProvider())
-		{
-			Size = windowSize
-		};
-
 		assetManager = new AssetManager();
+		assetManager.AddAssetLoader(new TextAssetLoader());
 		assetManager.AddAssetLoader(new TextureAssetLoader());
 		assetManager.AddAssetLoader(new FontAssetLoader(assetManager));
+
+		var demoGraphicsProvider = new DemoGraphicsProvider(camera);
+		var demoGuiInputProvider = new DemoGuiInputProvider();
+
+		Debug.Assert(assetManager.TryLoadAsset(TextExampleGuiLayout, out var textAsset));
+		var uiLoader = new UILoader(demoGraphicsProvider, demoGuiInputProvider, assetManager);
+		scene = uiLoader.LoadSceneFromXml(XDocument.Parse(textAsset.Text));
 
 		GL.Enable(EnableCap.DebugOutput);
 		GL.Enable(EnableCap.DebugOutputSynchronous);
@@ -54,8 +55,11 @@ public class Demo : GameWindow
 				Console.WriteLine($"{source}, {type}, {id}, {severity}, {Marshal.PtrToStringAnsi(message, length)}");
 			}, IntPtr.Zero);
 
-		TextInput += e => { Console.WriteLine($"code: {e.Unicode}, str: {e.AsString}"); };
-
+		TextInput += e =>
+		{
+			demoGuiInputProvider.TextInput(e.AsString);
+			Console.WriteLine($"code: {e.Unicode}, str: {e.AsString}");
+		};
 		KeyDown += e =>
 		{
 			Console.WriteLine(
@@ -63,47 +67,9 @@ public class Demo : GameWindow
 		};
 	}
 
-	protected override void OnLoad()
-	{
-		base.OnLoad();
-
-		if (!assetManager.TryLoadAsset(ImmortalFont, out var font))
-		{
-			throw new NullReferenceException();
-		}
-
-		var bytes = new[]
-		{
-			Color4.Red,
-			Color4.Green,
-			Color4.Green,
-			Color4.Red
-		}.ToByteArray();
-
-		texture = new Texture2D(bytes, width: 2, height: 2)
-		{
-			MinFilter = TextureMinFilter.Nearest,
-			MagFilter = TextureMagFilter.Nearest
-		};
-
-		var text = new Text(font, value: "abcd efgh ijkl mnop qrst uvw xyz ABCD EFGH IJKL MNOP QRST UVW XYZ")
-		{
-			Style = new TextStyle
-			{
-				Width = YogaValue.Percent(100),
-				Height = YogaValue.Percent(100),
-				FontSize = 100,
-				BackgroundColor = Color4.White,
-				FontColor = Color4.Red
-			}
-		};
-		scene.AddComponent(text);
-	}
-
 	protected override void OnUnload()
 	{
 		base.OnUnload();
-		texture?.Dispose();
 		assetManager.Dispose();
 	}
 

@@ -12,4 +12,6 @@ public class DemoGuiInputProvider : IGuiInputProvider
 	public bool JustReleased(GuiInputAction action) => false;
 	
 	public event EventHandler<IGuiInputProvider, string>? OnTextInput;
+
+	public void TextInput(string input) => OnTextInput?.Invoke(this, input);
 }
