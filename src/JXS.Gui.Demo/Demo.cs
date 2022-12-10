@@ -40,7 +40,7 @@ public class Demo : GameWindow
 		assetManager.AddAssetLoader(new TextureAssetLoader());
 		assetManager.AddAssetLoader(new FontAssetLoader(assetManager));
 
-		var demoGraphicsProvider = new DemoGraphicsProvider(camera);
+		var demoGraphicsProvider = new GLGraphicsProvider(camera);
 		var demoGuiInputProvider = new DemoGuiInputProvider();
 
 		Debug.Assert(assetManager.TryLoadAsset(TextExampleGuiLayout, out var textAsset));
