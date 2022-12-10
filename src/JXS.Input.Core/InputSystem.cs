@@ -9,13 +9,16 @@ public class InputSystem
 {
 	private readonly IDictionary<string, MultiAxis> axes;
 
-	public InputSystem()
+	public InputSystem(IInputProvider inputProvider)
 	{
+		InputProvider = inputProvider;
 		axes = new Dictionary<string, MultiAxis>();
 	}
 
+	public IInputProvider InputProvider { get; }
+
 	public bool Enabled { get; set; } = true;
-	
+
 	public Vector2 MousePosition { get; private set; }
 
 	public MultiAxis this[string name]
@@ -33,14 +36,14 @@ public class InputSystem
 		set => axes[name] = value;
 	}
 
-	public void Update(float delta, IInputProvider inputProvider)
+	public void Update(float delta)
 	{
 		foreach (var axis in axes.Values)
 		{
-			axis.Update(inputProvider, delta);
+			axis.Update(InputProvider, delta);
 		}
 
-		MousePosition = inputProvider.MouseState.Position;
+		MousePosition = InputProvider.MouseState.Position;
 	}
 
 	public Axis? GetAxisObject(string name) => Enabled && axes.TryGetValue(name, out var axis) ? axis : null;

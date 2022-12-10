@@ -6,10 +6,13 @@ public class InputManager<TInputState> where TInputState : struct, Enum
 {
 	private readonly IDictionary<TInputState, HashSet<InputSystem>> systemMap;
 
-	public InputManager()
+	public InputManager(IInputProvider inputProvider)
 	{
+		InputProvider = inputProvider;
 		systemMap = new Dictionary<TInputState, HashSet<InputSystem>>();
 	}
+
+	public IInputProvider InputProvider { get; }
 
 	public TInputState State { get; set; }
 
@@ -47,14 +50,14 @@ public class InputManager<TInputState> where TInputState : struct, Enum
 		return ImmutableHashSet<InputSystem>.Empty;
 	}
 
-	public void Update(float delta, IInputProvider inputProvider)
+	public void Update(float delta)
 	{
 		foreach (var (state, inputSystems) in systemMap)
 		{
 			foreach (var inputSystem in inputSystems)
 			{
 				inputSystem.Enabled = State.HasFlag(state);
-				inputSystem.Update(delta, inputProvider);
+				inputSystem.Update(delta);
 			}
 		}
 	}

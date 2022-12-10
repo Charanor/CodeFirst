@@ -17,6 +17,8 @@ public abstract class Component
 	public abstract bool Visible { get; }
 	public abstract YogaOverflow Overflow { get; }
 	public abstract Color4<Rgba> BackgroundColor { get; }
+	public abstract (float left, float right, float top, float bottom) BorderSize { get; }
+	public abstract Color4<Rgba> BorderColor { get; }
 
 	public string? Id { get; init; }
 
@@ -62,16 +64,17 @@ public abstract class Component
 	/// <param name="graphicsProvider"></param>
 	public virtual void Draw(IGraphicsProvider graphicsProvider)
 	{
+		var (left, right, top, bottom) = BorderSize;
 		if (Overflow == YogaOverflow.Hidden)
 		{
 			graphicsProvider.BeginOverflow();
 			{
-				graphicsProvider.DrawRect(CalculatedBounds, BackgroundColor);
+				graphicsProvider.DrawRect(CalculatedBounds, BackgroundColor, top, bottom, left, right, BorderColor);
 			}
 			graphicsProvider.EndOverflow();
 		}
 
-		graphicsProvider.DrawRect(CalculatedBounds, BackgroundColor);
+		graphicsProvider.DrawRect(CalculatedBounds, BackgroundColor, top, bottom, left, right, BorderColor);
 	}
 
 	/// <summary>

@@ -61,7 +61,7 @@ public class View : Component<Style>, IEnumerable<Component>
 		children.Add(component);
 	}
 
-	public bool RemoveChild(Component component)
+	public virtual bool RemoveChild(Component component)
 	{
 		var removed = children.Remove(component);
 		if (removed)

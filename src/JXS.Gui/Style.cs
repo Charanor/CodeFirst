@@ -54,6 +54,16 @@ public record Style
 		MaxHeight = ParseYogaValue(GetValue(element, nameof(MaxHeight), values), MaxHeight);
 		BackgroundColor =
 			ParseUtils.ParseColor(GetValue(element, nameof(BackgroundColor), values), BackgroundColor);
+		BorderWidth = ParseFloat(GetValue(element, nameof(BorderWidth), values), BorderWidth);
+		BorderLeftWidth = ParseFloat(GetValue(element, nameof(BorderLeftWidth), values), BorderLeftWidth);
+		BorderRightWidth = ParseFloat(GetValue(element, nameof(BorderRightWidth), values), BorderRightWidth);
+		BorderBottomWidth = ParseFloat(GetValue(element, nameof(BorderBottomWidth), values), BorderBottomWidth);
+		BorderTopWidth = ParseFloat(GetValue(element, nameof(BorderTopWidth), values), BorderTopWidth);
+		BorderRadius = ParseFloat(GetValue(element, nameof(BorderRadius), values), BorderRadius);
+		BorderLeftRadius = ParseFloat(GetValue(element, nameof(BorderLeftRadius), values), BorderLeftRadius);
+		BorderRightRadius = ParseFloat(GetValue(element, nameof(BorderRightRadius), values), BorderRightRadius);
+		BorderBottomRadius = ParseFloat(GetValue(element, nameof(BorderBottomRadius), values), BorderBottomRadius);
+		BorderTopRadius = ParseFloat(GetValue(element, nameof(BorderTopRadius), values), BorderTopRadius);
 	}
 
 	private static Color4<Rgba> RandomColor
@@ -105,7 +115,21 @@ public record Style
 	public YogaValue MaxWidth { get; init; } = YogaValue.Undefined();
 	public YogaValue MaxHeight { get; init; } = YogaValue.Undefined();
 
-	public Color4<Rgba> BackgroundColor { get; init; } // = RandomColor;//Color.Transparent;
+	public float BorderWidth { get; init; }
+	public float BorderBottomWidth { get; init; } = float.NaN;
+	public float BorderTopWidth { get; init; } = float.NaN;
+	public float BorderLeftWidth { get; init; } = float.NaN;
+	public float BorderRightWidth { get; init; } = float.NaN;
+
+	public float BorderRadius { get; init; }
+	public float BorderBottomRadius { get; init; } = float.NaN;
+	public float BorderTopRadius { get; init; } = float.NaN;
+	public float BorderLeftRadius { get; init; } = float.NaN;
+	public float BorderRightRadius { get; init; } = float.NaN;
+
+	public Color4<Rgba> BorderColor { get; init; }
+
+	public Color4<Rgba> BackgroundColor { get; init; }
 
 	protected static TValue Select<TValue>(TValue first, TValue second, TValue @default) =>
 		EqualityComparer<TValue>.Default.Equals(second, @default) ? first : second;
@@ -147,7 +171,12 @@ public record Style
 			MinHeight = Select(target.MinHeight, source.MinHeight, Default.MinHeight),
 			MaxWidth = Select(target.MaxWidth, source.MaxWidth, Default.MaxWidth),
 			MaxHeight = Select(target.MaxHeight, source.MaxHeight, Default.MaxHeight),
-			BackgroundColor = Select(target.BackgroundColor, source.BackgroundColor, Default.BackgroundColor)
+			BackgroundColor = Select(target.BackgroundColor, source.BackgroundColor, Default.BackgroundColor),
+			BorderWidth = Select(target.BorderWidth, source.BorderWidth, Default.BorderWidth),
+			BorderBottomWidth = Select(target.BorderBottomWidth, source.BorderBottomWidth, Default.BorderBottomWidth),
+			BorderTopWidth = Select(target.BorderTopWidth, source.BorderTopWidth, Default.BorderTopWidth),
+			BorderLeftWidth = Select(target.BorderLeftWidth, source.BorderLeftWidth, Default.BorderLeftWidth),
+			BorderRightWidth = Select(target.BorderRightWidth, source.BorderRightWidth, Default.BorderRightWidth),
 		};
 
 	protected static string? GetValue(XElement element, string attribute,

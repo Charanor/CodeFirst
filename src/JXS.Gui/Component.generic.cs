@@ -16,6 +16,15 @@ public abstract class Component<TStyle> : Component where TStyle : Style, new()
 
 	public override Color4<Rgba> BackgroundColor => Style.BackgroundColor;
 
+	public override (float left, float right, float top, float bottom) BorderSize => (
+		NaNSwitch(Style.BorderLeftWidth, Style.BorderWidth),
+		NaNSwitch(Style.BorderRightWidth, Style.BorderWidth),
+		NaNSwitch(Style.BorderTopWidth, Style.BorderWidth),
+		NaNSwitch(Style.BorderBottomWidth, Style.BorderWidth)
+	);
+
+	public override Color4<Rgba> BorderColor => Style.BorderColor;
+
 	public override void ApplyStyle()
 	{
 		ApplyStyle(Style);
@@ -56,5 +65,12 @@ public abstract class Component<TStyle> : Component where TStyle : Style, new()
 		Node.MinHeight = style.MinHeight;
 		Node.MaxWidth = style.MaxWidth;
 		Node.MaxHeight = style.MaxHeight;
+		Node.BorderWidth = style.BorderWidth;
+		Node.BorderBottomWidth = style.BorderBottomWidth;
+		Node.BorderTopWidth = style.BorderTopWidth;
+		Node.BorderLeftWidth = style.BorderLeftWidth;
+		Node.BorderRightWidth = style.BorderRightWidth;
 	}
+
+	private static float NaNSwitch(float value, float fallback) => float.IsNaN(value) ? fallback : value;
 }
