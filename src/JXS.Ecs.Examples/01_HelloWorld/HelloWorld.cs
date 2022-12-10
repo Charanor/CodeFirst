@@ -48,6 +48,10 @@ internal class HelloWorld
 
 	public static void Main()
 	{
+		var entity = default(Entity);
+		Console.WriteLine(entity.IsValid);
+		Console.WriteLine(entity);
+		
 		new HelloWorld();
 	}
 
@@ -70,7 +74,7 @@ internal class HelloWorld
 		{
 		}
 
-		protected override void Update(int entity, float delta)
+		protected override void Update(Entity entity, float delta)
 		{
 			// Naming convention is to add "C" as a suffix to component instance variables.
 			var helloWorldC = helloWorldMapper.Get(entity);

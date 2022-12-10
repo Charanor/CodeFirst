@@ -12,7 +12,7 @@ public interface IComponentMapper
 	/// <param name="entity">the entity id</param>
 	/// <returns>the component that belongs to the specified entity</returns>
 	/// <exception cref="NullReferenceException">thrown if the entity does not contain this component type.</exception>
-	public IComponent Get(int entity);
+	public IComponent Get(Entity entity);
 
 	/// <summary>
 	///     Updates the component that belong to this entity with any changes from <c>component</c>. Can also be used to add a
@@ -20,7 +20,7 @@ public interface IComponentMapper
 	/// </summary>
 	/// <param name="entity">the entity id</param>
 	/// <param name="component">the component to update values for</param>
-	public void Update(int entity, in IComponent component);
+	public void Update(Entity entity, in IComponent component);
 
 	/// <summary>
 	///     Creates a new component of the given type and returns it. Will override existing component.
@@ -31,7 +31,7 @@ public interface IComponentMapper
 	///     If the component this mapper is bound to can not be 0-argument
 	///     constructed and is not a value type.
 	/// </exception>
-	public IComponent Create(int entity);
+	public IComponent Create(Entity entity);
 
 	/// <summary>
 	///     Adds the given component to the entity. Useful when you need to add a ready-created component to the entity.
@@ -39,7 +39,7 @@ public interface IComponentMapper
 	/// <param name="entity"></param>
 	/// <param name="component"></param>
 	/// <returns></returns>
-	public IComponent Add(int entity, in IComponent component);
+	public IComponent Add(Entity entity, in IComponent component);
 
 	/// <summary>
 	///     If the given entity does not have this component, will add the given component to the entity and return it.
@@ -48,20 +48,20 @@ public interface IComponentMapper
 	/// <param name="entity">the entity</param>
 	/// <param name="component">the component to add</param>
 	/// <returns>the component</returns>
-	public IComponent AddIfMissing(int entity, in IComponent component);
+	public IComponent AddIfMissing(Entity entity, in IComponent component);
 
 	/// <summary>
 	///     Removes the component from the given entity. Does nothing if the entity did not have the component already.
 	/// </summary>
 	/// <param name="entity">the entity id</param>
-	public void Remove(int entity);
+	public void Remove(Entity entity);
 
 	/// <summary>
 	///     Checks if the entity has a component.
 	/// </summary>
 	/// <param name="entity">the entity id</param>
 	/// <returns><c>true</c> if the entity has this component, <c>false</c> otherwise</returns>
-	public bool Has(int entity);
+	public bool Has(Entity entity);
 
 	/// <summary>
 	///     Sets or removes ownership of this component for the given entity.
@@ -76,5 +76,5 @@ public interface IComponentMapper
 	///     If the component this mapper is bound to can not be 0-argument
 	///     constructed and is not a value type.
 	/// </exception>
-	public void Set(int entity, bool shouldHave);
+	public void Set(Entity entity, bool shouldHave);
 }

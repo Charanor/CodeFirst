@@ -17,16 +17,16 @@ public class EntityBuilder
 	///     [optional] the entity to edit. If <c>null</c> (or not specified) the entity builder will
 	///     automatically create a new entity.
 	/// </param>
-	public EntityBuilder(World world, int? entity = null)
+	public EntityBuilder(World world, Entity entity = default)
 	{
 		this.world = world;
-		Entity = entity ?? world.CreateEntity();
+		Entity = entity.IsValid ? entity : world.CreateEntity();
 	}
 
 	/// <summary>
 	///     The entity connected to this builder.
 	/// </summary>
-	public int Entity { get; }
+	public Entity Entity { get; }
 
 	public T Create<T>() where T : IComponent, IEquatable<T>, new() => Add(new T());
 

@@ -53,7 +53,7 @@ internal class BasicAnnotations
 	{
 		private readonly ComponentMapper<HelloWorldComponent> helloWorldMapper = null!;
 
-		protected override void Update(int entity, float delta)
+		protected override void Update(Entity entity, float delta)
 		{
 			var helloWorldC = helloWorldMapper.Get(entity);
 

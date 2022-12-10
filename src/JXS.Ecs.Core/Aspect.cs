@@ -8,7 +8,7 @@
 /// <param name="None">Only matches entities that have <i>no</i> components in this collection.</param>
 public record Aspect(ComponentFlags All, ComponentFlags Some, ComponentFlags None) : IAspect
 {
-	public bool Matches(World world, int entity)
+	public bool Matches(World world, Entity entity)
 	{
 		var flags = world.GetFlagsForEntity(entity);
 		var containsAll = All.Empty || flags.ContainsAll(All);
