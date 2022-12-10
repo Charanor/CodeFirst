@@ -1,7 +1,7 @@
 ﻿namespace JXS.Ecs.Core;
 
 /// <summary>
-/// A collection of flags that represents if a component is present/active or not.
+///     A collection of flags that represents if a component is present/active or not.
 /// </summary>
 public record ComponentFlags
 {
@@ -16,8 +16,9 @@ public record ComponentFlags
 
 	public bool Empty { get; }
 
-	public override string ToString() => string.Join(", ",
-		componentFlags.Where(flag => flag).Select((_, i) => ComponentManager.GetType(i).Name));
+	public override string ToString() => string.Join(separator: ", ", componentFlags
+		.Select((flag, i) => flag ? ComponentManager.GetType(i).Name : string.Empty)
+		.Where(str => str != string.Empty));
 
 	public bool Has(int componentId)
 	{

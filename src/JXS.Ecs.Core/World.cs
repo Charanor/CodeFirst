@@ -45,8 +45,6 @@ public class World
 	/// <param name="delta">time since last Update()</param>
 	public void Update(float delta)
 	{
-		UpdateDirtyEntities();
-
 		foreach (var system in updateSystems)
 		{
 			if (!system.Enabled)
@@ -54,6 +52,7 @@ public class World
 				continue;
 			}
 
+			UpdateDirtyEntities();
 			system.Begin();
 			system.Update(delta);
 			system.End();
@@ -68,8 +67,6 @@ public class World
 	/// <param name="delta">time since last Draw()</param>
 	public void Draw(float delta)
 	{
-		UpdateDirtyEntities();
-
 		foreach (var system in drawSystems)
 		{
 			if (!system.Enabled)
@@ -77,6 +74,7 @@ public class World
 				continue;
 			}
 
+			UpdateDirtyEntities();
 			system.Begin();
 			system.Update(delta);
 			system.End();
@@ -280,6 +278,9 @@ public class World
 
 		return GetMapperNoTypeCheck(componentType);
 	}
+
+	public ref T GetSingletonComponent<T>() where T : ISingletonComponent, IEquatable<T>, new() =>
+		ref GetSingletonMapper<T>().SingletonInstance;
 
 	public ISingletonComponent GetSingletonComponent(Type componentType)
 	{
