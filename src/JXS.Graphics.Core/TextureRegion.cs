@@ -20,4 +20,7 @@ public record TextureRegion(Texture Texture, Box3 Bounds)
 	public Box3 UVBounds3D => new(Bounds.Min / Texture.Dimensions, Bounds.Max / Texture.Dimensions);
 	public Box2 UVBounds2D => new(Bounds2D.Min / Texture.Dimensions.Xy, Bounds2D.Max / Texture.Dimensions.Xy);
 	public Vector2 UVBounds1D => new(Bounds1D.X / Texture.Dimensions.X, Bounds1D.X / Texture.Dimensions.X);
+
+	public static implicit operator TextureRegion(Texture texture) =>
+		new(texture, Box3.FromSize(Vector3.Zero, texture.Dimensions));
 }

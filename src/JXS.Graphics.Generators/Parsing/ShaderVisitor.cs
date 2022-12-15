@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using JXS.Graphics.Generators.Utils;
@@ -36,15 +37,19 @@ public class ShaderVisitor : GLSLBaseVisitor<IEnumerable<GLSLDefinition>>
 		var type = context.IDENTIFIER().GetText();
 		var identifier = context.instance_name()?.IDENTIFIER().GetText();
 		var members = context.member_list().Accept(this).OfType<GLSLMember>();
-		return Single(new GLSLInterface(ShaderVariant, storageType, type, identifier, members));
+		return Single(new GLSLInterface(ShaderVariant, storageType, type, identifier, members, ArrayRanks: 0,
+			Array.Empty<string>(), Enumerable.Empty<string>()));
 	}
 
 	public override IEnumerable<GLSLDefinition> VisitSingle_declaration(GLSLParser.Single_declarationContext context)
 	{
 		var identifier = context.IDENTIFIER()?.GetText();
-		var identifierBrackets = GLSLUtils.GLSLToCSArrayBrackets(context.array_specifier()?.GetText() ?? "");
+		var glslBrackets = context.array_specifier()?.GetText() ?? "";
+		var identifierBrackets = GLSLUtils.GLSLToCSArrayBrackets(glslBrackets);
+		var glslConstants = GLSLUtils.GLSLArraySizeConstants(glslBrackets);
 		return Single(
-			CreateMemberFromFullySpecifiedType(context.fully_specified_type(), identifier, identifierBrackets));
+			CreateMemberFromFullySpecifiedType(context.fully_specified_type(), identifier, identifierBrackets,
+				glslConstants));
 	}
 
 	public override IEnumerable<GLSLDefinition> VisitVersion_statement(GLSLParser.Version_statementContext context)
@@ -66,6 +71,8 @@ public class ShaderVisitor : GLSLBaseVisitor<IEnumerable<GLSLDefinition>>
 		var status = context.extension_status.Text;
 		return Single(new GLSLExtension(ShaderVariant, name, status));
 	}
+	
+	
 
 	public override IEnumerable<GLSLDefinition> VisitMember_declaration(GLSLParser.Member_declarationContext context)
 	{
@@ -74,10 +81,14 @@ public class ShaderVisitor : GLSLBaseVisitor<IEnumerable<GLSLDefinition>>
 		{
 			var declarator = list.struct_declarator();
 			var identifier = declarator.IDENTIFIER().GetText();
-			var brackets = GLSLUtils.GLSLToCSArrayBrackets(declarator.array_specifier()?.GetText() ?? "");
-			var member = CreateMemberFromFullySpecifiedType(context.fully_specified_type(), identifier, brackets);
+			var glslBrackets = declarator.array_specifier()?.GetText() ?? "";
+			var brackets = GLSLUtils.GLSLToCSArrayBrackets(glslBrackets);
+			var glslConstants = GLSLUtils.GLSLArraySizeConstants(glslBrackets);
+			var member =
+				CreateMemberFromFullySpecifiedType(context.fully_specified_type(), identifier, brackets, glslConstants);
 			members.Add(member);
 		}
+
 		return members;
 	}
 
@@ -87,7 +98,7 @@ public class ShaderVisitor : GLSLBaseVisitor<IEnumerable<GLSLDefinition>>
 	private static IEnumerable<GLSLDefinition> Single(GLSLDefinition definition) => new[] { definition };
 
 	private GLSLMember CreateMemberFromFullySpecifiedType(GLSLParser.Fully_specified_typeContext fullySpecifiedType,
-		string? identifier, string? identifierBrackets)
+		string? identifier, string? identifierBrackets, IEnumerable<string>? identifierBracketsConstants)
 	{
 		var storageType =
 			GLSLUtils.StringToGLSLStorageType(fullySpecifiedType.type_qualifier()?.storage_qualifier()?.GetText());
@@ -95,18 +106,35 @@ public class ShaderVisitor : GLSLBaseVisitor<IEnumerable<GLSLDefinition>>
 		var typeSpecifier = fullySpecifiedType.type_specifier();
 		var typeSpecifierNonArray = typeSpecifier.type_specifier_nonarray();
 
-		var typeBrackets = GLSLUtils.GLSLToCSArrayBrackets(typeSpecifier.array_specifier()?.GetText() ?? "");
+		var bracketsText = typeSpecifier.array_specifier()?.GetText() ?? "";
+		var typeBrackets = GLSLUtils.GLSLToCSArrayBrackets(bracketsText);
+		var bracketsConstants = GLSLUtils.GLSLArraySizeConstants(bracketsText).ToList();
+		var glslConstants = bracketsConstants.Where(GLSLUtils.IsGLSLConstant).ToList();
+
 		var arrayRank = (typeBrackets.Length + identifierBrackets?.Length ?? 0) / NUM_BRACKETS_PER_ARRAY_RANK;
 
+		var identifierBracketsConstantsList = identifierBracketsConstants?.ToList();
+		if (identifierBracketsConstantsList != null)
+		{
+			glslConstants.AddRange(identifierBracketsConstantsList
+				.Where(identifierBracketsConstant => identifierBracketsConstant != null &&
+				                                     GLSLUtils.IsGLSLConstant(identifierBracketsConstant)));
+		}
+
+		var sizeGuesses = (identifierBracketsConstantsList ?? Enumerable.Empty<string>())
+			.Concat(bracketsConstants)
+			.ToArray();
 		var structSpecifier = typeSpecifierNonArray.struct_specifier();
 		if (structSpecifier is not null)
 		{
 			var structName = structSpecifier.IDENTIFIER()?.GetText();
 			var members = structSpecifier.member_list().Accept(this).OfType<GLSLMember>();
-			return new GLSLStruct(ShaderVariant, storageType, structName, identifier, members, arrayRank);
+			return new GLSLStruct(ShaderVariant, storageType, structName, identifier, members, arrayRank,
+				sizeGuesses, glslConstants);
 		}
 
 		var type = typeSpecifierNonArray.GetText();
-		return new GLSLMember(ShaderVariant, storageType, type, identifier, arrayRank);
+		return new GLSLMember(ShaderVariant, storageType, type, identifier, arrayRank, sizeGuesses,
+			glslConstants);
 	}
 }

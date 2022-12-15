@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using JXS.Graphics.Core.Exceptions;
+using JXS.Graphics.Utils;
 using OpenTK.Mathematics;
 
 namespace JXS.Graphics.Core;
@@ -80,14 +81,7 @@ public class ShaderProgram : NativeResource
 
 	public void SetUniform(int location, ReadOnlySpan<TextureHandle> values)
 	{
-		var intArray = new int[values.Length];
-		for (var i = 0; i < values.Length; i++)
-		{
-			var textureHandle = values[i];
-			intArray[i] = textureHandle.Handle;
-		}
-
-		SetUniform(location, intArray);
+		SetUniform(location, Array.ConvertAll(values.ToArray(), converter: textureHandle => textureHandle.Handle));
 	}
 
 	// Float operations
@@ -114,14 +108,7 @@ public class ShaderProgram : NativeResource
 
 	public void SetUniform(int location, ReadOnlySpan<Box2> values)
 	{
-		var vectorArray = new Vector4[values.Length];
-		for (var i = 0; i < values.Length; i++)
-		{
-			var box = values[i];
-			vectorArray[i] = new Vector4(box.Left, box.Bottom, box.Right, box.Top);
-		}
-
-		SetUniform(location, vectorArray);
+		SetUniform(location, Array.ConvertAll(values.ToArray(), ConversionExtensions.ToVector4));
 	}
 
 	public void SetUniform(int location, Color4<Rgba> value) =>
@@ -129,14 +116,7 @@ public class ShaderProgram : NativeResource
 
 	public void SetUniform(int location, ReadOnlySpan<Color4<Rgba>> values)
 	{
-		var vectorArray = new Vector4[values.Length];
-		for (var i = 0; i < values.Length; i++)
-		{
-			var color = values[i];
-			vectorArray[i] = new Vector4(color.X, color.Y, color.Z, color.W);
-		}
-
-		SetUniform(location, vectorArray);
+		SetUniform(location, Array.ConvertAll(values.ToArray(), ConversionExtensions.ToVector4));
 	}
 
 	public void SetUniform(int location, Matrix4 value) =>

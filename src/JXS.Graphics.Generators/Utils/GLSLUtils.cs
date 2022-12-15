@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text.RegularExpressions;
 using JXS.Graphics.Generators.Parsing;
 
@@ -9,7 +11,8 @@ public static class GLSLUtils
 {
 	private const string MATH_NAMESPACE = "OpenTK.Mathematics";
 	private const string GRAPHICS_CORE_NAMESPACE = "JXS.Graphics.Core";
-	private const string NON_BRACKETS = @"[^\[\[]";
+	private const string NON_BRACKETS = @"[^\[\]]";
+	private const string BRACKETS = @"[\[\]]";
 
 	public static readonly ImmutableArray<string> Namespaces = new[]
 	{
@@ -19,6 +22,10 @@ public static class GLSLUtils
 
 	public static string GLSLToCSArrayBrackets(string glslBrackets) =>
 		Regex.Replace(glslBrackets, NON_BRACKETS, string.Empty);
+
+	public static IEnumerable<string> GLSLArraySizeConstants(string glslBrackets) => glslBrackets
+		.Split(new[] { "][" }, StringSplitOptions.RemoveEmptyEntries)
+		.Select(str => Regex.Replace(str, BRACKETS, string.Empty));
 
 	public static string FirstCharToUpper(string input) =>
 		input switch
@@ -55,4 +62,15 @@ public static class GLSLUtils
 		"uniform" => GLSLStorageType.Uniform,
 		_ => GLSLStorageType.None
 	};
+
+	public static bool IsGLSLConstant(string glslConstantName) => glslConstantName.StartsWith("gl_");
+
+	public static string GetGLSLConstantFieldName(string glslConstantName) =>
+		FirstCharToLower(GetGLConstantForGLSLConstant(glslConstantName));
+
+	public static string GetGLFunctionForGLSLConstant(string glslConstantName, string refVariableName) =>
+		$"GL.GetInteger(GetPName.{GetGLConstantForGLSLConstant(glslConstantName)}, ref {refVariableName});";
+
+	private static string GetGLConstantForGLSLConstant(string glslConstantName) =>
+		glslConstantName.Replace(oldValue: "gl_", newValue: "");
 }
