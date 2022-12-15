@@ -47,7 +47,7 @@ public class World
 	{
 		foreach (var system in updateSystems)
 		{
-			if (!system.Enabled)
+			if (!system.ShouldUpdate())
 			{
 				continue;
 			}
@@ -69,7 +69,7 @@ public class World
 	{
 		foreach (var system in drawSystems)
 		{
-			if (!system.Enabled)
+			if (!system.ShouldUpdate())
 			{
 				continue;
 			}
@@ -257,7 +257,7 @@ public class World
 	/// </summary>
 	/// <typeparam name="T">The type of component</typeparam>
 	/// <returns>the component mapper for the component type T</returns>
-	public ComponentMapper<T> GetMapper<T>() where T : IComponent, IEquatable<T> =>
+	public ComponentMapper<T> GetMapper<T>() where T : IComponent =>
 		(ComponentMapper<T>)GetMapperNoTypeCheck(typeof(T));
 
 	/// <summary>
@@ -265,7 +265,7 @@ public class World
 	/// </summary>
 	/// <typeparam name="T">The type of component</typeparam>
 	/// <returns>the component mapper for the component type T</returns>
-	public SingletonComponentMapper<T> GetSingletonMapper<T>() where T : ISingletonComponent, IEquatable<T>, new() =>
+	public SingletonComponentMapper<T> GetSingletonMapper<T>() where T : ISingletonComponent, new() =>
 		(SingletonComponentMapper<T>)GetMapperNoTypeCheck(typeof(T));
 
 	public IComponentMapper GetMapper(Type componentType)
@@ -279,7 +279,7 @@ public class World
 		return GetMapperNoTypeCheck(componentType);
 	}
 
-	public ref T GetSingletonComponent<T>() where T : ISingletonComponent, IEquatable<T>, new() =>
+	public ref T GetSingletonComponent<T>() where T : ISingletonComponent, new() =>
 		ref GetSingletonMapper<T>().SingletonInstance;
 
 	public ISingletonComponent GetSingletonComponent(Type componentType)

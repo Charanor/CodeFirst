@@ -36,7 +36,7 @@ internal static class ComponentManager
 		}
 	}
 
-	internal static int GetId<T>() where T : IComponent, IEquatable<T> => GetId(typeof(T));
+	internal static int GetId<T>() where T : IComponent => GetId(typeof(T));
 
 	internal static Type GetType(int id)
 	{

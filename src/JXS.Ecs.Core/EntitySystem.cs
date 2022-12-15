@@ -103,6 +103,13 @@ public abstract class EntitySystem
 
 	public abstract void Update(float delta);
 
+	/// <summary>
+	///     Checks if this system should update or not. The default implementation simply checks if the entity system is
+	///     enabled.
+	/// </summary>
+	/// <returns><c>true</c> if the system should update, <c>false</c> otherwise</returns>
+	public virtual bool ShouldUpdate() => Enabled;
+
 	private Pass GetPassFromAttribute()
 	{
 		var type = GetType();

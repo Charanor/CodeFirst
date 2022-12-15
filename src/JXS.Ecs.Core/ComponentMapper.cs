@@ -2,7 +2,7 @@
 
 namespace JXS.Ecs.Core;
 
-public class ComponentMapper<T> : IComponentMapper where T : IComponent, IEquatable<T>
+public class ComponentMapper<T> : IComponentMapper where T : IComponent
 {
 	private const int DEFAULT_ENTITY_COUNT = 256;
 	private readonly World world;

@@ -1,6 +1,6 @@
 ﻿namespace JXS.Ecs.Core;
 
-public class SingletonComponentMapper<T> : ComponentMapper<T> where T : ISingletonComponent, IEquatable<T>, new()
+public class SingletonComponentMapper<T> : ComponentMapper<T> where T : ISingletonComponent, new()
 {
 	private T singletonInstance;
 
