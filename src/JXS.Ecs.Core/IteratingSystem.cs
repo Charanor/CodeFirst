@@ -5,8 +5,6 @@ namespace JXS.Ecs.Core;
 /// </summary>
 public abstract class IteratingSystem : EntitySystem
 {
-	protected const int NO_ENTITY = -1;
-	
 	protected IteratingSystem()
 	{
 	}
@@ -15,9 +13,9 @@ public abstract class IteratingSystem : EntitySystem
 	{
 	}
 	
-	protected int CurrentEntity { get; set; }
+	protected Entity CurrentEntity { get; set; }
 
-	protected abstract void Update(int entity, float delta);
+	protected abstract void Update(Entity entity, float delta);
 
 	public override void Update(float delta)
 	{
@@ -28,7 +26,7 @@ public abstract class IteratingSystem : EntitySystem
 			var entity = entities[i];
 			CurrentEntity = entity;
 			Update(entity, delta);
-			CurrentEntity = NO_ENTITY;
+			CurrentEntity = Entity.Invalid;
 		}
 
 		Entities.Commit();
@@ -36,13 +34,13 @@ public abstract class IteratingSystem : EntitySystem
 
 	protected void AssertHasEntity(string methodName)
 	{
-		if (CurrentEntity == NO_ENTITY)
+		if (!CurrentEntity.IsValid)
 		{
 			throw new InvalidOperationException($"Can not call {methodName} while not processing an entity!");
 		}
 	}
 
-	protected sealed override void Remove(int entity)
+	protected sealed override void Remove(Entity entity)
 	{
 		AssertHasEntity(nameof(Remove));
 		base.Remove(entity);

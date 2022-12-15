@@ -13,14 +13,14 @@ namespace JXS.Ecs.Core;
 /// </summary>
 public abstract class EntitySystem
 {
-	private SnapshotList<int> entities;
+	private SnapshotList<Entity> entities;
 
 	protected EntitySystem(Aspect aspect, Pass pass)
 	{
 		Pass = pass;
 		Aspect = aspect;
 		// This looks weird, but we need to set "entities" first so we don't get a null reference exception
-		Entities = entities = new SnapshotList<int>();
+		Entities = entities = new SnapshotList<Entity>();
 	}
 
 	/// <summary>
@@ -38,7 +38,7 @@ public abstract class EntitySystem
 		Pass = GetPassFromAttribute();
 		Aspect = GetAspectFromAttributes();
 		// This looks weird, but we need to set "entities" first so we don't get a null reference exception
-		Entities = entities = new SnapshotList<int>();
+		Entities = entities = new SnapshotList<Entity>();
 	}
 
 	/// <summary>
@@ -60,7 +60,7 @@ public abstract class EntitySystem
 	///     Modifying this value will call <see cref="EntityAdded" /> and/or <see cref="EntityRemoved" /> for each new
 	///     entity added or removed, respectively. Will not be called for entities present in both the old and new list.
 	/// </remarks>
-	public SnapshotList<int> Entities
+	public SnapshotList<Entity> Entities
 	{
 		get => entities;
 		internal set
@@ -102,6 +102,13 @@ public abstract class EntitySystem
 	public bool Enabled { get; set; } = true;
 
 	public abstract void Update(float delta);
+
+	/// <summary>
+	///     Checks if this system should update or not. The default implementation simply checks if the entity system is
+	///     enabled.
+	/// </summary>
+	/// <returns><c>true</c> if the system should update, <c>false</c> otherwise</returns>
+	public virtual bool ShouldUpdate() => Enabled;
 
 	private Pass GetPassFromAttribute()
 	{
@@ -173,7 +180,7 @@ public abstract class EntitySystem
 	///     </list>
 	/// </remarks>
 	/// <param name="entity">the entity that was added</param>
-	protected virtual void EntityAdded(int entity)
+	protected virtual void EntityAdded(Entity entity)
 	{
 	}
 
@@ -185,16 +192,16 @@ public abstract class EntitySystem
 	///     has been called.
 	/// </remarks>
 	/// <param name="entity">the entity that was added</param>
-	protected virtual void EntityRemoved(int entity)
+	protected virtual void EntityRemoved(Entity entity)
 	{
 	}
 
-	protected virtual void Remove(int entity)
+	protected virtual void Remove(Entity entity)
 	{
 		Debug.Assert(World != null);
 		World?.DeleteEntity(entity);
 	}
 
-	private void OnItemRemoved(SnapshotList<int> _, EventArgs<int> e) => EntityRemoved(e.Value);
-	private void OnItemAdded(SnapshotList<int> _, EventArgs<int> e) => EntityAdded(e.Value);
+	private void OnItemRemoved(SnapshotList<Entity> _, EventArgs<Entity> e) => EntityRemoved(e.Value);
+	private void OnItemAdded(SnapshotList<Entity> _, EventArgs<Entity> e) => EntityAdded(e.Value);
 }

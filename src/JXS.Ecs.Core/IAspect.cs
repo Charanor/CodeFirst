@@ -8,5 +8,5 @@ public interface IAspect
 	/// <param name="world">the world containing the entity</param>
 	/// <param name="entity"></param>
 	/// <returns>true if the entity matches, false otherwise</returns>
-	bool Matches(World world, int entity);
+	bool Matches(World world, Entity entity);
 }

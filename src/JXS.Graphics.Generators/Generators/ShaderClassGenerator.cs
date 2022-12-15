@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using JXS.Graphics.Generators.Parsing;
@@ -24,6 +25,7 @@ public class ShaderClassGenerator
 	{
 		"System.Collections.Generic",
 		"System.CodeDom.Compiler",
+		"System.Linq",
 		"JXS.Graphics.Core",
 		"OpenTK.Mathematics",
 		"OpenTK.Graphics.OpenGL"
@@ -51,45 +53,47 @@ public class ShaderClassGenerator
 	{
 		classBuilder.IndentedLn(
 			$@"[GeneratedCode({Quote("JXS.Graphics.Generators")}, {Quote(GENERATOR_VERSION)})]");
-		classBuilder.BeginBlock($"public class {className} : {SHADER_PROGRAM_CLASS}");
+		classBuilder.BeginBlock($"public partial class {className} : {SHADER_PROGRAM_CLASS}");
 		{
 			BuildVersions(classBuilder);
 			BuildExtensions(classBuilder);
 			BuildSources(classBuilder);
-			var uniformMembers = BuildUniformUtilities(classBuilder);
-			BuildConstructor(classBuilder, uniformMembers);
+			var (uniformMembers, glslConstants) = BuildUniformUtilities(classBuilder);
+			BuildConstructor(classBuilder, uniformMembers, glslConstants);
 			BuildVertexRecord(classBuilder);
 			BuildStructs(classBuilder);
 		}
 		classBuilder.EndBlock();
 	}
 
-	private List<(string LocationName, string UniformName)> BuildUniformUtilities(ClassBuilder classBuilder)
+	private (List<UniformMember>, List<string>) BuildUniformUtilities(ClassBuilder classBuilder)
 	{
 		var uniforms = GetDefinitions<GLSLMember>()
 			.Where(member => member is { StorageType: GLSLStorageType.Uniform, Identifier: not null, Type: not null })
 			.Distinct(GLSLMemberComparer.Instance);
-		var uniformMembers = new List<(string LocationName, string UniformName)>();
+		var uniformMembers = new List<UniformMember>();
+		var glslConstants = new List<string>();
 		var textureSlot = 0;
 		foreach (var uniform in uniforms)
 		{
 			GenerateForMember(uniform);
 		}
 
-		return uniformMembers;
+		return (uniformMembers, glslConstants);
 
 		void GenerateForMember(GLSLMember member, string prefix = "")
 		{
-			var (_, _, type, identifier, arrayRanks) = member;
+			var (_, _, type, identifier, arrayRanks, sizeGuesses, memberGlslConstants) = member;
 			if (type == null || identifier == null)
 			{
 				return;
 			}
 
+			glslConstants.AddRange(memberGlslConstants);
+
 			if (member is GLSLMemberGroup memberGroup)
 			{
-				var (_, _, _, _, members, _) = memberGroup;
-				foreach (var glslMember in members)
+				foreach (var glslMember in memberGroup.Members)
 				{
 					GenerateForMember(glslMember, $"{prefix}{identifier}.");
 				}
@@ -103,8 +107,13 @@ public class ShaderClassGenerator
 				}
 
 				// Fields
+				var isTexture = type.StartsWith("sampler");
 				var locationFieldName = LocationFieldName(identifier);
-				uniformMembers.Add((LocationName: locationFieldName, UniformName: $"{prefix}{identifier}"));
+				var textureSlotField = $"{identifier}TextureSlotStart";
+				var textureOffset = isTexture
+					? new TextureOffset(textureSlotField, arrayRanks > 0 ? sizeGuesses[0] : "1")
+					: null;
+				uniformMembers.Add(new UniformMember(locationFieldName, $"{prefix}{identifier}", textureOffset));
 
 				classBuilder.IndentedLn($"private readonly int {locationFieldName};"); // Location field
 				classBuilder.IndentedLn($"private {openTKType} {identifier};"); // Cached value
@@ -121,13 +130,28 @@ public class ShaderClassGenerator
 						}
 						classBuilder.EndBlock();
 						classBuilder.IndentedLn($"{identifier} = value;");
-						if (type.StartsWith("sampler"))
+						if (isTexture)
 						{
-							// This is a texture
-							classBuilder.IndentedLn($"SetUniform({locationFieldName}, {textureSlot});");
-							classBuilder.IndentedLn($"GL.ActiveTexture(TextureUnit.Texture{textureSlot});");
-							classBuilder.IndentedLn("GL.BindTexture(value.Target, value);");
-							textureSlot += 1;
+							// This is a texture, or an array of textures
+							if (arrayRanks > 0)
+							{
+								// TODO: Allow this to handle multi-rank arrays (e.g. 2d arrays)
+								classBuilder.IndentedLn(
+									$"var slots = Enumerable.Range({textureSlotField}, value.Length).ToArray();");
+								classBuilder.IndentedLn($"SetUniform({locationFieldName}, slots);");
+
+								classBuilder.BeginBlock("for (var i = 0u; i <= value.Length; i++)");
+								{
+									classBuilder.IndentedLn($"GL.BindTextureUnit({textureSlotField} + i, value[i]);");
+								}
+								classBuilder.EndBlock();
+							}
+							else
+							{
+								classBuilder.IndentedLn($"SetUniform({locationFieldName}, {textureSlot});");
+								classBuilder.IndentedLn($"GL.BindTextureUnit({textureSlot}, value);");
+								textureSlot += 1;
+							}
 						}
 						else
 						{
@@ -148,7 +172,7 @@ public class ShaderClassGenerator
 	{
 		var groups = GetDefinitions<GLSLMemberGroup>().Where(grp => grp is { Type: not null })
 			.Distinct(GLSLMemberGroupComparer.Instance);
-		foreach (var (_, _, type, identifier, members, _) in groups)
+		foreach (var (_, _, type, identifier, members, _, _, _) in groups)
 		{
 			var csType = GLSLUtils.FirstCharToUpper(type!);
 			if (csType == MATERIAL)
@@ -173,7 +197,7 @@ public class ShaderClassGenerator
 	{
 		classBuilder.BeginBlock($"public record {MATERIAL} : {MATERIAL_CLASS}(new {className}())");
 		{
-			foreach (var (_, _, childType, childIdentifier, arrayRanks) in members.Where(member =>
+			foreach (var (_, _, childType, childIdentifier, arrayRanks, _, _) in members.Where(member =>
 				         member is { HasIdentifier: true, HasConcreteType: true }))
 			{
 				if (childType == null || childIdentifier == null)
@@ -230,15 +254,58 @@ public class ShaderClassGenerator
 		classBuilder.NewLine();
 	}
 
-	private void BuildConstructor(ClassBuilder classBuilder,
-		IEnumerable<(string LocationName, string UniformName)> uniformMembers)
+	private void BuildConstructor(ClassBuilder classBuilder, IEnumerable<UniformMember> uniformMembers,
+		IEnumerable<string> glslConstants)
 	{
+		var constantsList = glslConstants.Distinct().ToList();
+		foreach (var fieldName in constantsList.Select(GLSLUtils.GetGLSLConstantFieldName))
+		{
+			classBuilder.IndentedLn($"private readonly int {fieldName};");
+		}
+
+		var uniformMembersList = uniformMembers.ToList();
+		foreach (var (_, _, textureOffset) in uniformMembersList)
+		{
+			if (textureOffset == null)
+			{
+				continue;
+			}
+
+			var (offsetField, _) = textureOffset;
+			classBuilder.IndentedLn($"private readonly int {offsetField};");
+		}
+
 		classBuilder.BeginBlock(
 			$"public {className}() : base({ShaderType.Vertex.GetSourceConstantName()}, {ShaderType.Fragment.GetSourceConstantName()})");
 		{
-			foreach (var (locationName, uniformName) in uniformMembers)
+			var textureOffsetSizes = new List<string>();
+			foreach (var (locationName, uniformName, textureOffset) in uniformMembersList)
 			{
 				classBuilder.IndentedLn($"{locationName} = GetUniformLocation({Quote(uniformName)});");
+				if (textureOffset == null)
+				{
+					continue;
+				}
+
+				var (offsetField, estimatedSizeName) = textureOffset;
+
+				var estimatedSize = GLSLUtils.IsGLSLConstant(estimatedSizeName)
+					? GLSLUtils.GetGLSLConstantFieldName(estimatedSizeName)
+					: int.TryParse(estimatedSizeName, out var sizeInt)
+						? $"{sizeInt}"
+						// It's a #define:d value or a const or something
+						: throw new InvalidOperationException(
+							$"Can not determine constant size of {estimatedSizeName} for {locationName}. It is probably a 'const' or '#define' constant (not supported). Please use a raw number of a 'gl_' constant.");
+
+				classBuilder.IndentedLn($"{offsetField} = {string.Join(separator: "+", textureOffsetSizes)} + 0;");
+				// Add should be after we add the field!
+				textureOffsetSizes.Add(estimatedSize);
+			}
+
+			foreach (var glslConstant in constantsList)
+			{
+				var fieldName = GLSLUtils.GetGLSLConstantFieldName(glslConstant);
+				classBuilder.IndentedLn($"{GLSLUtils.GetGLFunctionForGLSLConstant(glslConstant, fieldName)}");
 			}
 		}
 		classBuilder.EndBlock();
@@ -367,7 +434,6 @@ public class ShaderClassGenerator
 	{
 		public static readonly GLSLMemberComparer Instance = new();
 
-
 		public bool Equals(GLSLMember x, GLSLMember y)
 		{
 			if (ReferenceEquals(x, y))
@@ -402,4 +468,8 @@ public class ShaderClassGenerator
 			}
 		}
 	}
+
+	private record UniformMember(string LocationName, string UniformName, TextureOffset? TextureOffset);
+
+	private record TextureOffset(string FieldName, string EstimatedSize);
 }

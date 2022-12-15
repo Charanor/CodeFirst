@@ -7,8 +7,4 @@
         <RootNamespace>JXS.Graphics.Utils</RootNamespace>
     </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\JXS.Graphics.Core\JXS.Graphics.Core.csproj" />
-    </ItemGroup>
-
 </Project>

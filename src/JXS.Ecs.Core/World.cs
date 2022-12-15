@@ -10,33 +10,33 @@ namespace JXS.Ecs.Core;
 /// </summary>
 public class World
 {
-	private readonly ISet<int> entities;
-	private readonly ISet<int> removedEntities;
+	private readonly ISet<Entity> entities;
+	private readonly ISet<Entity> removedEntities;
 
 	private readonly IList<EntitySystem> updateSystems;
 	private readonly IList<EntitySystem> drawSystems;
-	private readonly ISet<int> dirtyEntities;
+	private readonly ISet<Entity> dirtyEntities;
 
 	private readonly IDictionary<Type, IComponentMapper> mappers;
-	private readonly IDictionary<int, ComponentFlags> entityFlags;
+	private readonly IDictionary<Entity, ComponentFlags> entityFlags;
 
-	private readonly IDictionary<Aspect, SnapshotList<int>> entitiesForAspects;
+	private readonly IDictionary<Aspect, SnapshotList<Entity>> entitiesForAspects;
 
 	private int nextEntityId;
 
 	public World()
 	{
-		entities = new HashSet<int>();
-		removedEntities = new HashSet<int>();
+		entities = new HashSet<Entity>();
+		removedEntities = new HashSet<Entity>();
 
 		updateSystems = new List<EntitySystem>();
 		drawSystems = new List<EntitySystem>();
-		dirtyEntities = new HashSet<int>();
+		dirtyEntities = new HashSet<Entity>();
 
 		mappers = new Dictionary<Type, IComponentMapper>();
-		entityFlags = new Dictionary<int, ComponentFlags>();
+		entityFlags = new Dictionary<Entity, ComponentFlags>();
 
-		entitiesForAspects = new Dictionary<Aspect, SnapshotList<int>>();
+		entitiesForAspects = new Dictionary<Aspect, SnapshotList<Entity>>();
 	}
 
 	/// <summary>
@@ -47,7 +47,7 @@ public class World
 	{
 		foreach (var system in updateSystems)
 		{
-			if (!system.Enabled)
+			if (!system.ShouldUpdate())
 			{
 				continue;
 			}
@@ -69,7 +69,7 @@ public class World
 	{
 		foreach (var system in drawSystems)
 		{
-			if (!system.Enabled)
+			if (!system.ShouldUpdate())
 			{
 				continue;
 			}
@@ -116,17 +116,17 @@ public class World
 	/// </summary>
 	/// <returns>the id of the created entity</returns>
 	/// <exception cref="IndexOutOfRangeException">If we have ran out of new entity ID:s (<c>int.MaxValue = 2147483647</c>)</exception>
-	public int CreateEntity()
+	public Entity CreateEntity()
 	{
 		if (nextEntityId == int.MaxValue)
 		{
 			throw new IndexOutOfRangeException($"Max number of entities reached, {int.MaxValue}");
 		}
 
-		var entityId = nextEntityId++;
-		entities.Add(entityId);
-		MarkEntityDirty(entityId);
-		return entityId;
+		var entity = new Entity(nextEntityId++);
+		entities.Add(entity);
+		MarkEntityDirty(entity);
+		return entity;
 	}
 
 	/// <summary>
@@ -134,7 +134,7 @@ public class World
 	///     draw).
 	/// </summary>
 	/// <param name="entity">the entity</param>
-	public void DeleteEntity(int entity) => removedEntities.Add(entity);
+	public void DeleteEntity(Entity entity) => removedEntities.Add(entity);
 
 	/// <summary>
 	///     Adds a system to be processed by this world.
@@ -257,7 +257,7 @@ public class World
 	/// </summary>
 	/// <typeparam name="T">The type of component</typeparam>
 	/// <returns>the component mapper for the component type T</returns>
-	public ComponentMapper<T> GetMapper<T>() where T : IComponent, IEquatable<T> =>
+	public ComponentMapper<T> GetMapper<T>() where T : IComponent =>
 		(ComponentMapper<T>)GetMapperNoTypeCheck(typeof(T));
 
 	/// <summary>
@@ -265,7 +265,7 @@ public class World
 	/// </summary>
 	/// <typeparam name="T">The type of component</typeparam>
 	/// <returns>the component mapper for the component type T</returns>
-	public SingletonComponentMapper<T> GetSingletonMapper<T>() where T : ISingletonComponent, IEquatable<T>, new() =>
+	public SingletonComponentMapper<T> GetSingletonMapper<T>() where T : ISingletonComponent, new() =>
 		(SingletonComponentMapper<T>)GetMapperNoTypeCheck(typeof(T));
 
 	public IComponentMapper GetMapper(Type componentType)
@@ -279,15 +279,13 @@ public class World
 		return GetMapperNoTypeCheck(componentType);
 	}
 
-	public ref T GetSingletonComponent<T>() where T : ISingletonComponent, IEquatable<T>, new() =>
+	public ref T GetSingletonComponent<T>() where T : ISingletonComponent, new() =>
 		ref GetSingletonMapper<T>().SingletonInstance;
 
 	public ISingletonComponent GetSingletonComponent(Type componentType)
 	{
-		const int fakeEntity = 0; // Singleton mappers always return their singleton, so the entity ID does not matter
-
 		if (!componentType.IsAssignableTo(typeof(ISingletonComponent)) ||
-		    GetMapper(componentType).Get(fakeEntity) is not ISingletonComponent singletonComponent)
+		    GetMapper(componentType).Get(Entity.SingletonEntity) is not ISingletonComponent singletonComponent)
 		{
 			throw new ArgumentException(
 				$"Argument {nameof(componentType)} of type {componentType} does not match type constraint '{nameof(ISingletonComponent)}'");
@@ -316,7 +314,7 @@ public class World
 	/// </summary>
 	/// <param name="entity">the entity</param>
 	/// <returns>the component flags for the given entity</returns>
-	public ComponentFlags GetFlagsForEntity(int entity)
+	public ComponentFlags GetFlagsForEntity(Entity entity)
 	{
 		if (EntityIsDirty(entity))
 		{
@@ -331,7 +329,7 @@ public class World
 	/// </summary>
 	/// <param name="aspect">the aspect</param>
 	/// <returns>the entities</returns>
-	public SnapshotList<int> GetEntitiesForAspect(Aspect aspect)
+	public SnapshotList<Entity> GetEntitiesForAspect(Aspect aspect)
 	{
 		UpdateDirtyEntities();
 
@@ -340,7 +338,7 @@ public class World
 			return list;
 		}
 
-		list = new SnapshotList<int>();
+		list = new SnapshotList<Entity>();
 		entitiesForAspects.Add(aspect, list);
 
 		foreach (var entity in entities)
@@ -354,7 +352,7 @@ public class World
 		return list;
 	}
 
-	private ComponentFlags ConstructFlagsForEntity(int entity)
+	private ComponentFlags ConstructFlagsForEntity(Entity entity)
 	{
 		var builder = new ComponentFlagsBuilder();
 		foreach (var (_, mapper) in mappers)
@@ -370,26 +368,26 @@ public class World
 	///     this is handled internally.
 	/// </summary>
 	/// <param name="entity">the entity</param>
-	private void MarkEntityDirty(int entity) => dirtyEntities.Add(entity);
+	private void MarkEntityDirty(Entity entity) => dirtyEntities.Add(entity);
 
 	/// <summary>
 	///     Registers that this entity just has a component added to it, and will require re-calculation.
 	/// </summary>
 	/// <param name="entity">the entity</param>
-	public void ComponentAdded(int entity) => dirtyEntities.Add(entity);
+	public void ComponentAdded(Entity entity) => dirtyEntities.Add(entity);
 
 	/// <summary>
 	///     Registers that this entity just has a component removed from it, and will require re-calculation.
 	/// </summary>
 	/// <param name="entity">the entity</param>
-	public void ComponentRemoved(int entity) => dirtyEntities.Add(entity);
+	public void ComponentRemoved(Entity entity) => dirtyEntities.Add(entity);
 
 	/// <summary>
 	///     "Hydrates" the given entity, i.e. updating flags & aspects etc. You probably shouldn't need to use this manually,
 	///     this is handled internally.
 	/// </summary>
 	/// <param name="entity">the entity</param>
-	public void HydrateEntity(int entity)
+	public void HydrateEntity(Entity entity)
 	{
 		// Need to remove this up here so we don't get an infinite cycle.
 		dirtyEntities.Remove(entity);
@@ -434,5 +432,5 @@ public class World
 	/// <returns>
 	///     <c>true</c> if the entity is dirty, <c>false</c> otherwise
 	/// </returns>
-	public bool EntityIsDirty(int entity) => dirtyEntities.Contains(entity);
+	public bool EntityIsDirty(Entity entity) => dirtyEntities.Contains(entity);
 }
