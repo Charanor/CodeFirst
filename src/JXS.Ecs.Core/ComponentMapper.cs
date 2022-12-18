@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using JXS.Ecs.Core.Exceptions;
+﻿using JXS.Ecs.Core.Exceptions;
 
 namespace JXS.Ecs.Core;
 
@@ -71,8 +70,19 @@ public class ComponentMapper<T> : IComponentMapper where T : IComponent
 				$"Entity {entity} does not contain a component of type {typeof(T).Name}");
 		}
 
-		return ref components[entity.Id];
+		return ref GetComponentDataFor(entity);
 	}
+
+	/// <summary>
+	///     Gets the component data in the backing array for the given entity. This is similar to
+	///     <see cref="Get(Entity)" /> but it <b>does not make any guarantees about the returned component</b>, such as
+	///     checking if the entity even has a component of this type. This also means that the returned data might be
+	///     invalid in any number of ways. <b>Tl;dr</b> use <see cref="Get(Entity)" /> unless you know what you are
+	///     doing (and if you did, you probably would not be reading this documentation ;) ).
+	/// </summary>
+	/// <param name="entity">the entity</param>
+	/// <returns>the raw component data</returns>
+	public ref T GetComponentDataFor(Entity entity) => ref components[entity.Id];
 
 	/// <inheritdoc cref="IComponentMapper.Update" />
 	public virtual ref T Update(Entity entity, in T component)
