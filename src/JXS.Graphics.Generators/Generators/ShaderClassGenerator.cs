@@ -142,14 +142,14 @@ public class ShaderClassGenerator
 
 								classBuilder.BeginBlock("for (var i = 0u; i <= value.Length; i++)");
 								{
-									classBuilder.IndentedLn($"GL.BindTextureUnit({textureSlotField} + i, value[i]);");
+									classBuilder.IndentedLn($"GL.BindTextureUnit((uint){textureSlotField} + i, value[i]);");
 								}
 								classBuilder.EndBlock();
 							}
 							else
 							{
 								classBuilder.IndentedLn($"SetUniform({locationFieldName}, {textureSlot});");
-								classBuilder.IndentedLn($"GL.BindTextureUnit({textureSlot}, value);");
+								classBuilder.IndentedLn($"GL.BindTextureUnit((uint){textureSlot}, value);");
 								textureSlot += 1;
 							}
 						}
