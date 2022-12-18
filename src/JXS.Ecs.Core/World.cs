@@ -374,13 +374,13 @@ public class World
 	///     Registers that this entity just has a component added to it, and will require re-calculation.
 	/// </summary>
 	/// <param name="entity">the entity</param>
-	public void ComponentAdded(Entity entity) => dirtyEntities.Add(entity);
+	internal void ComponentAdded(Entity entity) => MarkEntityDirty(entity);
 
 	/// <summary>
 	///     Registers that this entity just has a component removed from it, and will require re-calculation.
 	/// </summary>
 	/// <param name="entity">the entity</param>
-	public void ComponentRemoved(Entity entity) => dirtyEntities.Add(entity);
+	internal void ComponentRemoved(Entity entity) => MarkEntityDirty(entity);
 
 	/// <summary>
 	///     "Hydrates" the given entity, i.e. updating flags & aspects etc. You probably shouldn't need to use this manually,

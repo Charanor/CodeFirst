@@ -1,4 +1,5 @@
-﻿using JXS.Ecs.Core.Exceptions;
+﻿using System.Diagnostics.CodeAnalysis;
+using JXS.Ecs.Core.Exceptions;
 
 namespace JXS.Ecs.Core;
 
@@ -8,7 +9,6 @@ public class ComponentMapper<T> : IComponentMapper where T : IComponent
 	private readonly World world;
 
 	private readonly bool isDefaultConstructible;
-	private readonly bool isValueType;
 
 	private T[] components;
 	private bool[] hasComponent;
@@ -19,8 +19,7 @@ public class ComponentMapper<T> : IComponentMapper where T : IComponent
 		components = new T[DEFAULT_ENTITY_COUNT];
 		hasComponent = new bool[DEFAULT_ENTITY_COUNT];
 		ComponentId = ComponentManager.GetId<T>();
-		isDefaultConstructible = typeof(T).GetConstructor(Type.EmptyTypes) != null;
-		isValueType = typeof(T).IsValueType;
+		isDefaultConstructible = typeof(T).IsValueType || typeof(T).GetConstructor(Type.EmptyTypes) != null;
 	}
 
 	public int ComponentId { get; }
@@ -29,7 +28,8 @@ public class ComponentMapper<T> : IComponentMapper where T : IComponent
 	{
 		if (!entity.IsValid)
 		{
-			throw new ArgumentException($"{nameof(entity)} must be am valid {nameof(Entity)}, got {entity}", nameof(entity));
+			throw new ArgumentException($"{nameof(entity)} must be a valid {nameof(Entity)}, got {entity}",
+				nameof(entity));
 		}
 
 		var entityId = entity.Id;
@@ -39,8 +39,8 @@ public class ComponentMapper<T> : IComponentMapper where T : IComponent
 		}
 
 		var longestArrayLen = Math.Max(components.Length, hasComponent.Length);
-		var minSize = Math.Max(longestArrayLen, entityId) + 1;
-		Resize(minSize * 2);
+		var minimumRequiredSize = Math.Max(longestArrayLen, entityId) + 1;
+		Resize(minimumRequiredSize * 2);
 	}
 
 	private void Resize(int newSize)
@@ -83,22 +83,31 @@ public class ComponentMapper<T> : IComponentMapper where T : IComponent
 				nameof(entity));
 		}
 
-		hasComponent[entity.Id] = true;
-		components[entity.Id] = component;
-		return ref components[entity.Id];
+		ref var compRef = ref Get(entity);
+		compRef = component;
+		return ref compRef;
 	}
 
 	/// <inheritdoc cref="IComponentMapper.Create" />
 	public virtual ref T Create(Entity entity)
 	{
-		if (!isDefaultConstructible && !isValueType)
+		if (!isDefaultConstructible)
 		{
 			throw new NotDefaultConstructibleException<T>();
 		}
 
+		var newInstance = Activator.CreateInstance<T>();
+		if (Has(entity))
+		{
+			// Note, can't use Update(Entity, TComponent) here :(
+			ref var component = ref Get(entity);
+			component = newInstance;
+			return ref component;
+		}
+
 		EnsureCanContainEntity(entity);
 		hasComponent[entity.Id] = true;
-		components[entity.Id] = Activator.CreateInstance<T>();
+		components[entity.Id] = newInstance;
 		world.ComponentAdded(entity);
 		return ref components[entity.Id];
 	}
@@ -106,17 +115,15 @@ public class ComponentMapper<T> : IComponentMapper where T : IComponent
 	/// <inheritdoc cref="IComponentMapper.Add" />
 	public virtual ref T Add(Entity entity, in T component)
 	{
-		EnsureCanContainEntity(entity);
-		var hadComponentAlready = Has(entity);
-
-		hasComponent[entity.Id] = true;
-		components[entity.Id] = component;
-
-		if (!hadComponentAlready)
+		if (Has(entity))
 		{
-			world.ComponentAdded(entity);
+			return ref Update(entity, in component);
 		}
 
+		EnsureCanContainEntity(entity);
+		hasComponent[entity.Id] = true;
+		components[entity.Id] = component;
+		world.ComponentAdded(entity);
 		return ref components[entity.Id];
 	}
 
@@ -135,8 +142,7 @@ public class ComponentMapper<T> : IComponentMapper where T : IComponent
 	/// <inheritdoc cref="IComponentMapper.Set" />
 	public virtual void Set(Entity entity, bool shouldHave)
 	{
-		var has = Has(entity);
-		if (has == shouldHave)
+		if (Has(entity) == shouldHave)
 		{
 			return;
 		}

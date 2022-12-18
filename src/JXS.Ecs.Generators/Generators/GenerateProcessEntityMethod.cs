@@ -10,12 +10,12 @@ using Microsoft.CodeAnalysis.Text;
 namespace Ecs.Generators.Generators;
 
 [Generator]
-public partial class GenerateProcessEntityMethod : IIncrementalGenerator
+public class GenerateProcessEntityMethod : IIncrementalGenerator
 {
     private const string ITERATING_SYSTEM_NAME = "IteratingSystem";
 
     private const string ENTITY_PROCESSOR_NAMESPACE = "JXS.Ecs.Core.Attributes.Generation";
-    private const string ENTITY_PROCESSOR_NAME = "EntityProcessor";
+    private const string ENTITY_PROCESSOR_NAME = "EntityProcessorAttribute";
     private const string ENTITY_PROCESSOR_FULL_NAME =
         $"{ENTITY_PROCESSOR_NAMESPACE}.{ENTITY_PROCESSOR_NAME}";
 

@@ -7,7 +7,8 @@ namespace Ecs.Generators.Utils;
 
 internal static class GenerationUtils
 {
-    private const string GENERATED_FIELD_PREFIX = "____";
+    private const string GENERATED_FIELD_PREFIX = "____generated_";
+    private const string GENERATED_MAPPER_SUFFIX = "_do_not_use_explicitly_use_utility_methods_instead";
     
     private const string ENTITY_TYPE_NAME = "Entity";
     private const string DELTA_TIME_TYPE_NAME = "float";
@@ -20,6 +21,7 @@ internal static class GenerationUtils
     private const string COMPONENT_MAPPER_NAMESPACE = "JXS.Ecs.Core";
 
     private const string REF = "ref";
+    private const string REF_READONLY = "ref readonly";
 
     // Fields and property names
     private const string CURRENT_ENTITY = "CurrentEntity";
@@ -37,7 +39,8 @@ internal static class GenerationUtils
 
     private static readonly IEnumerable<string> BuiltInNamespaces = new[]
     {
-        "JXS.Ecs.Core"
+        "JXS.Ecs.Core",
+        "System.ComponentModel"
     };
 
     public static string GenerateSystemClasses(IImmutableList<SystemToGenerate> systemsToGenerate)
@@ -87,6 +90,7 @@ internal static class GenerationUtils
                 foreach (var parameterDeclaration in componentParameters)
                 {
                     builder.DocstringBlock(tag: "summary", COMPONENT_MAPPER_DOC_SUMMARY);
+                    builder.IndentedLn("[EditorBrowsable(EditorBrowsableState.Never)]");
                     builder.IndentedLn(
                         $"private readonly {COMPONENT_MAPPER_NAMESPACE}.ComponentMapper<{parameterDeclaration.Type}> {MapperName(parameterDeclaration.Name)} = null!;"
                     );
@@ -108,7 +112,7 @@ internal static class GenerationUtils
                             $"{MapperName(parameterDeclaration.Name)}.Remove({CURRENT_ENTITY});"
                         );
                         // We set it to null here to make sure the user gets a NullReferenceException if they try to access it
-                        builder.AssignmentOp(parameterDeclaration.Name, value: "null");
+                        builder.AssignmentOp(parameterDeclaration.Name, value: "default");
                     }
                     builder.EndBlock();
                 }
@@ -123,8 +127,9 @@ internal static class GenerationUtils
                     {
                         if (!parameterDeclaration.Optional)
                         {
+                            var modifier = parameterDeclaration.Modifier != REF ? REF_READONLY : REF;
                             builder.IndentedLn(
-                                $"{REF} {parameterDeclaration.Type} {parameterDeclaration.Name} = {REF} {MapperName(parameterDeclaration.Name)}.Get(entity);"
+                                $"{modifier} {parameterDeclaration.Type} {parameterDeclaration.Name} = {REF} {MapperName(parameterDeclaration.Name)}.Get(entity);"
                             );
                         }
                         else
@@ -227,5 +232,5 @@ internal static class GenerationUtils
 
     private static string Quote(string str) => $@"""{str}""";
 
-    private static string MapperName(string componentName) => $"{GENERATED_FIELD_PREFIX}{componentName}Mapper";
+    private static string MapperName(string componentName) => $"{GENERATED_FIELD_PREFIX}{componentName}_mapper{GENERATED_MAPPER_SUFFIX}";
 }
