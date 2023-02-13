@@ -28,6 +28,7 @@ public abstract class Game : GameWindow
 				screen = value;
 				hasShownScreen = false;
 			}
+
 			ShowScreenIfRunning();
 		}
 	}

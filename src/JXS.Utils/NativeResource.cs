@@ -1,4 +1,4 @@
-﻿namespace JXS.Graphics.Core;
+﻿namespace JXS.Utils;
 
 public abstract class NativeResource : IDisposable
 {

@@ -1,47 +1,67 @@
+using System.Text;
+
 namespace JXS.Utils.Logging;
 
 internal class Logger : ILogger
 {
-    private const string FORMAT = "[{0:HH:mm:ss.fff}] {1,5}: ({3}) {2}\n";
+	private const string FORMAT = "[{0:HH:mm:ss.fff}] {1,5}: {4}({3}) {2}\n";
+	private int indentation;
 
-    internal Logger(string name)
-    {
-        Name = name;
-    }
+	internal Logger(string name)
+	{
+		Name = name;
+	}
 
-    public string Name { get; }
+	public string Name { get; }
 
-    public void Trace(string msg)
-    {
-        Log("Trace", msg, Name);
-    }
+	public string IndentString => "│    "; // Visual guide + 4 spaces
 
-    public void Debug(string msg)
-    {
-        Log("Debug", msg, Name);
-    }
+	public void Trace(string msg)
+	{
+		Log(prefix: "Trace", msg, Name, CreateIndentString());
+	}
 
-    public void Info(string msg)
-    {
-        Log("Info", msg, Name);
-    }
+	public void Debug(string msg)
+	{
+		Log(prefix: "Debug", msg, Name, CreateIndentString());
+	}
 
-    public void Warn(string msg)
-    {
-        Log("Warn", msg, Name);
-    }
+	public void Info(string msg)
+	{
+		Log(prefix: "Info", msg, Name, CreateIndentString());
+	}
 
-    public void Error(string msg)
-    {
-        Log("Error", msg, Name, true);
-    }
+	public void Warn(string msg)
+	{
+		Log(prefix: "Warn", msg, Name, CreateIndentString());
+	}
 
-    private static void Log(string prefix, string msg, string name, bool isError = false)
-    {
-        var format = string.Format(FORMAT, DateTime.Now, prefix, msg, name);
-        LoggingManager.Write(format);
+	public void Error(string msg)
+	{
+		Log(prefix: "Error", msg, Name, CreateIndentString(), isError: true);
+	}
 
-        var textWriter = isError ? Console.Error : Console.Out;
-        textWriter.Write(format);
-    }
+	public void Indent()
+	{
+		indentation++;
+	}
+
+	public void Dedent()
+	{
+		indentation = System.Math.Max(indentation - 1, val2: 0);
+	}
+
+	private string CreateIndentString() => indentation > 0 ? Repeat(IndentString, indentation) : string.Empty;
+
+	private static void Log(string prefix, string msg, string name, string indentation, bool isError = false)
+	{
+		var format = string.Format(FORMAT, DateTime.Now, prefix, msg, name, indentation);
+		LoggingManager.Write(format);
+
+		var textWriter = isError ? Console.Error : Console.Out;
+		textWriter.Write(format);
+	}
+
+	private static string Repeat(string value, int count) =>
+		new StringBuilder(value.Length * count).Insert(index: 0, value, count).ToString();
 }

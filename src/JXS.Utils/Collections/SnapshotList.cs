@@ -18,8 +18,14 @@ namespace JXS.Utils.Collections;
 ///     // Or: MyList.Discard();
 /// </example>
 /// <typeparam name="T">the item type</typeparam>
-public class SnapshotList<T> : IList<T>
+public class SnapshotList<T> : IList<T>, ISnapshotList<T>
 {
+	public enum HandleAction
+	{
+		Discard,
+		Commit
+	}
+
 	private readonly IList<T> backingList;
 	private T[] iteratingArray;
 
@@ -30,11 +36,6 @@ public class SnapshotList<T> : IList<T>
 		backingList = new List<T>();
 		iteratingArray = Array.Empty<T>();
 	}
-
-	/// <summary>
-	///     If the list is currently being iterated inside of a Begin/Commit block.
-	/// </summary>
-	public bool IsIterating { get; private set; }
 
 	/// <summary>
 	///     The size of the list. This will return the actual size of the list, not the size of the array being iterated over
@@ -195,6 +196,11 @@ public class SnapshotList<T> : IList<T>
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 	/// <summary>
+	///     If the list is currently being iterated inside of a Begin/Commit block.
+	/// </summary>
+	public bool IsIterating { get; private set; }
+
+	/// <summary>
 	///     Called when an item is added to this list.
 	/// </summary>
 	/// <remarks>
@@ -282,10 +288,8 @@ public class SnapshotList<T> : IList<T>
 		(outputIteratingArray, size) = Begin();
 	}
 
-	public SnapshotListIterationHandle BeginHandle()
-	{
-		return new SnapshotListIterationHandle(this);
-	}
+	public SnapshotListIterationHandle BeginHandle(HandleAction defaultAction = HandleAction.Discard) =>
+		new(this, defaultAction);
 
 	/// <summary>
 	///     Commits the changes made inside of a Begin/Commit block and ends iteration.
@@ -335,13 +339,7 @@ public class SnapshotList<T> : IList<T>
 		}
 	}
 
-	public enum HandleAction
-	{
-		Discard,
-		Commit
-	}
-
-	public sealed class SnapshotListIterationHandle : IDisposable
+	public sealed class SnapshotListIterationHandle : IDisposable, IEnumerable<T>
 	{
 		private readonly SnapshotList<T> list;
 		private readonly HandleAction defaultAction;
@@ -358,26 +356,6 @@ public class SnapshotList<T> : IList<T>
 			hasEnded = false;
 		}
 
-		public void Discard()
-		{
-			if (hasEnded)
-			{
-				return;
-			}
-			hasEnded = true;
-			list.Discard();
-		}
-
-		public void Commit()
-		{
-			if (hasEnded)
-			{
-				return;
-			}
-			hasEnded = true;
-			list.Commit();
-		}
-
 		public void Dispose()
 		{
 			switch (defaultAction)
@@ -391,6 +369,38 @@ public class SnapshotList<T> : IList<T>
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
+		}
+
+		public IEnumerator<T> GetEnumerator()
+		{
+			for (var i = 0; i < count; i++)
+			{
+				yield return items[i];
+			}
+		}
+
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+		public void Discard()
+		{
+			if (hasEnded)
+			{
+				return;
+			}
+
+			hasEnded = true;
+			list.Discard();
+		}
+
+		public void Commit()
+		{
+			if (hasEnded)
+			{
+				return;
+			}
+
+			hasEnded = true;
+			list.Commit();
 		}
 
 		public void Deconstruct(out T[] outItems, out int outCount)
