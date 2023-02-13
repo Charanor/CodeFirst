@@ -6,6 +6,7 @@
 		"windowing",
 		"input",
 		"gui",
-		"assets"
+		"assets",
+		"async"
 	]
 }
