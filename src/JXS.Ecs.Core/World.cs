@@ -426,7 +426,7 @@ public class World : IDisposable
 	/// <returns>the entities</returns>
 	public IReadOnlySnapshotList<Entity> GetEntitiesForAspect(Aspect aspect) => GetMutableEntitiesForAspect(aspect);
 
-	internal ISnapshotList<Entity> GetMutableEntitiesForAspect(Aspect aspect)
+	private ISnapshotList<Entity> GetMutableEntitiesForAspect(Aspect aspect)
 	{
 		UpdateDirtyEntities();
 

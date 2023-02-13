@@ -21,6 +21,13 @@ public class AspectBuilder
 		none = new ComponentFlagsBuilder();
 	}
 
+	public AspectBuilder(Aspect baseAspect)
+	{
+		all = new ComponentFlagsBuilder(baseAspect.All);
+		some = new ComponentFlagsBuilder(baseAspect.Some);
+		none = new ComponentFlagsBuilder(baseAspect.None);
+	}
+
 	public AspectBuilder All(params Type[] types)
 	{
 		foreach (var type in types)

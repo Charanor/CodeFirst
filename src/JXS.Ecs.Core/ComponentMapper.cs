@@ -5,7 +5,6 @@ namespace JXS.Ecs.Core;
 public class ComponentMapper<T> : IComponentMapper, IComponentMapper<T> where T : IComponent
 {
 	private const int DEFAULT_ENTITY_COUNT = 256;
-	private readonly World world;
 
 	private readonly bool isDefaultConstructible;
 
@@ -14,12 +13,14 @@ public class ComponentMapper<T> : IComponentMapper, IComponentMapper<T> where T 
 
 	public ComponentMapper(World world)
 	{
-		this.world = world;
+		World = world;
 		components = new T[DEFAULT_ENTITY_COUNT];
 		hasComponent = new bool[DEFAULT_ENTITY_COUNT];
 		ComponentId = ComponentManager.GetId<T>();
 		isDefaultConstructible = typeof(T).IsValueType || typeof(T).GetConstructor(Type.EmptyTypes) != null;
 	}
+
+	public World World { get; }
 
 	public int ComponentId { get; }
 
@@ -118,7 +119,7 @@ public class ComponentMapper<T> : IComponentMapper, IComponentMapper<T> where T 
 		EnsureCanContainEntity(entity);
 		hasComponent[entity.Id] = true;
 		components[entity.Id] = newInstance;
-		world.ComponentAdded(entity);
+		World.ComponentAdded(entity);
 		return ref components[entity.Id];
 	}
 
@@ -133,7 +134,7 @@ public class ComponentMapper<T> : IComponentMapper, IComponentMapper<T> where T 
 		EnsureCanContainEntity(entity);
 		hasComponent[entity.Id] = true;
 		components[entity.Id] = component;
-		world.ComponentAdded(entity);
+		World.ComponentAdded(entity);
 		return ref components[entity.Id];
 	}
 
@@ -146,7 +147,7 @@ public class ComponentMapper<T> : IComponentMapper, IComponentMapper<T> where T 
 		}
 
 		hasComponent[entity.Id] = false;
-		world.ComponentRemoved(entity);
+		World.ComponentRemoved(entity);
 	}
 
 	/// <inheritdoc cref="IComponentMapper.Set" />

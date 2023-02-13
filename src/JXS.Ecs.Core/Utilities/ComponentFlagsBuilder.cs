@@ -14,6 +14,15 @@ public class ComponentFlagsBuilder
 		flags = new bool[ComponentManager.NumTypes];
 	}
 
+	public ComponentFlagsBuilder(ComponentFlags baseFlags)
+	{
+		flags = new bool[ComponentManager.NumTypes];
+		for (var i = 0; i < flags.Length; i++)
+		{
+			flags[i] = baseFlags.Has(i);
+		}
+	}
+
 	public void Set(int componentId, bool state)
 	{
 		EnsureHasSpaceForComponentId(componentId);
