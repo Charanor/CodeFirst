@@ -5,16 +5,18 @@
 /// </summary>
 public record ComponentFlags
 {
+	public static readonly ComponentFlags Empty = new();
+
 	private readonly bool[] componentFlags;
 
 	public ComponentFlags(params bool[] componentFlags)
 	{
 		this.componentFlags = new bool[componentFlags.Length];
 		Array.Copy(componentFlags, this.componentFlags, componentFlags.Length);
-		Empty = !this.componentFlags.Any(flag => flag);
+		IsEmpty = !this.componentFlags.Any(flag => flag);
 	}
 
-	public bool Empty { get; }
+	public bool IsEmpty { get; }
 
 	public override string ToString() => string.Join(separator: ", ", componentFlags
 		.Select((flag, i) => flag ? ComponentManager.GetType(i).Name : string.Empty)

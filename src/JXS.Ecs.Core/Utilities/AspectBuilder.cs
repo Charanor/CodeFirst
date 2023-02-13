@@ -1,4 +1,7 @@
-﻿namespace JXS.Ecs.Core.Utilities;
+﻿using System.Reflection;
+using JXS.Ecs.Core.Attributes;
+
+namespace JXS.Ecs.Core.Utilities;
 
 /// <summary>
 ///     A utility class for creating <see cref="Aspect" />s.
@@ -96,4 +99,30 @@ public class AspectBuilder
 	public Aspect Build() => new(all, some, none);
 
 	public static implicit operator Aspect(AspectBuilder builder) => builder.Build();
+
+	public static Aspect GetAspectFromAttributes(Type type)
+	{
+		var all = type.GetCustomAttribute<AllAttribute>();
+		var one = type.GetCustomAttribute<SomeAttribute>();
+		var none = type.GetCustomAttribute<NoneAttribute>();
+
+		var builder = new AspectBuilder();
+		builder.All(all?.Types ?? Array.Empty<Type>());
+		builder.Some(one?.Types ?? Array.Empty<Type>());
+		builder.None(none?.Types ?? Array.Empty<Type>());
+		return builder.Build();
+	}
+
+	public static Aspect GetAspectFromFieldAttributes(FieldInfo fieldInfo)
+	{
+		var all = fieldInfo.GetCustomAttribute<AllAttribute>();
+		var one = fieldInfo.GetCustomAttribute<SomeAttribute>();
+		var none = fieldInfo.GetCustomAttribute<NoneAttribute>();
+
+		var builder = new AspectBuilder();
+		builder.All(all?.Types ?? Array.Empty<Type>());
+		builder.Some(one?.Types ?? Array.Empty<Type>());
+		builder.None(none?.Types ?? Array.Empty<Type>());
+		return builder.Build();
+	}
 }

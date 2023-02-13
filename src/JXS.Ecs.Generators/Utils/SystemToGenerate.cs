@@ -2,4 +2,5 @@
 
 namespace Ecs.Generators.Utils;
 
-internal readonly record struct SystemToGenerate(string? Namespace, string SystemName, string MethodName, ImmutableArray<ParameterDeclaration> ParameterDeclarations);
+internal readonly record struct SystemToGenerate(string? Namespace, string SystemName, string MethodName,
+	ImmutableArray<ParameterDeclaration> ParameterDeclarations);

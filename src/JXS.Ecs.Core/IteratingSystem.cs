@@ -12,7 +12,7 @@ public abstract class IteratingSystem : EntitySystem
 	protected IteratingSystem(Aspect aspect, Pass pass) : base(aspect, pass)
 	{
 	}
-	
+
 	protected Entity CurrentEntity { get; set; }
 
 	protected abstract void Update(Entity entity, float delta);

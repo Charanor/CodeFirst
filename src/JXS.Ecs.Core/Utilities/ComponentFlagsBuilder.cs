@@ -20,9 +20,9 @@ public class ComponentFlagsBuilder
 		flags[componentId] = state;
 	}
 
-	public void Enable(int componentId) => Set(componentId, true);
+	public void Enable(int componentId) => Set(componentId, state: true);
 
-	public void Disable(int componentId) => Set(componentId, false);
+	public void Disable(int componentId) => Set(componentId, state: false);
 
 	private void EnsureHasSpaceForComponentId(int componentId)
 	{

@@ -13,7 +13,7 @@ namespace JXS.Ecs.Core;
 /// </summary>
 public abstract class EntitySystem
 {
-	private SnapshotList<Entity> entities;
+	private IReadOnlySnapshotList<Entity> entities;
 
 	protected EntitySystem(Aspect aspect, Pass pass)
 	{
@@ -36,7 +36,7 @@ public abstract class EntitySystem
 	protected EntitySystem()
 	{
 		Pass = GetPassFromAttribute();
-		Aspect = GetAspectFromAttributes();
+		Aspect = AspectBuilder.GetAspectFromAttributes(GetType());
 		// This looks weird, but we need to set "entities" first so we don't get a null reference exception
 		Entities = entities = new SnapshotList<Entity>();
 	}
@@ -54,13 +54,13 @@ public abstract class EntitySystem
 	/// <summary>
 	///     The entities that this system will process.
 	///     Guaranteed to be the same reference, **unless the system is added to another world (or after it's added the
-	///     first time)**. This list is the real thing so don't modify it directly unless you know what you're doing.
+	///     first time)**.
 	/// </summary>
 	/// <remarks>
 	///     Modifying this value will call <see cref="EntityAdded" /> and/or <see cref="EntityRemoved" /> for each new
 	///     entity added or removed, respectively. Will not be called for entities present in both the old and new list.
 	/// </remarks>
-	public SnapshotList<Entity> Entities
+	public IReadOnlySnapshotList<Entity> Entities
 	{
 		get => entities;
 		internal set
@@ -123,19 +123,6 @@ public abstract class EntitySystem
 		return pass.Value;
 	}
 
-	private Aspect GetAspectFromAttributes()
-	{
-		var type = GetType();
-		var all = type.GetCustomAttribute<AllAttribute>();
-		var one = type.GetCustomAttribute<SomeAttribute>();
-		var none = type.GetCustomAttribute<NoneAttribute>();
-
-		var builder = new AspectBuilder();
-		builder.All(all?.Types ?? Array.Empty<Type>());
-		builder.Some(one?.Types ?? Array.Empty<Type>());
-		builder.None(none?.Types ?? Array.Empty<Type>());
-		return builder.Build();
-	}
 
 	/// <summary>
 	///     Called when the system begins processing, right before <c>EntitySystem#Update</c>.

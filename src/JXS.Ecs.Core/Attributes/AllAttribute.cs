@@ -1,6 +1,6 @@
 namespace JXS.Ecs.Core.Attributes;
 
-[AttributeUsage(AttributeTargets.Class)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Field)]
 public sealed class AllAttribute : Attribute
 {
 	public AllAttribute(params Type[] componentTypes)

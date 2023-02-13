@@ -2,7 +2,7 @@
 
 namespace JXS.Ecs.Core;
 
-public class ComponentMapper<T> : IComponentMapper where T : IComponent
+public class ComponentMapper<T> : IComponentMapper, IComponentMapper<T> where T : IComponent
 {
 	private const int DEFAULT_ENTITY_COUNT = 256;
 	private readonly World world;
@@ -188,7 +188,7 @@ public class ComponentMapper<T> : IComponentMapper where T : IComponent
 
 	public IComponent Add(Entity entity, IComponent component) => Add(entity, (T)component);
 
-	public void Update(Entity entity, in IComponent component) => Update(entity, (T)component);
+	public IComponent Update(Entity entity, in IComponent component) => Update(entity, (T)component);
 
 	public IComponent Add(Entity entity, in IComponent component) => Add(entity, (T)component);
 

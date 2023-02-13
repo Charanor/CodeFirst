@@ -8,12 +8,14 @@
 /// <param name="None">Only matches entities that have <i>no</i> components in this collection.</param>
 public record Aspect(ComponentFlags All, ComponentFlags Some, ComponentFlags None) : IAspect
 {
+	public bool IsEmpty => All.IsEmpty && Some.IsEmpty && None.IsEmpty;
+
 	public bool Matches(World world, Entity entity)
 	{
 		var flags = world.GetFlagsForEntity(entity);
-		var containsAll = All.Empty || flags.ContainsAll(All);
-		var containsSome = Some.Empty || flags.ContainsSome(Some);
-		var containsNone = None.Empty || flags.ContainsNone(None);
+		var containsAll = All.IsEmpty || flags.ContainsAll(All);
+		var containsSome = Some.IsEmpty || flags.ContainsSome(Some);
+		var containsNone = None.IsEmpty || flags.ContainsNone(None);
 		return containsAll && containsSome && containsNone;
 	}
 }

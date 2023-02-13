@@ -2,6 +2,6 @@
 
 public enum Pass
 {
-    Update,
-    Draw
+	Update,
+	Draw
 }

@@ -28,10 +28,10 @@ public class EntityBuilder
 	/// </summary>
 	public Entity Entity { get; }
 
-	public T Create<T>() where T : IComponent,  new() => Add(new T());
+	public T Create<T>() where T : IComponent, new() => Add(new T());
 
-	public T Add<T>(T component) where T : IComponent =>
-		world.GetMapper<T>().Add(Entity, component);
+	public ref T Add<T>(in T component) where T : IComponent =>
+		ref world.GetMapper<T>().Add(Entity, in component);
 
 	public ref T Get<T>() where T : IComponent =>
 		ref world.GetMapper<T>().Get(Entity);

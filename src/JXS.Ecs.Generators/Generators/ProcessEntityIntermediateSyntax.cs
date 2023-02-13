@@ -3,6 +3,6 @@
 namespace Ecs.Generators.Generators;
 
 internal record ProcessEntityIntermediateSyntax(
-    ClassDeclarationSyntax ClassSyntax,
-    MethodDeclarationSyntax MethodSyntax
+	ClassDeclarationSyntax ClassSyntax,
+	MethodDeclarationSyntax MethodSyntax
 );

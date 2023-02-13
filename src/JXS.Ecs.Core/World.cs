@@ -2,14 +2,17 @@
 using JXS.Ecs.Core.Exceptions;
 using JXS.Ecs.Core.Utilities;
 using JXS.Utils.Collections;
+using JXS.Utils.Logging;
 
 namespace JXS.Ecs.Core;
 
 /// <summary>
 ///     The core class of the ECS. Handles updating all systems and managing the components of entities.
 /// </summary>
-public class World
+public class World : IDisposable
 {
+	private static readonly ILogger Logger = LoggingManager.Get<World>();
+
 	private readonly ISet<Entity> entities;
 	private readonly ISet<Entity> removedEntities;
 
@@ -37,6 +40,20 @@ public class World
 		entityFlags = new Dictionary<Entity, ComponentFlags>();
 
 		entitiesForAspects = new Dictionary<Aspect, SnapshotList<Entity>>();
+	}
+
+	public void Dispose()
+	{
+		GC.SuppressFinalize(this);
+		foreach (var system in drawSystems.OfType<IDisposable>())
+		{
+			system.Dispose();
+		}
+
+		foreach (var system in updateSystems.OfType<IDisposable>())
+		{
+			system.Dispose();
+		}
 	}
 
 	/// <summary>
@@ -96,6 +113,9 @@ public class World
 		foreach (var removedEntity in removedEntities)
 		{
 			entities.Remove(removedEntity);
+			entityFlags.Remove(removedEntity);
+			dirtyEntities.Remove(removedEntity);
+
 			foreach (var (_, aspectEntities) in entitiesForAspects)
 			{
 				if (aspectEntities.Contains(removedEntity))
@@ -103,13 +123,12 @@ public class World
 					aspectEntities.Remove(removedEntity);
 				}
 			}
-
-			entityFlags.Remove(removedEntity);
-			dirtyEntities.Remove(removedEntity);
 		}
 
 		removedEntities.Clear();
 	}
+
+	public bool HasEntity(Entity entity) => entities.Contains(entity);
 
 	/// <summary>
 	///     Creates a new entity and adds it to the world.
@@ -182,6 +201,12 @@ public class World
 		system.Initialize(this);
 	}
 
+	public bool HasSystem<TSystem>() where TSystem : EntitySystem => HasSystem(typeof(TSystem));
+
+	public bool HasSystem(Type type) =>
+		updateSystems.Any(updateSystem => updateSystem.GetType() == type) ||
+		drawSystems.Any(updateSystem => updateSystem.GetType() == type);
+
 	/// <summary>
 	///     Injects any injectable dependencies registered with this world into the given object,
 	///     for example component mappers. Fields that receive injected dependencies must be marked as 'readonly'.
@@ -200,6 +225,7 @@ public class World
 	public void Inject(object obj)
 	{
 		InjectComponentMappers(obj);
+		InjectAspectsAndEntities(obj);
 	}
 
 	/// <summary>
@@ -230,6 +256,7 @@ public class World
 
 			if (!fieldInfo.IsInitOnly)
 			{
+				Logger.Error($"Could not inject {obj} into field {fieldInfo}: Field is not 'readonly'!");
 #if DEBUG
 				throw new InjectionException(fieldInfo, message: "Field is not 'readonly'");
 #else
@@ -238,6 +265,69 @@ public class World
 			}
 
 			fieldInfo.SetValue(obj, GetMapper(mapperType.GenericTypeArguments[0]));
+		}
+	}
+
+	public void InjectAspectsAndEntities(object obj)
+	{
+		var type = obj.GetType();
+		foreach (var fieldInfo in type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic))
+		{
+			var fieldType = fieldInfo.FieldType;
+			var aspect = AspectBuilder.GetAspectFromFieldAttributes(fieldInfo);
+			if (aspect.IsEmpty)
+			{
+				// Not annotated, can't inject
+				continue;
+			}
+
+			if (!fieldInfo.IsInitOnly)
+			{
+				Logger.Error($"Could not inject {obj} into field {fieldInfo}: Field is not 'readonly'!");
+#if DEBUG
+				throw new InjectionException(fieldInfo, message: "Field is not 'readonly'");
+#else
+				return;
+#endif
+			}
+
+			if (fieldType.IsAssignableTo(typeof(IReadOnlySnapshotList<Entity>)))
+			{
+				fieldInfo.SetValue(obj, GetEntitiesForAspect(aspect));
+			}
+			else if (fieldType.IsAssignableTo(typeof(Aspect)))
+			{
+				fieldInfo.SetValue(obj, aspect);
+			}
+			else
+			{
+				// We can't inject an aspect into a field of this type	
+				throw new InjectionException(fieldInfo,
+					$"Can not inject aspect-annotated field of type {fieldType}. Expected field type to be one of [{nameof(Aspect)}, {nameof(IReadOnlySnapshotList<Entity>)}]");
+			}
+		}
+	}
+
+	public void RemoveSystem<TSystem>() where TSystem : EntitySystem => RemoveSystem(typeof(TSystem));
+
+	/// <summary>
+	///     Removes a system from this world.
+	/// </summary>
+	/// <remarks>If the system doesn't exist, nothing happens.</remarks>
+	/// <param name="type">the type of system to remove</param>
+	public void RemoveSystem(Type type)
+	{
+		var system = updateSystems.FirstOrDefault(updateSystem => updateSystem.GetType() == type);
+		if (system != null)
+		{
+			updateSystems.Remove(system);
+			return;
+		}
+
+		system = drawSystems.FirstOrDefault(updateSystem => updateSystem.GetType() == type);
+		if (system != null)
+		{
+			drawSystems.Remove(system);
 		}
 	}
 
@@ -316,6 +406,11 @@ public class World
 	/// <returns>the component flags for the given entity</returns>
 	public ComponentFlags GetFlagsForEntity(Entity entity)
 	{
+		if (!HasEntity(entity))
+		{
+			return ComponentFlags.Empty;
+		}
+
 		if (EntityIsDirty(entity))
 		{
 			HydrateEntity(entity);
@@ -329,7 +424,9 @@ public class World
 	/// </summary>
 	/// <param name="aspect">the aspect</param>
 	/// <returns>the entities</returns>
-	public SnapshotList<Entity> GetEntitiesForAspect(Aspect aspect)
+	public IReadOnlySnapshotList<Entity> GetEntitiesForAspect(Aspect aspect) => GetMutableEntitiesForAspect(aspect);
+
+	internal ISnapshotList<Entity> GetMutableEntitiesForAspect(Aspect aspect)
 	{
 		UpdateDirtyEntities();
 
@@ -354,6 +451,13 @@ public class World
 
 	private ComponentFlags ConstructFlagsForEntity(Entity entity)
 	{
+#if DEBUG
+		if (!HasEntity(entity))
+		{
+			throw CreateEntityDoesNotExistException(entity);
+		}
+#endif
+
 		var builder = new ComponentFlagsBuilder();
 		foreach (var (_, mapper) in mappers)
 		{
@@ -368,7 +472,16 @@ public class World
 	///     this is handled internally.
 	/// </summary>
 	/// <param name="entity">the entity</param>
-	private void MarkEntityDirty(Entity entity) => dirtyEntities.Add(entity);
+	private void MarkEntityDirty(Entity entity)
+	{
+#if DEBUG
+		if (!HasEntity(entity))
+		{
+			throw CreateEntityDoesNotExistException(entity);
+		}
+#endif
+		dirtyEntities.Add(entity);
+	}
 
 	/// <summary>
 	///     Registers that this entity just has a component added to it, and will require re-calculation.
@@ -389,6 +502,15 @@ public class World
 	/// <param name="entity">the entity</param>
 	public void HydrateEntity(Entity entity)
 	{
+		if (!HasEntity(entity))
+		{
+#if DEBUG
+			throw CreateEntityDoesNotExistException(entity);
+#else
+			return;
+#endif
+		}
+
 		// Need to remove this up here so we don't get an infinite cycle.
 		dirtyEntities.Remove(entity);
 
@@ -433,4 +555,7 @@ public class World
 	///     <c>true</c> if the entity is dirty, <c>false</c> otherwise
 	/// </returns>
 	public bool EntityIsDirty(Entity entity) => dirtyEntities.Contains(entity);
+
+	private static Exception CreateEntityDoesNotExistException(Entity entity) =>
+		new ArgumentException($"Entity {entity} does not exist in world!", nameof(entity));
 }
