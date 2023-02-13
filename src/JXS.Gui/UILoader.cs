@@ -1,11 +1,9 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Xml.Linq;
-using JXS.Assets.Core;
+using JXS.AssetManagement;
 using JXS.Graphics.Core;
-using JXS.Graphics.Core.Assets;
 using JXS.Graphics.Text;
 using JXS.Graphics.Text.Assets;
 using JXS.Gui.Components;
@@ -27,7 +25,6 @@ public class UILoader
 
 	private readonly IGraphicsProvider graphicsProvider;
 	private readonly IGuiInputProvider guiInputProvider;
-	private readonly AssetManager assetManager;
 
 	private Dictionary<string, Style> styles;
 	private Dictionary<string, string> values;
@@ -45,14 +42,14 @@ public class UILoader
 		{
 			BuiltinComponents.Add(subclass.Name, subclass);
 		}
+
+		Assets.AddAssetResolver(new FontAssetResolver());
 	}
 
-	public UILoader(IGraphicsProvider graphicsProvider, IGuiInputProvider guiInputProvider,
-		AssetManager assetManager)
+	public UILoader(IGraphicsProvider graphicsProvider, IGuiInputProvider guiInputProvider)
 	{
 		this.graphicsProvider = graphicsProvider;
 		this.guiInputProvider = guiInputProvider;
-		this.assetManager = assetManager;
 
 		styles = new Dictionary<string, Style>();
 		values = new Dictionary<string, string>();
@@ -237,27 +234,20 @@ public class UILoader
 	{
 		if (type == typeof(Texture2D))
 		{
-			var textureAsset = new TextureAssetDefinition(property);
-			Debug.Assert(assetManager.TryLoadAsset(textureAsset, out var texture));
-			return texture;
+			return Assets.Get<Texture2D>(property);
 		}
 
 		if (type == typeof(Font))
 		{
-			var fontAtlasAsset = new TextureAssetDefinition($"Fonts/{property}.mtsdf.png");
-			var fontAsset = new FontAssetDefinition($"Fonts/{property}.mtsdf.json", fontAtlasAsset);
-			Debug.Assert(assetManager.TryLoadAsset(fontAsset, out var font));
-			return font;
+			return Assets.Get<Font>(property);
 		}
 
 		if (type.IsSubclassOf(typeof(Style)) || type == typeof(Style))
 		{
-			var style = GetStyle(property, type) ?? (Style)Activator.CreateInstance(type)!;
-			return style;
+			return GetStyle(property, type) ?? (Style)Activator.CreateInstance(type)!;
 		}
 
-		var conv = Convert.ChangeType(property, type);
-		return conv;
+		return Convert.ChangeType(property, type);
 	}
 
 	private Style? GetStyle(string styleId, Type styleType)

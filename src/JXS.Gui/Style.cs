@@ -24,6 +24,7 @@ public record Style
 		Overflow = ParseEnum(GetValue(element, nameof(Overflow), values), Overflow);
 		Flex = ParseFloat(GetValue(element, nameof(Flex), values), Flex);
 		FlexDirection = ParseEnum(GetValue(element, nameof(FlexDirection), values), FlexDirection);
+		AspectRatio = ParseFloat(GetValue(element, nameof(AspectRatio), values), AspectRatio);
 		JustifyContent = ParseEnum(GetValue(element, nameof(JustifyContent), values), JustifyContent);
 		AlignContent = ParseEnum(GetValue(element, nameof(AlignContent), values), AlignContent);
 		AlignItems = ParseEnum(GetValue(element, nameof(AlignItems), values), AlignItems);
@@ -81,6 +82,8 @@ public record Style
 
 	public float Flex { get; init; }
 	public YogaFlexDirection FlexDirection { get; init; } = YogaFlexDirection.Row;
+
+	public float AspectRatio { get; init; } = float.NaN;
 
 	public YogaJustify JustifyContent { get; init; } = YogaJustify.FlexStart;
 	public YogaAlign AlignContent { get; init; } = YogaAlign.FlexStart;
@@ -142,6 +145,7 @@ public record Style
 			Display = Select(target.Display, source.Display, Default.Display),
 			Overflow = Select(target.Overflow, source.Overflow, Default.Overflow),
 			Flex = Select(target.Flex, source.Flex, Default.Flex),
+			AspectRatio = Select(target.AspectRatio, source.AspectRatio, Default.AspectRatio),
 			AlignContent = Select(target.AlignContent, source.AlignContent, Default.AlignContent),
 			JustifyContent = Select(target.JustifyContent, source.JustifyContent, Default.JustifyContent),
 			AlignItems = Select(target.AlignItems, source.AlignItems, Default.AlignItems),
@@ -176,7 +180,7 @@ public record Style
 			BorderBottomWidth = Select(target.BorderBottomWidth, source.BorderBottomWidth, Default.BorderBottomWidth),
 			BorderTopWidth = Select(target.BorderTopWidth, source.BorderTopWidth, Default.BorderTopWidth),
 			BorderLeftWidth = Select(target.BorderLeftWidth, source.BorderLeftWidth, Default.BorderLeftWidth),
-			BorderRightWidth = Select(target.BorderRightWidth, source.BorderRightWidth, Default.BorderRightWidth),
+			BorderRightWidth = Select(target.BorderRightWidth, source.BorderRightWidth, Default.BorderRightWidth)
 		};
 
 	protected static string? GetValue(XElement element, string attribute,

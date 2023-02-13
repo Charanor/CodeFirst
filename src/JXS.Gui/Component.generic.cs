@@ -37,6 +37,7 @@ public abstract class Component<TStyle> : Component where TStyle : Style, new()
 		Node.Overflow = style.Overflow;
 		Node.Flex = style.Flex;
 		Node.FlexDirection = style.FlexDirection;
+		Node.AspectRatio = style.AspectRatio;
 		Node.JustifyContent = style.JustifyContent;
 		Node.AlignContent = style.AlignContent;
 		Node.AlignItems = style.AlignItems;

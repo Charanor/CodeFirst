@@ -52,7 +52,6 @@ public class View : Component<Style>, IEnumerable<Component>
 		}
 	}
 
-
 	public virtual void AddChild(Component component)
 	{
 		Node.AddChild(component.Node);

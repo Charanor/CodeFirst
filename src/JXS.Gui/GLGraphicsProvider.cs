@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics;
 using JXS.Graphics.Core;
+using JXS.Graphics.Core.Utils;
 using JXS.Graphics.Generated;
 using JXS.Graphics.Text;
 using JXS.Graphics.Text.Layout;
-using JXS.Graphics.Utils;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 
@@ -11,7 +11,7 @@ namespace JXS.Gui;
 
 public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 {
-	private static readonly DemoVertex[] QuadVertices =
+	private static readonly Vertex[] QuadVertices =
 	{
 		new(new Vector2(x: 0, y: 0)),
 		new(new Vector2(x: 1, y: 0)),
@@ -27,7 +27,7 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 
 	private readonly Camera camera;
 
-	private readonly Buffer<DemoVertex> vertexBuffer;
+	private readonly Buffer<Vertex> vertexBuffer;
 	private readonly Buffer<uint> indexBuffer;
 	private readonly VertexArray vertexArray;
 	private readonly BasicGraphicsShader shader;
@@ -39,9 +39,9 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 	public GLGraphicsProvider(Camera camera)
 	{
 		this.camera = camera;
-		vertexBuffer = new Buffer<DemoVertex>(QuadVertices, VertexBufferObjectUsage.StaticRead);
+		vertexBuffer = new Buffer<Vertex>(QuadVertices, VertexBufferObjectUsage.StaticRead);
 		indexBuffer = new Buffer<uint>(QuadIndices, VertexBufferObjectUsage.StaticRead);
-		vertexArray = VertexArray.CreateForVertexInfo(DemoVertex.VertexInfo, vertexBuffer, indexBuffer);
+		vertexArray = VertexArray.CreateForVertexInfo(Vertex.VertexInfo, vertexBuffer, indexBuffer);
 		shader = new BasicGraphicsShader();
 		overflowLayer = 0;
 	}
@@ -72,6 +72,7 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 
 	public void Begin()
 	{
+		GLEnableCapSwitcher.PushState();
 		GL.Enable(EnableCap.Blend);
 		GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
@@ -80,6 +81,8 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		GL.StencilFunc(StencilFunction.Always, reference: 1, mask: 0xff);
 		GL.StencilOp(StencilOp.Replace, StencilOp.Replace, StencilOp.Replace);
 		GL.StencilMask(0xff);
+
+		GL.Disable(EnableCap.DepthTest);
 
 		shader.ProjectionMatrix = camera.Projection;
 		shader.ViewMatrix = camera.View;
@@ -95,8 +98,7 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		ActiveShader = null;
 
 		GL.Clear(ClearBufferMask.StencilBufferBit);
-		GL.Disable(EnableCap.StencilTest);
-		GL.Disable(EnableCap.Blend);
+		GLEnableCapSwitcher.Popstate();
 	}
 
 	public void BeginOverflow()
@@ -193,15 +195,11 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		return new Vector4(min.X, min.Y, max.X, max.Y);
 	}
 
-	public readonly record struct DemoVertex(Vector2 Position)
+	public readonly record struct Vertex(Vector2 Position)
 	{
-		public static readonly VertexAttribute PositionAttribute =
-			new(VertexAttributeLocation.Position, ComponentCount: 2, sizeof(float), VertexAttribType.Float,
-				Offset: 0);
-
 		public static readonly VertexInfo VertexInfo = new(
 			typeof(Vertex),
-			PositionAttribute
+			VertexAttribute.Vector2(VertexAttributeLocation.Position)
 		);
 	}
 }
