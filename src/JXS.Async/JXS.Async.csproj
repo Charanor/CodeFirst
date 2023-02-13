@@ -4,12 +4,11 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <RootNamespace>JXS.Async</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\JXS.Graphics.Core\JXS.Graphics.Core.csproj" />
-      <ProjectReference Include="..\JXS.Graphics.Utils\JXS.Graphics.Utils.csproj" />
+      <ProjectReference Include="..\JXS.Utils\JXS.Utils.csproj" />
     </ItemGroup>
 
 </Project>

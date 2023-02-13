@@ -1,4 +1,4 @@
-﻿namespace JXS.Assets.Core.Exceptions;
+﻿namespace JXS.AssetManagement.Exceptions;
 
 public class InvalidFileFormatException : IOException
 {
