@@ -2,150 +2,45 @@
 
 namespace JXS.Graphics.Core;
 
-public partial record Material
+public abstract class Material : IDisposable
 {
-	private readonly MaterialRegistration?[] registrations;
+	private const int NULL_UNIFORM = -1;
 
-	public Material(ShaderProgram shaderProgram)
+	private int modelLoc = NULL_UNIFORM;
+	private int viewLoc = NULL_UNIFORM;
+	private int projLoc = NULL_UNIFORM;
+
+	public abstract ShaderProgram Shader { get; }
+
+	public Matrix4 ModelMatrix { get; set; } = Matrix4.Identity;
+	public Matrix4 ViewMatrix { get; set; } = Matrix4.Identity;
+	public Matrix4 ProjectionMatrix { get; set; } = Matrix4.Identity;
+
+	public void Dispose()
 	{
-		ShaderProgram = shaderProgram ?? throw new NullReferenceException();
-		registrations = new MaterialRegistration[ShaderProgram.ActiveUniformCount];
+		GC.SuppressFinalize(this);
+		Shader.Dispose();
 	}
 
-	public Material(Material parent)
+	protected abstract void ApplyExtended();
+
+	public void Apply()
 	{
-		ShaderProgram = parent.ShaderProgram;
-		registrations = new MaterialRegistration[ShaderProgram.ActiveUniformCount];
-	}
-
-	public ShaderProgram ShaderProgram { get; }
-
-	public void UploadUniformsToShader()
-	{
-		for (var location = 0u; location < registrations.Length; location++)
+		if (modelLoc != NULL_UNIFORM || Shader.TryGetUniformLocation(name: "modelMatrix", out modelLoc))
 		{
-			var registration = registrations[location];
-			if (registration is null)
-			{
-				continue;
-			}
-
-			switch (registration.Type)
-			{
-				case UniformType.Float:
-					ShaderProgram.SetUniform((int)location, registration.AsFloat());
-					break;
-				case UniformType.FloatVec3:
-					ShaderProgram.SetUniform((int)location, registration.AsVector3Float());
-					break;
-				case UniformType.FloatVec4:
-					ShaderProgram.SetUniform((int)location, registration.AsVector4Float());
-					break;
-				default:
-					throw new NotImplementedException($"Uniforms of type {registration.Type} are not yet implemented.");
-			}
-		}
-	}
-
-	public void Bind()
-	{
-		ShaderProgram.Bind();
-		UploadUniformsToShader();
-	}
-
-	public void Unbind()
-	{
-		ShaderProgram.Unbind();
-	}
-
-	public int GetPropertyId(string propertyName) =>
-		ShaderProgram.TryGetUniformLocation(propertyName, out var location)
-			? location
-			: throw new ArgumentException($"No uniform {propertyName} exists on shader", nameof(propertyName));
-
-	private MaterialRegistration GetRegistration(int propertyId)
-	{
-		if (propertyId >= registrations.Length)
-		{
-			throw new ArgumentException(
-				$"{nameof(propertyId)} must be in range [0, {registrations.Length}], got {propertyId}",
-				nameof(propertyId));
+			Shader.SetUniform(modelLoc, ModelMatrix);
 		}
 
-		return registrations[propertyId] ??
-		       throw new ArgumentException($"No parameter with id {propertyId} registered",
-			       nameof(propertyId));
-	}
-
-	protected static string MaterialName(string inner) => $"material.{inner}";
-
-	private record MaterialRegistration(UniformType Type, IEnumerable<byte> Data)
-	{
-		public float AsFloat()
+		if (viewLoc != NULL_UNIFORM || Shader.TryGetUniformLocation(name: "viewMatrix", out viewLoc))
 		{
-			if (Type != UniformType.Float || Data.Count() != sizeof(float))
-			{
-				throw new InvalidOperationException($"Can not convert {this} to float");
-			}
-
-			return BitConverter.ToSingle(Data.ToArray());
-		}
-		
-		public int AsInt()
-		{
-			if (Type != UniformType.Int || Data.Count() != sizeof(int))
-			{
-				throw new InvalidOperationException($"Can not convert {this} to int");
-			}
-
-			return BitConverter.ToInt32(Data.ToArray());
+			Shader.SetUniform(viewLoc, ViewMatrix);
 		}
 
-		public Vector3 AsVector3Float()
+		if (projLoc != NULL_UNIFORM || Shader.TryGetUniformLocation(name: "projectionMatrix", out projLoc))
 		{
-			if (Type != UniformType.FloatVec3 || Data.Count() != Vector3.SizeInBytes)
-			{
-				throw new InvalidOperationException($"Can not convert {this} to {nameof(Vector3)}");
-			}
-
-			var data = Data.ToArray();
-			return new Vector3(
-				BitConverter.ToSingle(data, startIndex: 0),
-				BitConverter.ToSingle(data, sizeof(float)),
-				BitConverter.ToSingle(data, sizeof(float) * 2)
-			);
+			Shader.SetUniform(projLoc, ProjectionMatrix);
 		}
 
-		public Vector4 AsVector4Float()
-		{
-			if (Type != UniformType.FloatVec4 || Data.Count() != Vector4.SizeInBytes)
-			{
-				throw new InvalidOperationException($"Can not convert {this} to {nameof(Vector4)}");
-			}
-
-			var data = Data.ToArray();
-			return new Vector4(
-				BitConverter.ToSingle(data, startIndex: 0),
-				BitConverter.ToSingle(data, sizeof(float)),
-				BitConverter.ToSingle(data, sizeof(float) * 2),
-				BitConverter.ToSingle(data, sizeof(float) * 3)
-			);
-		}
-
-		public Color4<Rgba> AsColor4()
-		{
-			if (Type != UniformType.FloatVec4 || Data.Count() != Vector4.SizeInBytes)
-			{
-				throw new InvalidOperationException($"Can not convert {this} to {nameof(Color4)}");
-			}
-
-			var data = Data.ToArray();
-			return new Color4<Rgba>(
-				BitConverter.ToSingle(data, startIndex: 0),
-				BitConverter.ToSingle(data, sizeof(float)),
-				BitConverter.ToSingle(data, sizeof(float) * 2),
-				BitConverter.ToSingle(data, sizeof(float) * 3)
-			);
-		}
+		ApplyExtended();
 	}
 }

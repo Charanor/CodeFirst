@@ -9,7 +9,10 @@ namespace JXS.Graphics.Text;
 /// <param name="Position">the position of the glyph, in pixels, inside the parent font's texture atlas</param>
 /// <param name="Size">the size of the glyph, in pixels, inside the parent font's texture atlas</param>
 /// <param name="Advance">how much to advance the virtual cursor after rendering this glyph, in EM:s</param>
-/// <param name="Offset">when rendering this glyph to a quad, this is the offset on how to place this glyph relative to the "expected" drawing position</param>
+/// <param name="Offset">
+///     when rendering this glyph to a quad, this is the offset on how to place this glyph relative to the
+///     "expected" drawing position
+/// </param>
 public record FontGlyph(int Code, Vector2 Position, Vector2 Size, float Advance, Box2 Offset)
 {
 	/// <summary>

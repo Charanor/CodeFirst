@@ -1,5 +1,5 @@
-﻿using System.Collections.Immutable;
-using System.ComponentModel;
+﻿using System.ComponentModel;
+using JXS.Utils;
 using OpenTK.Mathematics;
 
 namespace JXS.Graphics.Core;
@@ -26,7 +26,7 @@ public abstract class Texture : NativeResource
 
 		Target = target;
 		Handle = CreateTexture(Target);
-		Data = data.ToArray().ToImmutableArray();
+		Data = data.ToArray();
 
 		Width = width;
 		Height = height;
@@ -41,18 +41,31 @@ public abstract class Texture : NativeResource
 				case TextureTarget.Texture1d:
 					EnsureValidDimensions(width);
 					TextureStorage1D(this, mipMapLevels, internalFormat, width);
-					TextureSubImage1D(this, level: 0, xoffset: 0, width, format, type, ptr);
+					if (ptr != null)
+					{
+						TextureSubImage1D(this, level: 0, xoffset: 0, width, format, type, ptr);
+					}
+
 					break;
 				case TextureTarget.Texture2d:
 					EnsureValidDimensions(width, height);
 					TextureStorage2D(this, mipMapLevels, internalFormat, width, height);
-					TextureSubImage2D(this, level: 0, xoffset: 0, yoffset: 0, width, height, format, type, ptr);
+					if (ptr != null)
+					{
+						TextureSubImage2D(this, level: 0, xoffset: 0, yoffset: 0, width, height, format, type, ptr);
+					}
+
 					break;
 				case TextureTarget.Texture3d:
 					EnsureValidDimensions(width, height, depth);
 					TextureStorage3D(this, mipMapLevels, internalFormat, width, height, depth);
-					TextureSubImage3D(this, level: 0, xoffset: 0, yoffset: 0, zoffset: 0, width, height, depth, format,
-						type, ptr);
+					if (ptr != null)
+					{
+						TextureSubImage3D(this, level: 0, xoffset: 0, yoffset: 0, zoffset: 0, width, height, depth,
+							format,
+							type, ptr);
+					}
+
 					break;
 				default:
 					if (!Enum.IsDefined(target))
@@ -62,14 +75,15 @@ public abstract class Texture : NativeResource
 					}
 
 					// We simply can not process this type of texture
-					throw new InvalidEnumArgumentException($"Unable to create texture for {nameof(TextureTarget)}.{Enum.GetName(target)} = ({target}): Unsupported target.");
+					throw new InvalidEnumArgumentException(
+						$"Unable to create texture for {nameof(TextureTarget)}.{Enum.GetName(target)} = ({target}): Unsupported target.");
 			}
 		}
 	}
 
 	public TextureHandle Handle { get; }
 	public TextureTarget Target { get; }
-	public ImmutableArray<byte> Data { get; }
+	public IReadOnlyList<byte> Data { get; }
 
 	public int Width { get; }
 	public int Height { get; }
@@ -154,7 +168,7 @@ public abstract class Texture : NativeResource
 			{
 				// We can't support wrap R, throw!
 				throw new InvalidOperationException(
-					"Can not set texture wrap for 3rd dimension T for a 1d or 2d texture");
+					"Can not set texture wrap for 3rd dimension R for a 1d or 2d texture");
 			}
 
 			if (!Enum.IsDefined(value))
@@ -249,7 +263,7 @@ public abstract class Texture : NativeResource
 			{
 				return;
 			}
-			
+
 			GC.SuppressFinalize(this);
 			isDisposed = true;
 			if (texture == null || !Enum.IsDefined(Unit))

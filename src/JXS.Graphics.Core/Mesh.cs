@@ -1,63 +1,76 @@
-﻿using System.Collections.Immutable;
-using OpenTK.Mathematics;
+﻿using OpenTK.Mathematics;
 
 namespace JXS.Graphics.Core;
 
-public class Mesh : NativeResource
+public class Mesh : IDisposable
 {
+	private readonly VertexArray vertexArray;
 	private readonly Buffer<Vertex> vertexBuffer;
 	private readonly Buffer<uint> indexBuffer;
-	private readonly VertexArray vertexArray;
 
-	private readonly ImmutableArray<Vertex> vertices;
-	private readonly ImmutableArray<uint> indices;
-
-	public Mesh(IEnumerable<Vertex> vertices, IEnumerable<uint> indices, Material material)
+	public Mesh(IEnumerable<Vertex> vertices, IEnumerable<uint> indices, Material? material)
 	{
-		this.vertices = vertices.ToImmutableArray();
-		this.indices = indices.ToImmutableArray();
 		Material = material;
-		vertexBuffer = new Buffer<Vertex>(Vertices.ToArray(), VertexBufferObjectUsage.StaticDraw);
-		indexBuffer = new Buffer<uint>(Indices.ToArray(), VertexBufferObjectUsage.StaticDraw);
+
+		var vertArray = vertices.ToArray();
+		Vertices = vertArray;
+		vertexBuffer = new Buffer<Vertex>(vertArray, VertexBufferObjectUsage.StaticDraw);
+
+		var indexArray = indices.ToArray();
+		Indices = indexArray;
+		indexBuffer = new Buffer<uint>(indexArray, VertexBufferObjectUsage.StaticDraw);
+
 		vertexArray = VertexArray.CreateForVertexInfo(Vertex.VertexInfo, vertexBuffer, indexBuffer);
 	}
 
-	public Material Material { get; }
-	public IEnumerable<Vertex> Vertices => vertices;
-	public IEnumerable<uint> Indices => indices;
+	public Material? Material { get; }
+	public IReadOnlyList<Vertex> Vertices { get; }
+	public IReadOnlyList<uint> Indices { get; }
+	public PrimitiveType PrimitiveType { get; init; } = PrimitiveType.Triangles;
 
-	public void Draw(Matrix4 model, Matrix4 view, Matrix4 projection)
+	public void Dispose()
 	{
-		Material.Bind();
-
-		var shader = Material.ShaderProgram;
-		if (shader.TryGetUniform(name: "matrices.model", out var info))
-		{
-			shader.SetUniform(info.Location, model);
-		}
-
-		if (shader.TryGetUniform(name: "matrices.view", out info))
-		{
-			shader.SetUniform(info.Location, view);
-		}
-
-		if (shader.TryGetUniform(name: "matrices.projection", out info))
-		{
-			shader.SetUniform(info.Location, projection);
-		}
-
-		vertexArray.Bind();
-
-		DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, offset: 0);
-
-		vertexArray.Unbind();
-		Material.Unbind();
-	}
-
-	protected override void DisposeNativeResources()
-	{
+		GC.SuppressFinalize(this);
 		vertexBuffer.Dispose();
 		indexBuffer.Dispose();
 		vertexArray.Dispose();
+	}
+
+	public void Draw(Matrix4 model, Matrix4 view, Matrix4 projection)
+	{
+		if (Material == null)
+		{
+			// Material-less render.
+			vertexArray.Bind();
+			{
+				DrawElements(PrimitiveType, Indices.Count, DrawElementsType.UnsignedInt, offset: 0);
+			}
+			vertexArray.Unbind();
+			return;
+		}
+
+		Material.ModelMatrix = model;
+		Material.ViewMatrix = view;
+		Material.ProjectionMatrix = projection;
+		Material.Apply();
+		Material.Shader.Bind();
+		{
+			vertexArray.Bind();
+			{
+				DrawElements(PrimitiveType, Indices.Count, DrawElementsType.UnsignedInt, offset: 0);
+			}
+			vertexArray.Unbind();
+		}
+		Material.Shader.Unbind();
+	}
+
+	public readonly record struct Vertex(Vector3 Position, Vector3 Normal, Vector2 TexCoord)
+	{
+		public static readonly VertexInfo VertexInfo = new(
+			typeof(Vertex),
+			VertexAttribute.Vector3(VertexAttributeLocation.Position),
+			VertexAttribute.Vector3(VertexAttributeLocation.Normal),
+			VertexAttribute.Vector2(VertexAttributeLocation.TexCoords)
+		);
 	}
 }

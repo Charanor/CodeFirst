@@ -2,7 +2,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using JXS.Graphics.Core.Exceptions;
-using JXS.Graphics.Utils;
+using JXS.Graphics.Core.Utils;
+using JXS.Utils;
 using OpenTK.Mathematics;
 
 namespace JXS.Graphics.Core;
@@ -143,7 +144,13 @@ public class ShaderProgram : NativeResource
 		return true;
 	}
 
-	protected int GetUniformLocation(string name) => uniformNameMapper[name].Location;
+	/// <summary>
+	///     Gets the uniform location. Returns <c>-1</c> if the uniform does not exist.
+	/// </summary>
+	/// <param name="name">the name of the uniform in GLSL code</param>
+	/// <returns>the uniform index, or -1 if uniform does not exist.</returns>
+	public int GetUniformLocation(string name) =>
+		uniformNameMapper.TryGetValue(name, out var info) ? info.Location : -1;
 
 	public virtual void Bind()
 	{

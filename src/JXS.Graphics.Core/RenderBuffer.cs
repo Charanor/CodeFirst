@@ -1,4 +1,6 @@
-﻿namespace JXS.Graphics.Core;
+﻿using JXS.Utils;
+
+namespace JXS.Graphics.Core;
 
 public class RenderBuffer : NativeResource
 {

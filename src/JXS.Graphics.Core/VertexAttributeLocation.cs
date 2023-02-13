@@ -20,7 +20,7 @@ public static class VertexAttributeLocationExtensions
 
 		return $"VERTEX_{ToCapitalSnakeCase(name)}_IDX";
 	}
-	
+
 	public static string GetLayoutName(this VertexAttributeLocation @this)
 	{
 		var name = Enum.GetName(@this);

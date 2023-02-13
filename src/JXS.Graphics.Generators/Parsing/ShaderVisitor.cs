@@ -71,8 +71,6 @@ public class ShaderVisitor : GLSLBaseVisitor<IEnumerable<GLSLDefinition>>
 		var status = context.extension_status.Text;
 		return Single(new GLSLExtension(ShaderVariant, name, status));
 	}
-	
-	
 
 	public override IEnumerable<GLSLDefinition> VisitMember_declaration(GLSLParser.Member_declarationContext context)
 	{

@@ -1,4 +1,4 @@
-﻿using OpenTK.Graphics.OpenGL;
+﻿using JXS.Utils.Math;
 using OpenTK.Mathematics;
 
 namespace JXS.Graphics.Core;
@@ -24,7 +24,41 @@ public class PerspectiveCamera : Camera
 
 	public override Matrix4 View => Matrix4.LookAt(Position, Position + Forward, Vector3.UnitY);
 
-	protected override void UpdateViewport(int screenWidth, int screenHeight)
+	public override Frustum Frustum
+	{
+		get
+		{
+			var aspectRatio = WorldSize.X / WorldSize.Y;
+			var nearHeight = 2 * MathF.Tan(VerticalFieldOfView / 2f) * NearClippingPlane;
+			var nearWidth = nearHeight * aspectRatio;
+			var farHeight = 2 * MathF.Tan(VerticalFieldOfView / 2f) * FarClippingPlane;
+			var farWidth = farHeight * aspectRatio;
+
+			var nearCenter = Position + Forward * NearClippingPlane;
+			var farCenter = Position + Forward * FarClippingPlane;
+
+			var nearBottomLeft = nearCenter - Up * (nearHeight / 2.0f) - Right * (nearWidth / 2.0f);
+			var nearBottomRight = nearCenter - Up * (nearHeight / 2.0f) + Right * (nearWidth / 2.0f);
+			var nearTopLeft = nearCenter + Up * (nearHeight / 2.0f) - Right * (nearWidth / 2.0f);
+			var nearTopRight = nearCenter + Up * (nearHeight / 2.0f) + Right * (nearWidth / 2.0f);
+
+			var farBottomLeft = farCenter - Up * (farHeight / 2.0f) - Right * (farWidth / 2.0f);
+			var farBottomRight = farCenter - Up * (farHeight / 2.0f) + Right * (farWidth / 2.0f);
+			var farTopLeft = farCenter + Up * (farHeight / 2.0f) - Right * (farWidth / 2.0f);
+			var farTopRight = farCenter + Up * (farHeight / 2.0f) + Right * (farWidth / 2.0f);
+
+			return new Frustum(
+				new Plane(nearBottomLeft, nearBottomRight, nearTopLeft), // Near
+				new Plane(farTopLeft, farTopRight, farBottomLeft), // Far
+				new Plane(nearBottomLeft, nearTopLeft, farBottomLeft), // Left
+				new Plane(farTopRight, nearTopRight, farBottomRight), // Right
+				new Plane(farTopLeft, nearTopLeft, farTopRight), // Top
+				new Plane(nearBottomLeft, farBottomLeft, nearBottomRight) // Bottom
+			);
+		}
+	}
+
+	protected override Viewport UpdateViewport(int screenWidth, int screenHeight)
 	{
 		var newWorldWidth = baseWorldWidth;
 		var newWorldHeight = baseWorldHeight;
@@ -50,7 +84,7 @@ public class PerspectiveCamera : Camera
 		}
 
 		WorldSize = new Vector2(newWorldWidth, newWorldHeight);
-		GL.Viewport(
+		return new Viewport(
 			(int)(screenWidth - viewportWidth) / 2,
 			(int)(screenHeight - viewportHeight) / 2,
 			(int)viewportWidth,

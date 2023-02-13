@@ -10,8 +10,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.1.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.1.0" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -20,8 +20,8 @@
         https://github.com/dotnet/roslyn/discussions/47517#discussioncomment-64145
         https://github.com/dotnet/roslyn-sdk/blob/0313c80ed950ac4f4eef11bb2e1c6d1009b328c4/samples/CSharp/SourceGenerators/SourceGeneratorSamples/SourceGeneratorSamples.csproj#L13-L30
         -->
-        <PackageReference Include="Antlr4.Runtime.Standard" Version="4.11.1" GeneratePathProperty="true" PrivateAssets="all" OutputItemType="Analyzer" />
-        <PackageReference Include="Antlr4BuildTasks" Version="12.0.0" GeneratePathProperty="true" PrivateAssets="all" OutputItemType="Analyzer" />
+        <PackageReference Include="Antlr4.Runtime.Standard" Version="4.11.1" GeneratePathProperty="true" PrivateAssets="all" OutputItemType="Analyzer"/>
+        <PackageReference Include="Antlr4BuildTasks" Version="12.0.0" GeneratePathProperty="true" PrivateAssets="all" OutputItemType="Analyzer"/>
     </ItemGroup>
 
     <PropertyGroup>
@@ -30,17 +30,17 @@
 
     <Target Name="GetDependencyTargetPaths">
         <ItemGroup>
-            <TargetPathWithTargetPlatformMoniker Include="$(PKGAntlr4_Runtime_Standard)\lib\netstandard2.0\Antlr4.Runtime.Standard.dll" IncludeRuntimeDependency="false" />
-            <TargetPathWithTargetPlatformMoniker Include="$(PKGAntlr4BuildTasks)\lib\netstandard2.0\Antlr4BuildTasks.dll" IncludeRuntimeDependency="false" />
+            <TargetPathWithTargetPlatformMoniker Include="$(PKGAntlr4_Runtime_Standard)\lib\netstandard2.0\Antlr4.Runtime.Standard.dll" IncludeRuntimeDependency="false"/>
+            <TargetPathWithTargetPlatformMoniker Include="$(PKGAntlr4BuildTasks)\lib\netstandard2.0\Antlr4BuildTasks.dll" IncludeRuntimeDependency="false"/>
         </ItemGroup>
     </Target>
 
     <ItemGroup>
-        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
     </ItemGroup>
 
     <ItemGroup>
-        <Antlr4 Include="Grammars\GLSL.g4" />
+        <Antlr4 Include="Grammars\GLSL.g4"/>
     </ItemGroup>
 
 </Project>

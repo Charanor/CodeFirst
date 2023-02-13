@@ -1,43 +1,48 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using JXS.Assets.Core;
+using JXS.AssetManagement;
+using JXS.FileSystem;
 using JXS.Graphics.Core;
+using JXS.Graphics.Core.Assets;
 using OpenTK.Mathematics;
 
 namespace JXS.Graphics.Text.Assets;
 
-public class FontAssetLoader : CachedAssetLoader<Font, FontAssetDefinition>
+public class FontAssetResolver : IAssetResolver
 {
-	private const string FONT_ATLAS_EXTENSION = ".mtsdf";
-	private const string JSON_EXT = ".json";
+	private readonly TextureAssetResolver textureAssetResolver = new();
 
-	private readonly AssetManager assetManager;
+	public bool CanLoadAssetOfType(Type type) => type == typeof(Font);
 
-	public FontAssetLoader(AssetManager assetManager)
+	public bool TryLoadAsset(FileHandle fileHandle, [NotNullWhen(true)] out object? asset)
 	{
-		this.assetManager = assetManager;
-	}
+		var path = fileHandle.FilePath;
+		if (!path.EndsWith(".mtsdf.json"))
+		{
+			asset = default;
+			return false;
+		}
 
-	protected override Font LoadAsset(FontAssetDefinition definition)
-	{
-		var path = definition.Path;
 		var fontName = Path.GetFileName(Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(path)));
 
 		var fileContents = File.ReadAllText(path);
-		Debug.Assert(assetManager.TryLoadAsset(definition.TextureAtlasAsset, out var textureAtlas));
+		var atlasFileHandle = new FileHandle(Path.ChangeExtension(path, extension: ".png"));
+		if (!textureAssetResolver.TryLoadAsset(atlasFileHandle, out Texture? textureAtlas))
+		{
+			asset = default;
+			return false;
+		}
+
 		var atlas2D = textureAtlas as Texture2D;
 		Debug.Assert(atlas2D != null);
 
-		// For now we only allow JSON, so no need to check the type
-		// TODO: Add CSV parser
-		return LoadJsonFont(fontName, fileContents, atlas2D);
+		asset = LoadJsonFont(fontName, fileContents, atlas2D);
+		return true;
 	}
 
 	private Font LoadJsonFont(string fontName, string fileContents, Texture2D textureAtlas)
 	{
-		// For now we only support MTSDF files
-		// TODO: Add support for other file types
-
 		var mtsdfFontFile = JsonSerializer.Deserialize<MtsdfFontFile>(fileContents, new JsonSerializerOptions
 		{
 			PropertyNameCaseInsensitive = true
@@ -58,19 +63,6 @@ public class FontAssetLoader : CachedAssetLoader<Font, FontAssetDefinition>
 
 		return new Font(fontName, fontAtlas, metrics, characterSet, kernings);
 	}
-
-	public override bool CanLoadAsset(FontAssetDefinition assetDefinition)
-	{
-		var path = assetDefinition.Path;
-		var format = Path.GetExtension(path);
-		var type = Path.GetExtension(Path.GetFileNameWithoutExtension(path));
-
-		return format.Equals(JSON_EXT, StringComparison.InvariantCultureIgnoreCase) &&
-		       type.Equals(FONT_ATLAS_EXTENSION, StringComparison.InvariantCultureIgnoreCase) &&
-		       assetManager.CanLoadAsset(assetDefinition.TextureAtlasAsset);
-	}
-
-	protected override bool IsValidAsset(Font asset) => !asset.Atlas.Texture.IsDisposed;
 
 	private record MtsdfFontFile(MtsdfFontFile.MtsdfAtlas Atlas, MtsdfFontFile.MtsdfMetrics Metrics,
 		IEnumerable<MtsdfFontFile.MtsdfGlyph> Glyphs, IEnumerable<MtsdfFontFile.MtsdfKerning> Kerning)

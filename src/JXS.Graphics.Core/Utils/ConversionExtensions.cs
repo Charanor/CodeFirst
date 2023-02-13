@@ -1,6 +1,6 @@
 ﻿using OpenTK.Mathematics;
 
-namespace JXS.Graphics.Utils;
+namespace JXS.Graphics.Core.Utils;
 
 public static class ConversionExtensions
 {
@@ -10,7 +10,7 @@ public static class ConversionExtensions
 	public static Vector4 ToVector4<TColorSpace>(this Color4<TColorSpace> color) where TColorSpace : IColorSpace4 =>
 		new(color.X, color.Y, color.Z, color.W);
 
-	public static Vector4 ToVector4(this Box2 box) => new(box.Left, box.Bottom, box.Right, box.Top);
+	public static Vector4 ToVector4(this Box2 box) => new(box.Min.X, box.Min.Y, box.Max.X, box.Max.Y);
 	public static Box2 ToBox2(this Vector4 vector) => new(vector.X, vector.Y, vector.Z, vector.W);
 
 	public static byte[] ToByteArray<TColorSpace>(this Color4<TColorSpace> color) where TColorSpace : IColorSpace4

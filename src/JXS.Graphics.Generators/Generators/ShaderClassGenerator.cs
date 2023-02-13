@@ -12,7 +12,7 @@ public class ShaderClassGenerator
 	private const string GENERATOR_VERSION = "1.0.0";
 
 	private const string SHADER_PROGRAM_CLASS = "ShaderProgram";
-	private const string MATERIAL_CLASS = "Material";
+	private const string MATERIAL_CLASS = "JXS.Graphics.Core.Material";
 	private const string MATERIAL = "Material";
 
 	private const string VERSION_TYPE = "(string VersionNumber, string VersionProfile)";
@@ -61,6 +61,7 @@ public class ShaderClassGenerator
 			var (uniformMembers, glslConstants) = BuildUniformUtilities(classBuilder);
 			BuildConstructor(classBuilder, uniformMembers, glslConstants);
 			BuildVertexRecord(classBuilder);
+			BuildMaterialClass(classBuilder);
 			BuildStructs(classBuilder);
 		}
 		classBuilder.EndBlock();
@@ -124,11 +125,6 @@ public class ShaderClassGenerator
 					classBuilder.IndentedLn($"get => {identifier};");
 					classBuilder.BeginBlock("set");
 					{
-						classBuilder.BeginBlock($"if ({identifier} == value)");
-						{
-							classBuilder.IndentedLn("return;");
-						}
-						classBuilder.EndBlock();
 						classBuilder.IndentedLn($"{identifier} = value;");
 						if (isTexture)
 						{
@@ -140,9 +136,15 @@ public class ShaderClassGenerator
 									$"var slots = Enumerable.Range({textureSlotField}, value.Length).ToArray();");
 								classBuilder.IndentedLn($"SetUniform({locationFieldName}, slots);");
 
-								classBuilder.BeginBlock("for (var i = 0u; i <= value.Length; i++)");
+								classBuilder.BeginBlock("for (var i = 0u; i < value.Length; i++)");
 								{
-									classBuilder.IndentedLn($"GL.BindTextureUnit((uint){textureSlotField} + i, value[i]);");
+									classBuilder.IndentedLn("var texture = value[i];");
+									classBuilder.BeginBlock("if (texture != null)");
+									{
+										classBuilder.IndentedLn(
+											$"GL.BindTextureUnit((uint){textureSlotField} + i, value[i]);");
+									}
+									classBuilder.EndBlock();
 								}
 								classBuilder.EndBlock();
 							}
@@ -170,7 +172,8 @@ public class ShaderClassGenerator
 
 	private void BuildStructs(ClassBuilder classBuilder)
 	{
-		var groups = GetDefinitions<GLSLMemberGroup>().Where(grp => grp is { Type: not null })
+		var groups = GetDefinitions<GLSLMemberGroup>()
+			.Where(grp => grp is { Type: not null })
 			.Distinct(GLSLMemberGroupComparer.Instance);
 		foreach (var (_, _, type, identifier, members, _, _, _) in groups)
 		{
@@ -213,6 +216,57 @@ public class ShaderClassGenerator
 		classBuilder.EndBlock();
 	}
 
+	private void BuildMaterialClass(ClassBuilder classBuilder)
+	{
+		var allUniforms = GetDefinitions<GLSLMember>()
+			.Where(member => member is
+			{
+				Identifier: not ("modelMatrix" or "viewMatrix" or "projectionMatrix"),
+				HasConcreteType: true,
+				HasIdentifier: true,
+				StorageType: GLSLStorageType.Uniform
+			})
+			.Distinct(GLSLMemberComparer.Instance);
+		classBuilder.BeginBlock($"public class {MATERIAL} : {MATERIAL_CLASS}");
+		{
+			// Create shader property
+			classBuilder.IndentedLn("// The shader");
+			classBuilder.IndentedLn($"public override {className} Shader {{ get; }} = new();");
+			classBuilder.NewLine();
+
+			var properties = new List<string>();
+
+			classBuilder.IndentedLn("// Uniforms");
+			foreach (var (_, _, type, identifier, arrayRanks, _, _) in allUniforms)
+			{
+				if (type == null || identifier == null)
+				{
+					continue;
+				}
+
+				// Build property
+				var propertyType = GLSLUtils.GLSLTypeToOpenTKType(type);
+				var propertyName = GLSLUtils.FirstCharToUpper(identifier);
+				classBuilder.IndentedLn($"public {Array(propertyType, arrayRanks)} {propertyName} {{ get; set; }}");
+				properties.Add(propertyName);
+			}
+
+			classBuilder.BeginBlock("protected override void ApplyExtended()");
+			{
+				foreach (var property in properties)
+				{
+					classBuilder.BeginBlock($"if ({property} != null)");
+					{
+						classBuilder.IndentedLn($"Shader.{property} = {property};");
+					}
+					classBuilder.EndBlock();
+				}
+			}
+			classBuilder.EndBlock();
+		}
+		classBuilder.EndBlock();
+	}
+
 	private static void BuildProperty(ClassBuilder classBuilder, string? identifier, string csChildType, int arrayRanks,
 		string fieldName, string childIdentifier)
 	{
@@ -226,8 +280,7 @@ public class ShaderClassGenerator
 				var compoundName = Quote(identifier is { Length: > 0 }
 					? $"{identifier}.{childIdentifier}"
 					: childIdentifier);
-				var arraySuffix =
-					string.Concat(Enumerable.Repeat(element: "Array", arrayRanks));
+				var arraySuffix = string.Concat(Enumerable.Repeat(element: "Array", arrayRanks));
 				classBuilder.IndentedLn(
 					$"Set{GLSLUtils.FirstCharToUpper(csChildType)}{arraySuffix}({compoundName}, {fieldName});");
 			}
@@ -250,8 +303,11 @@ public class ShaderClassGenerator
 	{
 		var inputs = GetDefinitions<GLSLMember>().Where(def => def is
 			{ ParentShaderVariant: ShaderType.Vertex, StorageType: GLSLStorageType.Input });
-		classBuilder.IndentedLn($"public readonly record struct Vertex({ParamList(inputs)});");
+		classBuilder.IndentedLn(
+			$"public readonly record struct Vertex({ParamList(inputs, RemoveVertexPrefix)});");
 		classBuilder.NewLine();
+
+		string RemoveVertexPrefix(string name) => name.StartsWith("Vertex") ? name.Substring("Vertex".Length) : name;
 	}
 
 	private void BuildConstructor(ClassBuilder classBuilder, IEnumerable<UniformMember> uniformMembers,
@@ -375,14 +431,21 @@ public class ShaderClassGenerator
 	// ReSharper disable once PossiblyImpureMethodCallOnReadonlyVariable
 	private IEnumerable<T> GetDefinitions<T>() where T : GLSLDefinition => definitions.OfType<T>();
 
-	private static string ParamList(IEnumerable<GLSLMember> members)
+	private static string ParamList(IEnumerable<GLSLMember> members, Func<string, string>? nameTransformer = null)
 	{
 		var inputs = members.Where(def => def is { HasConcreteType: true, HasIdentifier: true });
 		return string.Join(separator: ", ", inputs.Select(Parameter));
 
 		// Functions
-		string Parameter(GLSLMember member) =>
-			$"{Array(GLSLUtils.GLSLTypeToOpenTKType(member.Type!), member.ArrayRanks)} {GLSLUtils.FirstCharToUpper(member.Identifier!)}";
+		string Parameter(GLSLMember member)
+		{
+			var identifier = member.Identifier!;
+			var transformedIdentifier = nameTransformer?.Invoke(identifier) ?? identifier;
+			var fieldName = GLSLUtils.FirstCharToUpper(transformedIdentifier);
+			var fieldType = GLSLUtils.GLSLTypeToOpenTKType(member.Type!);
+			var fieldTypeWithArrayModifier = Array(fieldType, member.ArrayRanks);
+			return $"{fieldTypeWithArrayModifier} {fieldName}";
+		}
 	}
 
 	private static string Array(string type, int ranks) =>

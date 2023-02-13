@@ -1,4 +1,6 @@
-﻿namespace JXS.Graphics.Core;
+﻿using JXS.Utils;
+
+namespace JXS.Graphics.Core;
 
 public class Buffer<TData> : NativeResource where TData : unmanaged
 {
@@ -24,12 +26,12 @@ public class Buffer<TData> : NativeResource where TData : unmanaged
 		NamedBufferData(Handle, reservedSpace, IntPtr.Zero, usage);
 	}
 
+	public BufferHandle Handle { get; }
+
 	public void SetData(ReadOnlySpan<TData> data)
 	{
 		NamedBufferSubData(this, IntPtr.Zero, data);
 	}
-
-	public BufferHandle Handle { get; }
 
 	protected override void DisposeNativeResources()
 	{

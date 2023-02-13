@@ -1,4 +1,6 @@
-﻿namespace JXS.Graphics.Core;
+﻿using JXS.Utils;
+
+namespace JXS.Graphics.Core;
 
 public class VertexArray : NativeResource
 {
@@ -9,12 +11,12 @@ public class VertexArray : NativeResource
 		handle = CreateVertexArray();
 	}
 
-	public void LinkVertexAttribute<TData>(VertexAttribute attribute, Buffer<TData> buffer, int stride)
+	public void LinkVertexAttribute<TData>(VertexAttribute attribute, Buffer<TData> buffer, int stride, int offset)
 		where TData : unmanaged
 	{
-		var (location, componentCount, _, type, offset) = attribute;
+		var (location, componentCount, _, type, divisor) = attribute;
 		var index = (uint)location;
-		SetupArrayAttribute(index, componentCount, type);
+		SetupArrayAttribute(index, componentCount, type, divisor);
 		LinkBuffer(buffer, index, offset, stride);
 	}
 
@@ -27,11 +29,12 @@ public class VertexArray : NativeResource
 
 	public void LinkElementBuffer(Buffer<ushort> indexBuffer) => VertexArrayElementBuffer(handle, indexBuffer);
 
-	public void SetupArrayAttribute(uint index, int componentCount, VertexAttribType type)
+	public void SetupArrayAttribute(uint index, int componentCount, VertexAttribType type, uint divisor = 0)
 	{
 		EnableVertexArrayAttrib(handle, index);
 		VertexArrayAttribFormat(handle, index, componentCount, type, normalized: false, relativeoffset: 0);
 		VertexArrayAttribBinding(handle, index, index);
+		VertexArrayBindingDivisor(handle, index, divisor);
 	}
 
 	public void Bind()
@@ -56,12 +59,20 @@ public class VertexArray : NativeResource
 		Buffer<uint> indexBuffer)
 		where TVertex : unmanaged
 	{
+		if (typeof(TVertex) != vertexInfo.VertexType)
+		{
+			throw new ArgumentException(
+				$"Vertex buffer underlying type (got: {typeof(TVertex)}) must be the same as the {nameof(vertexInfo)} type (got: {vertexInfo.VertexType}).");
+		}
+
 		var vertexArray = new VertexArray();
 
 		var sizeInBytes = vertexInfo.SizeInBytes;
+		var offset = 0;
 		foreach (var attribute in vertexInfo.VertexAttributes)
 		{
-			vertexArray.LinkVertexAttribute(attribute, vertexBuffer, sizeInBytes);
+			vertexArray.LinkVertexAttribute(attribute, vertexBuffer, sizeInBytes, offset);
+			offset += attribute.Size;
 		}
 
 		vertexArray.LinkElementBuffer(indexBuffer);

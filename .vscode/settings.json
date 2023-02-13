@@ -8,6 +8,7 @@
 		"gui",
 		"assets",
 		"async",
-		"audio"
+		"audio",
+		"files"
 	]
 }
