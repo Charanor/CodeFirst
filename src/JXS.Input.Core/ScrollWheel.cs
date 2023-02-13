@@ -2,8 +2,8 @@
 
 public class ScrollWheel : Axis
 {
-	private float value = Single.NaN;
-	private float prevValue = Single.NaN;
+	private float value = float.NaN;
+	private float prevValue = float.NaN;
 
 	public ScrollWheel(ScrollDirection direction = ScrollDirection.Vertical)
 	{

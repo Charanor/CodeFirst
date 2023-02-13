@@ -9,12 +9,15 @@ public class MultiAxis : Axis
 		axes = new List<Axis>();
 	}
 
-	public override float Value => Math.Max(Math.Min(axes.Sum(a => a.Value), 1), -1);
+	public override float Value => Math.Max(Math.Min(axes.Sum(a => a.Value), val2: 1), val2: -1);
 
 	public override void Update(IInputProvider inputProvider, float delta)
 	{
 		base.Update(inputProvider, delta);
-		foreach (var axis in axes) axis.Update(inputProvider, delta);
+		foreach (var axis in axes)
+		{
+			axis.Update(inputProvider, delta);
+		}
 	}
 
 	public static MultiAxis operator +(MultiAxis multiAxis, Axis axis)

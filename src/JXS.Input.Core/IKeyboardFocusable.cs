@@ -2,7 +2,7 @@ namespace JXS.Input.Core;
 
 public interface IKeyboardFocusable
 {
-    public bool Focused { get; set; }
+	public bool Focused { get; set; }
 
-    public void OnTextTyped(string typedText);
+	public void OnTextTyped(string typedText);
 }

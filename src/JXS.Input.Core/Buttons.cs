@@ -2,9 +2,9 @@ namespace JXS.Input.Core;
 
 public enum Buttons
 {
-    Left,
-    Right,
-    Middle,
-    ExtraOne,
-    ExtraTwo
+	Left,
+	Right,
+	Middle,
+	ExtraOne,
+	ExtraTwo
 }

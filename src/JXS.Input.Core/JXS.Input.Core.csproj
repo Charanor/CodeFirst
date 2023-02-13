@@ -7,11 +7,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="OpenTK" Version="5.0.0-pre.8" />
+        <PackageReference Include="OpenTK" Version="5.0.0-pre.8"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\JXS.Utils\JXS.Utils.csproj" />
+        <ProjectReference Include="..\JXS.Utils\JXS.Utils.csproj"/>
     </ItemGroup>
 
 </Project>
