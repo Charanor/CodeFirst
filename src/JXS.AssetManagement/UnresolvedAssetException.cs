@@ -2,7 +2,7 @@
 
 public class UnresolvedAssetException : Exception
 {
-	public UnresolvedAssetException(string asset) : base($"No asset loaders could not resolve asset {asset}")
+	public UnresolvedAssetException(string asset) : base($"No asset loaders could resolve asset {asset}")
 	{
 	}
 }

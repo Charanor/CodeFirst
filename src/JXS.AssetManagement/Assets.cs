@@ -230,6 +230,49 @@ public static class Assets
 	}
 
 	/// <summary>
+	///     Tries to get the asset. If the asset could not be loaded, the asset engine attempt to load it in the background.
+	/// </summary>
+	/// <param name="asset"></param>
+	/// <param name="result"></param>
+	/// <param name="failReason">the reason why this call failed</param>
+	/// <typeparam name="TAsset"></typeparam>
+	/// <returns></returns>
+	public static bool TryGetAssetOrPrecache<TAsset>([UriString] string asset, [NotNullWhen(true)] out TAsset? result, out LoadFailReason failReason)
+	{
+		var state = GetAssetState(asset);
+		if (state != AssetState.Loaded)
+		{
+			result = default;
+
+			if (state == AssetState.Invalid)
+			{
+				failReason = LoadFailReason.InvalidAssetUri;
+			}
+			else
+			{
+				failReason = LoadFailReason.NotLoaded;
+				Precache<TAsset>(asset);
+			}
+			
+			return false;
+		}
+
+		try
+		{
+			result = Get<TAsset>(asset);
+			failReason = LoadFailReason.None;
+			return true;
+		}
+		// We don't want to catch any other exceptions, since they should be "impossible".
+		catch (WrongAssetTypeException)
+		{
+			result = default;
+			failReason = LoadFailReason.WrongAssetType;
+			return false;
+		}
+	}
+
+	/// <summary>
 	///     Checks if the given asset string is a correctly formatted asset string.
 	/// </summary>
 	/// <remarks>
@@ -266,8 +309,10 @@ public static class Assets
 			return false;
 		}
 
+		// This is placed inside DEBUG clause since it consumed A LOT of ram because it needs to convert the "host"
+		// span to a string to check if the dictionary contains that key.
 		// ReSharper disable once InvertIf
-		if (host != default && !PathResolvers.ContainsKey(host.ToString()))
+		if (!host.IsEmpty && !PathResolvers.ContainsKey(host.ToString()))
 		{
 			Logger.Debug(
 				$"{nameof(IsValidAssetUri)}({asset}): Asset has unknown root path \"{host}\"; expected one of [{string.Join(separator: ", ", PathResolvers.Keys)}].");
@@ -327,7 +372,7 @@ public static class Assets
 	/// <param name="asset"></param>
 	/// <returns></returns>
 	public static bool IsGeneratedAsset([UriString] string asset) =>
-		TryParseUri(asset, out var host, out _) && host == null;
+		TryParseUri(asset, out var host, out _) && host == default;
 
 	public static bool TryResolveAsset([UriString] string asset, [NotNullWhen(true)] out FileHandle? fileHandle)
 	{
@@ -444,4 +489,12 @@ public enum AssetState
 	///     This asset is loaded and ready to be used
 	/// </summary>
 	Loaded
+}
+
+public enum LoadFailReason
+{
+	None,
+	NotLoaded,
+	InvalidAssetUri,
+	WrongAssetType
 }
