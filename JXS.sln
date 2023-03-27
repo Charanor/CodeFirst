@@ -28,6 +28,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Async", "src\JXS.Async\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.AssetManagement", "src\JXS.AssetManagement\JXS.AssetManagement.csproj", "{31505413-7AF6-411C-92B9-24A7F75A9620}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JXS.Ai.Steering", "src\JXS.Ai.Steering\JXS.Ai.Steering.csproj", "{2B8C3575-F44C-4E7B-BDEB-A67D6F731D54}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,5 +88,9 @@ Global
 		{31505413-7AF6-411C-92B9-24A7F75A9620}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{31505413-7AF6-411C-92B9-24A7F75A9620}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{31505413-7AF6-411C-92B9-24A7F75A9620}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B8C3575-F44C-4E7B-BDEB-A67D6F731D54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B8C3575-F44C-4E7B-BDEB-A67D6F731D54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B8C3575-F44C-4E7B-BDEB-A67D6F731D54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B8C3575-F44C-4E7B-BDEB-A67D6F731D54}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

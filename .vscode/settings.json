@@ -9,6 +9,7 @@
 		"assets",
 		"async",
 		"audio",
-		"files"
+		"files",
+		"ai"
 	]
 }
