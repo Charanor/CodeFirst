@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -13,8 +14,6 @@ namespace Ecs.Generators.Generators;
 [Generator]
 public class GenerateProcessEntityMethod : IIncrementalGenerator
 {
-	private const string ITERATING_SYSTEM_NAME = "IteratingSystem";
-
 	private const string ENTITY_PROCESSOR_NAMESPACE = "JXS.Ecs.Core.Attributes.Generation";
 	private const string ENTITY_PROCESSOR_NAME = "EntityProcessorAttribute";
 
@@ -73,60 +72,28 @@ public class GenerateProcessEntityMethod : IIncrementalGenerator
 	)
 	{
 		var syntax = (ClassDeclarationSyntax)context.Node;
-
-		var isEntitySystem = false;
-		foreach (var baseTypeSyntax in syntax.BaseList!.Types)
+		foreach (var memberDeclarationSyntax in syntax.Members.OfType<MethodDeclarationSyntax>())
 		{
-			if (
-				baseTypeSyntax.Type is not IdentifierNameSyntax stx
-				|| stx.Identifier.ToString() != ITERATING_SYSTEM_NAME
-			)
+			if (memberDeclarationSyntax is not { ParameterList.Parameters.Count: > 0, AttributeLists.Count: > 0 })
 			{
 				continue;
 			}
 
-			isEntitySystem = true;
-			break;
-		}
-
-		if (!isEntitySystem)
-		{
-			return null;
-		}
-
-		// ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
-		foreach (var memberDeclarationSyntax in syntax.Members)
-		{
-			if (
-				memberDeclarationSyntax
-				is not MethodDeclarationSyntax
-				{
-					ParameterList.Parameters.Count: > 0,
-					AttributeLists.Count: > 0
-				} methodSyntax
-			)
+			foreach (var attributeSyntax in memberDeclarationSyntax.AttributeLists.SelectMany(list => list.Attributes))
 			{
-				continue;
-			}
-
-			foreach (var attributeListSyntax in methodSyntax.AttributeLists)
-			{
-				foreach (var attributeSyntax in attributeListSyntax.Attributes)
+				if (
+					context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol
+					is not IMethodSymbol attributeSymbol
+				)
 				{
-					if (
-						context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol
-						is not IMethodSymbol attributeSymbol
-					)
-					{
-						continue;
-					}
+					continue;
+				}
 
-					var namedTypeNode = attributeSymbol.ContainingType;
-					var fullName = namedTypeNode.ToDisplayString();
-					if (fullName == ENTITY_PROCESSOR_FULL_NAME)
-					{
-						return new ProcessEntityIntermediateSyntax(syntax, methodSyntax);
-					}
+				var namedTypeNode = attributeSymbol.ContainingType;
+				var fullName = namedTypeNode.ToDisplayString();
+				if (fullName == ENTITY_PROCESSOR_FULL_NAME)
+				{
+					return new ProcessEntityIntermediateSyntax(syntax, memberDeclarationSyntax);
 				}
 			}
 		}
