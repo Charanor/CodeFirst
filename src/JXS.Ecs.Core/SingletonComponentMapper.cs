@@ -11,7 +11,7 @@ public class SingletonComponentMapper<T> : ComponentMapper<T> where T : ISinglet
 
 	public ref T SingletonInstance => ref singletonInstance;
 
-	public override bool Has(Entity entity) => true;
+	public override bool Has(Entity entity) => entity == Entity.SingletonEntity;
 
 	public override ref T Get(Entity entity) => ref SingletonInstance;
 

@@ -83,7 +83,11 @@ public class ComponentMapper<T> : IComponentMapper, IComponentMapper<T> where T 
 	/// </summary>
 	/// <param name="entity">the entity</param>
 	/// <returns>the raw component data</returns>
-	public ref T GetComponentDataFor(Entity entity) => ref components[entity.Id];
+	public ref T GetComponentDataFor(Entity entity)
+	{
+		EnsureCanContainEntity(entity);
+		return ref components[entity.Id];
+	}
 
 	/// <inheritdoc cref="IComponentMapper.Update" />
 	public virtual ref T Update(Entity entity, in T component)

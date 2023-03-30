@@ -197,7 +197,6 @@ public class World : IDisposable
 
 		Inject(system);
 		system.World = this;
-		system.Entities = GetEntitiesForAspect(system.Aspect);
 		system.Initialize(this);
 	}
 

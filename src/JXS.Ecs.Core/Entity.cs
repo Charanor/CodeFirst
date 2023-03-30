@@ -51,5 +51,7 @@ public readonly record struct Entity
 
 	public override int GetHashCode() => Id;
 
-	public override string ToString() => $"Entity{{{nameof(Id)}: {Id}, {nameof(IsValid)}: {IsValid}}}";
+	public override string ToString() => this == SingletonEntity
+		? "SingletonEntity"
+		: $"{(IsValid ? string.Empty : "Invalid")}Entity({Id})";
 }

@@ -13,14 +13,9 @@ namespace JXS.Ecs.Core;
 /// </summary>
 public abstract class EntitySystem
 {
-	private IReadOnlySnapshotList<Entity> entities;
-
-	protected EntitySystem(Aspect aspect, Pass pass)
+	protected EntitySystem(Pass pass)
 	{
 		Pass = pass;
-		Aspect = aspect;
-		// This looks weird, but we need to set "entities" first so we don't get a null reference exception
-		Entities = entities = new SnapshotList<Entity>();
 	}
 
 	/// <summary>
@@ -36,60 +31,12 @@ public abstract class EntitySystem
 	protected EntitySystem()
 	{
 		Pass = GetPassFromAttribute();
-		Aspect = AspectBuilder.GetAspectFromAttributes(GetType());
-		// This looks weird, but we need to set "entities" first so we don't get a null reference exception
-		Entities = entities = new SnapshotList<Entity>();
 	}
 
 	/// <summary>
 	///     During which pass this system should update.
 	/// </summary>
 	public Pass Pass { get; }
-
-	/// <summary>
-	///     The aspect of entities this system processes.
-	/// </summary>
-	public Aspect Aspect { get; }
-
-	/// <summary>
-	///     The entities that this system will process.
-	///     Guaranteed to be the same reference, **unless the system is added to another world (or after it's added the
-	///     first time)**.
-	/// </summary>
-	/// <remarks>
-	///     Modifying this value will call <see cref="EntityAdded" /> and/or <see cref="EntityRemoved" /> for each new
-	///     entity added or removed, respectively. Will not be called for entities present in both the old and new list.
-	/// </remarks>
-	public IReadOnlySnapshotList<Entity> Entities
-	{
-		get => entities;
-		internal set
-		{
-			var prevEntities = entities;
-			var removedEntities = prevEntities.Where(val => !value.Contains(val));
-			foreach (var removedEntity in removedEntities)
-			{
-				EntityRemoved(removedEntity);
-			}
-
-			entities = value;
-			var addedEntities = value.Where(val => !prevEntities.Contains(val));
-			foreach (var addedEntity in addedEntities)
-			{
-				EntityAdded(addedEntity);
-			}
-
-			if (prevEntities != entities)
-			{
-				// New reference, re-target event listeners
-				prevEntities.OnItemAdded -= OnItemAdded;
-				prevEntities.OnItemRemoved -= OnItemRemoved;
-
-				value.OnItemAdded += OnItemAdded;
-				value.OnItemRemoved += OnItemRemoved;
-			}
-		}
-	}
 
 	/// <summary>
 	///     The world that this system belongs to. Null if it does not belong to a world.
@@ -188,7 +135,4 @@ public abstract class EntitySystem
 		Debug.Assert(World != null);
 		World?.DeleteEntity(entity);
 	}
-
-	private void OnItemRemoved(SnapshotList<Entity> _, EventArgs<Entity> e) => EntityRemoved(e.Value);
-	private void OnItemAdded(SnapshotList<Entity> _, EventArgs<Entity> e) => EntityAdded(e.Value);
 }

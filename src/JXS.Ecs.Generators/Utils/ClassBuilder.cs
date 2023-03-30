@@ -86,4 +86,6 @@ public class ClassBuilder
 	}
 
 	public void DocstringLn(string contents) => Docstring(contents + Environment.NewLine);
+
+	public void Clear() => sb.Clear();
 }
