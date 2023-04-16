@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using JetBrains.Annotations;
+using JXS.Async;
 using JXS.Audio.Internals;
 using OpenTK.Audio.OpenAL;
 using OpenTK.Mathematics;
@@ -59,15 +60,33 @@ public class Sound
 	/// <summary>
 	///     Plays this sound and returns the playing instance.
 	/// </summary>
+	/// <remarks>The <paramref name="freeOnStop" /> parameter <b>requires</b> <see cref="Coroutines"/> to be available and processed.</remarks>
 	/// <returns>the new playing instance</returns>
-	public SoundInstance Play([ValueRange(MIN_VOLUME, MAX_VOLUME)] float volume = 1f, bool looping = false)
+	public SoundInstance Play([ValueRange(MIN_VOLUME, MAX_VOLUME)] float volume = 1f, bool looping = false,
+		bool freeOnStop = false)
 	{
 		var source = ObtainSource();
 		source.Volume = MathHelper.Clamp(volume, MIN_VOLUME, MAX_VOLUME);
 		source.Looping = looping;
 		source.Play();
 
-		return new SoundInstance(this, source);
+		var soundInstance = new SoundInstance(this, source);
+		if (freeOnStop)
+		{
+			Coroutines.Start(FreeOnStop());
+		}
+
+		IEnumerator<Wait?> FreeOnStop()
+		{
+			while (soundInstance.State != ALSourceState.Stopped)
+			{
+				yield return null;
+			}
+
+			soundInstance.Free();
+		}
+
+		return soundInstance;
 	}
 
 	internal void FreeInstance(SoundInstance instance)
