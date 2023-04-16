@@ -10,12 +10,13 @@ namespace JXS.AssetManagement;
 
 public static class Assets
 {
+	private const string PATH_SEPARATOR = "://";
 	private const string GENERATED_ASSET_SCHEME = "generated";
-	private const string DEFAULT_ASSET_SCHEME = "file";
+	private const string GENERATED_ASSET_PREFIX = $"{GENERATED_ASSET_SCHEME}{PATH_SEPARATOR}";
 
 	private static readonly ILogger Logger = LoggingManager.Get(nameof(Assets));
 
-	private static readonly IDictionary<string, PathResolver> PathResolvers = new Dictionary<string, PathResolver>();
+	private static readonly IDictionary<string, PathResolver> SchemeResolvers = new Dictionary<string, PathResolver>();
 
 	private static readonly IList<IAssetResolver> AssetResolvers = new List<IAssetResolver>
 	{
@@ -33,7 +34,7 @@ public static class Assets
 	///     loaders.
 	/// </param>
 	/// <returns></returns>
-	public static async Task<bool> Precache([UriString] string asset, Type? assetType = null)
+	public static async Task<bool> Precache([UriString] string asset, Type assetType)
 	{
 		if (asset is not { Length: > 0 })
 		{
@@ -45,20 +46,20 @@ public static class Assets
 		}
 
 		// ReSharper disable once InvertIf
-		if (!IsValidAssetUri(asset, out string? host, out var path))
+		if (!IsValidAssetUri(asset, out string? scheme, out var path))
 		{
 			Logger.Warn($"{nameof(Precache)}({asset}): Invalid asset uri; aborting preload.");
 			return false;
 		}
 
-		if (host == default)
+		if (scheme == GENERATED_ASSET_SCHEME)
 		{
 			Logger.Warn($"{nameof(Precache)}({asset}): Asset is a generated asset; aborting preload.");
 			return false;
 		}
 
 		var assetTask = AssetTasks.GetOrAdd(asset,
-			valueFactory: key => Task.Run(() => LoadAsset(key, host, path, assetType)));
+			valueFactory: key => Task.Run(() => LoadAsset(key, scheme, path, assetType)));
 		await assetTask;
 		return assetTask.IsCompletedSuccessfully;
 	}
@@ -66,12 +67,12 @@ public static class Assets
 	public static Task<bool> Precache<TAssetType>([UriString] string asset) =>
 		Precache(asset, typeof(TAssetType));
 
-	private static object LoadAsset<TAssetType>([UriString] string asset, string host, string path) =>
-		LoadAsset(asset, host, path, typeof(TAssetType));
+	private static object LoadAsset<TAssetType>([UriString] string asset, string scheme, string path) =>
+		LoadAsset(asset, scheme, path, typeof(TAssetType));
 
-	private static object LoadAsset([UriString] string asset, string host, string path, Type? assetType)
+	private static object LoadAsset([UriString] string asset, string scheme, string path, Type? assetType)
 	{
-		var pathResolver = PathResolvers[host];
+		var pathResolver = SchemeResolvers[scheme];
 		var fileHandle = pathResolver(path);
 
 		if (!fileHandle.Exists)
@@ -170,7 +171,7 @@ public static class Assets
 
 		if (!AssetTasks.TryGetValue(asset, out var assetTask))
 		{
-			var precacheTask = Precache(asset);
+			var precacheTask = Precache<TAsset>(asset);
 			precacheTask.WaitWhileHandlingMainThreadTasks();
 			if (!precacheTask.Result)
 			{
@@ -222,7 +223,7 @@ public static class Assets
 			return true;
 		}
 		// We don't want to catch any other exceptions, since they should be "impossible".
-		catch (WrongAssetTypeException)
+		catch (WrongAssetTypeException e)
 		{
 			result = default;
 			return false;
@@ -237,7 +238,8 @@ public static class Assets
 	/// <param name="failReason">the reason why this call failed</param>
 	/// <typeparam name="TAsset"></typeparam>
 	/// <returns></returns>
-	public static bool TryGetAssetOrPrecache<TAsset>([UriString] string asset, [NotNullWhen(true)] out TAsset? result, out LoadFailReason failReason)
+	public static bool TryGetAssetOrPrecache<TAsset>([UriString] string asset, [NotNullWhen(true)] out TAsset? result,
+		out LoadFailReason failReason)
 	{
 		var state = GetAssetState(asset);
 		if (state != AssetState.Loaded)
@@ -253,7 +255,7 @@ public static class Assets
 				failReason = LoadFailReason.NotLoaded;
 				Precache<TAsset>(asset);
 			}
-			
+
 			return false;
 		}
 
@@ -264,7 +266,7 @@ public static class Assets
 			return true;
 		}
 		// We don't want to catch any other exceptions, since they should be "impossible".
-		catch (WrongAssetTypeException)
+		catch (WrongAssetTypeException e)
 		{
 			result = default;
 			failReason = LoadFailReason.WrongAssetType;
@@ -285,37 +287,58 @@ public static class Assets
 	public static bool IsValidAssetUri([UriString] string asset) =>
 		IsValidAssetUri(asset, out ReadOnlySpan<char> _, out _);
 
-	private static bool IsValidAssetUri([UriString] string asset, out string? host,
+	private static bool IsValidAssetUri([UriString] string asset, [NotNullWhen(true)] out string? scheme,
 		[NotNullWhen(true)] out string? path)
 	{
-		if (!IsValidAssetUri(asset, out ReadOnlySpan<char> hostSpan, out var pathSpan))
+		if (!IsValidAssetUri(asset, out ReadOnlySpan<char> schemeSpan, out var pathSpan))
 		{
-			host = default;
+			scheme = default;
 			path = default;
 			return false;
 		}
 
-		host = hostSpan == default ? default : hostSpan.ToString();
+		scheme = schemeSpan.ToString();
 		path = pathSpan.ToString();
 		return true;
 	}
 
-	private static bool IsValidAssetUri([UriString] string asset, out ReadOnlySpan<char> host,
+	private static bool IsValidAssetUri([UriString] string asset, out ReadOnlySpan<char> scheme,
 		out ReadOnlySpan<char> path)
 	{
-		if (!TryParseUri(asset, out host, out path))
+		if (!TryParseUri(asset, out scheme, out path))
 		{
 			Logger.Debug($"{nameof(IsValidAssetUri)}({asset}): Invalid uri format");
 			return false;
 		}
 
-		// This is placed inside DEBUG clause since it consumed A LOT of ram because it needs to convert the "host"
-		// span to a string to check if the dictionary contains that key.
+		if (scheme == GENERATED_ASSET_SCHEME)
+		{
+			// Generated assets are always valid
+			return true;
+		}
+
+		var found = false;
+		// We could of course use #Contains here to check if the key exists, but that means we need to allocate memory
+		// for the scheme span (to convert it to a string). Checking it by iterating the keys is slower but more memory
+		// efficient!
+		using var keyEnumerator = SchemeResolvers.Keys.GetEnumerator();
+		while (keyEnumerator.MoveNext())
+		{
+			var key = keyEnumerator.Current;
+			if (!scheme.Equals(key, StringComparison.InvariantCulture))
+			{
+				continue;
+			}
+
+			found = true;
+			break;
+		}
+
 		// ReSharper disable once InvertIf
-		if (!host.IsEmpty && !PathResolvers.ContainsKey(host.ToString()))
+		if (!found)
 		{
 			Logger.Debug(
-				$"{nameof(IsValidAssetUri)}({asset}): Asset has unknown root path \"{host}\"; expected one of [{string.Join(separator: ", ", PathResolvers.Keys)}].");
+				$"{nameof(IsValidAssetUri)}({asset}): Asset has unknown scheme \"{scheme}\"; expected one of [{string.Join(separator: ", ", SchemeResolvers.Keys)}].");
 			return false;
 		}
 
@@ -354,35 +377,34 @@ public static class Assets
 				$"Generated asset for asset of type {typeof(TAsset)}, however there are no asset resolvers that can load assets of that type. This is not guaranteed to work, since the asset can not be reloaded if it would be taken out of scope.");
 		}
 
-		var uuid = $"{GENERATED_ASSET_SCHEME}:{Path.GetRandomFileName()}";
+		var uuid = $"{GENERATED_ASSET_PREFIX}{Path.GetRandomFileName()}";
 		var task = Task.FromResult((object)assetObject);
 		while (!AssetTasks.TryAdd(uuid, task))
 		{
-			uuid = $"{GENERATED_ASSET_SCHEME}:{Path.GetRandomFileName()}";
+			uuid = $"{GENERATED_ASSET_PREFIX}{Path.GetRandomFileName()}";
 		}
 
 		return uuid;
 	}
 
 	/// <summary>
-	///     Checks if the given asset handle points to a generated asset generated via
-	///     <see cref="GenerateAssetHandle{TAsset}" />. This method will also return <c>false</c> when the asset handle is
-	///     invalid, or does not exist, or is not loaded, etc.
+	///     Checks if the given asset handle would point to a generated asset generated via
+	///     <see cref="GenerateAssetHandle{TAsset}" />. Does not actually check if the asset exists, or is loaded, etc.
 	/// </summary>
 	/// <param name="asset"></param>
 	/// <returns></returns>
 	public static bool IsGeneratedAsset([UriString] string asset) =>
-		TryParseUri(asset, out var host, out _) && host == default;
+		asset.StartsWith(GENERATED_ASSET_PREFIX);
 
 	public static bool TryResolveAsset([UriString] string asset, [NotNullWhen(true)] out FileHandle? fileHandle)
 	{
-		if (!IsValidAssetUri(asset, out string? host, out var path) || host == default)
+		if (!IsValidAssetUri(asset, out string? scheme, out var path) || scheme == default)
 		{
 			fileHandle = default;
 			return false;
 		}
 
-		var pathResolver = PathResolvers[host];
+		var pathResolver = SchemeResolvers[scheme];
 		fileHandle = pathResolver(path);
 		return true;
 	}
@@ -399,7 +421,8 @@ public static class Assets
 
 	public static void AddSchemeResolver(string scheme, PathResolver pathResolver)
 	{
-		PathResolvers.Add(scheme, pathResolver);
+		var actualScheme = scheme.EndsWith(PATH_SEPARATOR) ? scheme[..-PATH_SEPARATOR.Length] : scheme;
+		SchemeResolvers.Add(actualScheme, pathResolver);
 	}
 
 	public static void UnloadAll()
@@ -418,53 +441,20 @@ public static class Assets
 		UnloadAll();
 	}
 
-	public static bool TryParseUri([UriString] string uri, out ReadOnlySpan<char> host, out ReadOnlySpan<char> path)
+	public static bool TryParseUri([UriString] string uri, out ReadOnlySpan<char> scheme, out ReadOnlySpan<char> path)
 	{
-		const string filePrefix = $"{DEFAULT_ASSET_SCHEME}://";
-		const string generatedPrefix = $"{GENERATED_ASSET_SCHEME}:";
-
-		var span = uri.AsSpan();
-		if (uri.StartsWith(filePrefix))
+		var uriSpan = uri.AsSpan();
+		if (!uriSpan.Contains(PATH_SEPARATOR, StringComparison.InvariantCulture))
 		{
-			var hostStartIdx = filePrefix.Length;
-			var hostEndIdx = hostStartIdx;
-			for (; hostEndIdx < uri.Length; hostEndIdx++)
-			{
-				if (uri[hostEndIdx] == '/')
-				{
-					break;
-				}
-			}
-
-			if (hostEndIdx <= hostStartIdx)
-			{
-				host = default;
-				path = default;
-				return false;
-			}
-
-			var pathLength = uri.Length - hostEndIdx;
-			if (pathLength <= 1) // 1, since we skip the first slash
-			{
-				host = default;
-				path = default;
-				return false;
-			}
-
-			host = span[hostStartIdx..hostEndIdx];
-			path = span[(hostEndIdx + 1)..];
-			return true;
+			scheme = default;
+			path = default;
+			return false;
 		}
 
-		host = default;
-		if (uri.StartsWith(generatedPrefix))
-		{
-			path = span[generatedPrefix.Length..];
-			return true;
-		}
-
-		path = default;
-		return false;
+		var separatorIndex = uri.AsSpan().IndexOf(PATH_SEPARATOR);
+		scheme = uriSpan[..separatorIndex];
+		path = uriSpan[(separatorIndex + PATH_SEPARATOR.Length)..];
+		return scheme.Length > 0 && path.Length > 0;
 	}
 }
 
