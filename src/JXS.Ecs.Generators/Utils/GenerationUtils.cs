@@ -188,7 +188,8 @@ internal static class GenerationUtils
 							builder.IndentedLn($"{MapperName(decl.Type)}.Update(entity, {IN} {decl.Name});");
 						}
 						builder.EndBlock();
-						builder.BeginBlock($"else if (!{OptionalComponentFieldName(decl.Type)} && !{decl.Name}.Equals(default))");
+						builder.BeginBlock(
+							$"else if (!{OptionalComponentFieldName(decl.Type)} && !{decl.Name}.Equals(default))");
 						{
 							builder.IndentedLn(
 								$"throw new System.InvalidOperationException({Quote($"Must not assign to optional component parameter {decl.Name} when the component does not exist. Instead, use Has{decl.Type} to check if the component exists, and if it does not, use the {CREATE_METHOD}({IN} {decl.Type}) to create a new instance.")});");

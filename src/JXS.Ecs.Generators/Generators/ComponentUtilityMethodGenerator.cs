@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Ecs.Generators.Utils;
@@ -65,7 +64,7 @@ public class ComponentUtilityMethodGenerator : IIncrementalGenerator
 		var componentType = compilation.GetTypeByMetadataName(COMPONENT_METADATA_NAME);
 		var singletonComponentType = compilation.GetTypeByMetadataName(SINGLETON_COMPONENT_METADATA_NAME);
 		var attributeType = compilation.GetTypeByMetadataName(ATTRIBUTE);
-		
+
 		var allTypes = syntax.AttributeLists
 			.SelectMany(list => list.Attributes)
 			.Where(IsUtilityAttributeSyntax)
@@ -107,7 +106,8 @@ public class ComponentUtilityMethodGenerator : IIncrementalGenerator
 			SymbolEqualityComparer.Default.Equals(symbol, singletonComponentType);
 
 		bool IsIteratingSystemClass(ITypeSymbol? symbol) =>
-			symbol != null && (SymbolEqualityComparer.Default.Equals(symbol, iteratingSystemType) || IsIteratingSystemClass(symbol.BaseType));
+			symbol != null && (SymbolEqualityComparer.Default.Equals(symbol, iteratingSystemType) ||
+			                   IsIteratingSystemClass(symbol.BaseType));
 	}
 
 	private static void Execute(Compilation compilation, ImmutableArray<IntermediateSyntax> classes,
