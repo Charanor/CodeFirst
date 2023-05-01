@@ -1,8 +1,8 @@
 ﻿using System.Reflection;
 using JXS.Ecs.Core.Exceptions;
 using JXS.Ecs.Core.Utilities;
+using JXS.Utils;
 using JXS.Utils.Collections;
-using JXS.Utils.Logging;
 
 namespace JXS.Ecs.Core;
 
@@ -11,12 +11,11 @@ namespace JXS.Ecs.Core;
 /// </summary>
 public class World : IDisposable
 {
-	private static readonly ILogger Logger = LoggingManager.Get<World>();
-
 	private readonly ISet<Entity> entities;
 	private readonly ISet<Entity> removedEntities;
 
 	private readonly IList<EntitySystem> updateSystems;
+	private readonly IList<EntitySystem> fixedUpdateSystems;
 	private readonly IList<EntitySystem> drawSystems;
 	private readonly ISet<Entity> dirtyEntities;
 
@@ -25,7 +24,7 @@ public class World : IDisposable
 
 	private readonly IDictionary<Aspect, SnapshotList<Entity>> entitiesForAspects;
 
-	private int nextEntityId;
+	private float fixedUpdateAccumulator;
 
 	public World()
 	{
@@ -33,6 +32,7 @@ public class World : IDisposable
 		removedEntities = new HashSet<Entity>();
 
 		updateSystems = new List<EntitySystem>();
+		fixedUpdateSystems = new List<EntitySystem>();
 		drawSystems = new List<EntitySystem>();
 		dirtyEntities = new HashSet<Entity>();
 
@@ -42,15 +42,33 @@ public class World : IDisposable
 		entitiesForAspects = new Dictionary<Aspect, SnapshotList<Entity>>();
 	}
 
+	/// <summary>
+	///     The delta time of the fixed update step. For example a value of <c>0.01</c> would mean that the fixed update
+	///     runs 100 times per second (1 / 0.01). If <c>&lt;=0</c> fixed update will not run at all.
+	/// </summary>
+	/// <remarks>
+	///     The fixed update is controlled by the <see cref="Update" /> function and run directly after the normal update
+	///     pass (if it is its time to run, that is).
+	/// </remarks>
+	public float FixedUpdateDelta { get; set; }
+
 	public void Dispose()
 	{
 		GC.SuppressFinalize(this);
+		// ReSharper disable once SuspiciousTypeConversion.Global
 		foreach (var system in drawSystems.OfType<IDisposable>())
 		{
 			system.Dispose();
 		}
 
+		// ReSharper disable once SuspiciousTypeConversion.Global
 		foreach (var system in updateSystems.OfType<IDisposable>())
+		{
+			system.Dispose();
+		}
+
+		// ReSharper disable once SuspiciousTypeConversion.Global
+		foreach (var system in fixedUpdateSystems.OfType<IDisposable>())
 		{
 			system.Dispose();
 		}
@@ -75,7 +93,38 @@ public class World : IDisposable
 			system.End();
 		}
 
+		if (FixedUpdateDelta > 0)
+		{
+			fixedUpdateAccumulator += delta;
+			// We cache the delta here in case it is changed during processing, which could have weird effects
+			var currentFixedUpdateDelta = FixedUpdateDelta;
+			for (; fixedUpdateAccumulator >= currentFixedUpdateDelta; fixedUpdateAccumulator -= currentFixedUpdateDelta)
+			{
+				UpdateFixed(currentFixedUpdateDelta);
+			}
+		}
+		else
+		{
+			fixedUpdateAccumulator = 0;
+		}
+
 		RemoveDeletedEntities();
+	}
+
+	private void UpdateFixed(float delta)
+	{
+		foreach (var system in fixedUpdateSystems)
+		{
+			if (!system.ShouldUpdate())
+			{
+				continue;
+			}
+
+			UpdateDirtyEntities();
+			system.Begin();
+			system.Update(delta);
+			system.End();
+		}
 	}
 
 	/// <summary>
@@ -128,21 +177,52 @@ public class World : IDisposable
 		removedEntities.Clear();
 	}
 
-	public bool HasEntity(Entity entity) => entities.Contains(entity);
+	public bool HasEntity(Entity entity) => entity.IsValid && entities.Contains(entity);
 
 	/// <summary>
 	///     Creates a new entity and adds it to the world.
 	/// </summary>
-	/// <returns>the id of the created entity</returns>
-	/// <exception cref="IndexOutOfRangeException">If we have ran out of new entity ID:s (<c>int.MaxValue = 2147483647</c>)</exception>
-	public Entity CreateEntity()
+	/// <param name="id">
+	///     the optional id of the entity. If left as default, or <c>&lt;0</c>, will pick the 1st available id. This
+	///     parameter is, for the most part, unnecessary to set and is primarily offered as a way to re-initialize a
+	///     world from some state, or to synchronize entity ID:s across server/client pairs.
+	/// </param>
+	/// <returns>the created entity. In non-dev environments this may be <see cref="Entity.Invalid" /> if an error occurs.</returns>
+	/// <exception cref="IndexOutOfRangeException">
+	///     (Dev only) If we have ran out of new entity ID:s (
+	///     <c>int.MaxValue = 2147483647</c>)
+	/// </exception>
+	/// <exception cref="EntityAlreadyExistsException">(Dev only) An entity with the given ID already exists</exception>
+	public Entity CreateEntity(int id = -1)
 	{
-		if (nextEntityId == int.MaxValue)
+		if (id < 0)
 		{
-			throw new IndexOutOfRangeException($"Max number of entities reached, {int.MaxValue}");
+			// Search for 1st valid ID
+			for (var i = 0; i < int.MaxValue; i++)
+			{
+				if (entities.Contains(new Entity(i)))
+				{
+					continue;
+				}
+
+				id = i;
+				break;
+			}
+
+			if (id < 0)
+			{
+				DevTools.Throw<World>(new IndexOutOfRangeException($"Max number of entities reached, {int.MaxValue}"));
+				return Entity.Invalid;
+			}
 		}
 
-		var entity = new Entity(nextEntityId++);
+		var entity = new Entity(id);
+		if (entities.Contains(entity))
+		{
+			DevTools.Throw<World>(new EntityAlreadyExistsException(entity));
+			return Entity.Invalid;
+		}
+
 		entities.Add(entity);
 		MarkEntityDirty(entity);
 		return entity;
@@ -153,7 +233,17 @@ public class World : IDisposable
 	///     draw).
 	/// </summary>
 	/// <param name="entity">the entity</param>
-	public void DeleteEntity(Entity entity) => removedEntities.Add(entity);
+	/// <exception cref="InvalidEntityException">(Dev only) if <see cref="Entity.IsValid" /> is false</exception>
+	public void DeleteEntity(Entity entity)
+	{
+		if (!entity.IsValid)
+		{
+			DevTools.Throw<World>(new InvalidEntityException());
+			return;
+		}
+
+		removedEntities.Add(entity);
+	}
 
 	/// <summary>
 	///     Adds a system to be processed by this world.
@@ -182,6 +272,15 @@ public class World : IDisposable
 
 				updateSystems.Add(system);
 				break;
+			case Pass.FixedUpdate:
+				if (fixedUpdateSystems.Any(sys => sys.GetType() == system.GetType()))
+				{
+					throw new InvalidOperationException(
+						$"A system of type {system.GetType()} already exists in world.");
+				}
+
+				fixedUpdateSystems.Add(system);
+				break;
 			case Pass.Draw:
 				if (drawSystems.Any(sys => sys.GetType() == system.GetType()))
 				{
@@ -204,20 +303,22 @@ public class World : IDisposable
 
 	public bool HasSystem(Type type) =>
 		updateSystems.Any(updateSystem => updateSystem.GetType() == type) ||
+		fixedUpdateSystems.Any(updateSystem => updateSystem.GetType() == type) ||
 		drawSystems.Any(updateSystem => updateSystem.GetType() == type);
 
 	/// <summary>
 	///     Injects any injectable dependencies registered with this world into the given object,
 	///     for example component mappers. Fields that receive injected dependencies must be marked as 'readonly'.
 	///     <code>
-	/// 		// If you are using nullable context, initialise the value to "null!" to prevent nullability warnings :)
-	///  	private readonly ComponentMapper&lt;MyComponent&gt; myComponentMapper = null!;
-	///   </code>
+	///  		// If you are using nullable context, initialise the value to "null!" to prevent nullability warnings :)
+	///   	private readonly ComponentMapper&lt;MyComponent&gt; myComponentMapper = null!;
+	///    </code>
 	/// </summary>
 	/// <param name="obj">The object to inject the dependencies into</param>
 	/// <exception cref="InjectionException">If the field definition of the injected dependency is not 'readonly'</exception>
 	/// <example>
 	///     // If you are using nullable context, initialise the value to "null!" to prevent nullability warnings :)
+	///     <br />
 	///     private readonly ComponentMapper&lt;MyComponent&gt; myComponentMapper = null!;
 	/// </example>
 	/// <seealso cref="InjectComponentMappers" />
@@ -236,7 +337,7 @@ public class World : IDisposable
 	///   </code>
 	/// </summary>
 	/// <param name="obj">the object to inject the mappers into</param>
-	/// <exception cref="InjectionException">If the component mapper field definition is not 'readonly'</exception>
+	/// <exception cref="InjectionException">(Dev only) If the component mapper field definition is not 'readonly'</exception>
 	/// <example>
 	///     // If you are using nullable context, initialise the value to "null!" to prevent nullability warnings :)
 	///     private readonly ComponentMapper&lt;MyComponent&gt; myComponentMapper = null!;
@@ -255,18 +356,19 @@ public class World : IDisposable
 
 			if (!fieldInfo.IsInitOnly)
 			{
-				Logger.Error($"Could not inject {obj} into field {fieldInfo}: Field is not 'readonly'!");
-#if DEBUG
-				throw new InjectionException(fieldInfo, message: "Field is not 'readonly'");
-#else
-				return;
-#endif
+				DevTools.Throw<World>(new InjectionException(fieldInfo,
+					$"Could not inject {obj} into field {fieldInfo}: Field is not 'readonly'!"));
+				continue;
 			}
 
 			fieldInfo.SetValue(obj, GetMapper(mapperType.GenericTypeArguments[0]));
 		}
 	}
 
+	/// <exception cref="InjectionException">
+	///     (Dev only) If the injected field definition is not 'readonly', or if an
+	///     aspect-annotated field is not of type <see cref="Aspect" /> or <see cref="IReadOnlySnapshotList{T}" />
+	/// </exception>
 	public void InjectAspectsAndEntities(object obj)
 	{
 		var type = obj.GetType();
@@ -282,12 +384,9 @@ public class World : IDisposable
 
 			if (!fieldInfo.IsInitOnly)
 			{
-				Logger.Error($"Could not inject {obj} into field {fieldInfo}: Field is not 'readonly'!");
-#if DEBUG
-				throw new InjectionException(fieldInfo, message: "Field is not 'readonly'");
-#else
-				return;
-#endif
+				DevTools.Throw<World>(new InjectionException(fieldInfo,
+					$"Could not inject {obj} into field {fieldInfo}: Field is not 'readonly'!"));
+				continue;
 			}
 
 			if (fieldType.IsAssignableTo(typeof(IReadOnlySnapshotList<Entity>)))
@@ -301,8 +400,8 @@ public class World : IDisposable
 			else
 			{
 				// We can't inject an aspect into a field of this type	
-				throw new InjectionException(fieldInfo,
-					$"Can not inject aspect-annotated field of type {fieldType}. Expected field type to be one of [{nameof(Aspect)}, {nameof(IReadOnlySnapshotList<Entity>)}]");
+				DevTools.Throw<World>(new InjectionException(fieldInfo,
+					$"Can not inject aspect-annotated field of type {fieldType}. Expected field type to be one of [{nameof(Aspect)}, {nameof(IReadOnlySnapshotList<Entity>)}]"));
 			}
 		}
 	}
@@ -323,7 +422,13 @@ public class World : IDisposable
 			return;
 		}
 
-		system = drawSystems.FirstOrDefault(updateSystem => updateSystem.GetType() == type);
+		system = fixedUpdateSystems.FirstOrDefault(fixedUpdateSystem => fixedUpdateSystem.GetType() == type);
+		if (system != null)
+		{
+			fixedUpdateSystems.Remove(system);
+		}
+
+		system = drawSystems.FirstOrDefault(drawSystem => drawSystem.GetType() == type);
 		if (system != null)
 		{
 			drawSystems.Remove(system);
@@ -338,6 +443,7 @@ public class World : IDisposable
 	public void RemoveSystem(EntitySystem system)
 	{
 		updateSystems.Remove(system);
+		fixedUpdateSystems.Remove(system);
 		drawSystems.Remove(system);
 	}
 
@@ -403,8 +509,15 @@ public class World : IDisposable
 	/// </summary>
 	/// <param name="entity">the entity</param>
 	/// <returns>the component flags for the given entity</returns>
+	/// <exception cref="InvalidEntityException">(Dev only) if <see cref="Entity.IsValid" /> is <c>false</c></exception>
 	public ComponentFlags GetFlagsForEntity(Entity entity)
 	{
+		if (!entity.IsValid)
+		{
+			DevTools.Throw<World>(new InvalidEntityException());
+			return ComponentFlags.Empty;
+		}
+
 		if (!HasEntity(entity))
 		{
 			return ComponentFlags.Empty;
@@ -450,13 +563,6 @@ public class World : IDisposable
 
 	private ComponentFlags ConstructFlagsForEntity(Entity entity)
 	{
-#if DEBUG
-		if (!HasEntity(entity))
-		{
-			throw CreateEntityDoesNotExistException(entity);
-		}
-#endif
-
 		var builder = new ComponentFlagsBuilder();
 		foreach (var (_, mapper) in mappers)
 		{
@@ -473,12 +579,12 @@ public class World : IDisposable
 	/// <param name="entity">the entity</param>
 	private void MarkEntityDirty(Entity entity)
 	{
-#if DEBUG
 		if (!HasEntity(entity))
 		{
-			throw CreateEntityDoesNotExistException(entity);
+			DevTools.Throw<World>(new EntityDoesNotExistException(entity));
+			return;
 		}
-#endif
+
 		dirtyEntities.Add(entity);
 	}
 
@@ -499,15 +605,20 @@ public class World : IDisposable
 	///     this is handled internally.
 	/// </summary>
 	/// <param name="entity">the entity</param>
+	/// <exception cref="InvalidEntityException">(Dev only) if <see cref="Entity.IsValid" /> is <c>false</c></exception>
+	/// <exception cref="EntityDoesNotExistException">(Dev only) if entity does not exist in this world</exception>
 	public void HydrateEntity(Entity entity)
 	{
+		if (!entity.IsValid)
+		{
+			DevTools.Throw<World>(new InvalidEntityException());
+			return;
+		}
+
 		if (!HasEntity(entity))
 		{
-#if DEBUG
-			throw CreateEntityDoesNotExistException(entity);
-#else
+			DevTools.Throw<World>(new EntityDoesNotExistException(entity));
 			return;
-#endif
 		}
 
 		// Need to remove this up here so we don't get an infinite cycle.
@@ -553,7 +664,7 @@ public class World : IDisposable
 	/// <returns>
 	///     <c>true</c> if the entity is dirty, <c>false</c> otherwise
 	/// </returns>
-	public bool EntityIsDirty(Entity entity) => dirtyEntities.Contains(entity);
+	public bool EntityIsDirty(Entity entity) => entity.IsValid && dirtyEntities.Contains(entity);
 
 	private static Exception CreateEntityDoesNotExistException(Entity entity) =>
 		new ArgumentException($"Entity {entity} does not exist in world!", nameof(entity));

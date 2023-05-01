@@ -3,7 +3,7 @@
 public abstract class OrderedIteratingSystem : IteratingSystem
 {
 	protected abstract int Order(Entity first);
-	
+
 	public override void Update(float delta)
 	{
 		using var handle = Entities.BeginHandle();

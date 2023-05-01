@@ -11,7 +11,7 @@ namespace JXS.Ecs.Core;
 public abstract class IteratingSystem : EntitySystem
 {
 	private IReadOnlySnapshotList<Entity> internalEntities;
-	
+
 	/// <summary>
 	///     Constructs a new EntitySystem and infers Family and Pass from the <c>[ProcessPass(Pass)]</c>,
 	///     <c>[All(ComponentType[])]</c>,
@@ -78,7 +78,7 @@ public abstract class IteratingSystem : EntitySystem
 	}
 
 	protected Entity CurrentEntity { get; set; }
-	
+
 	public override void Initialize(World world)
 	{
 		base.Initialize(world);

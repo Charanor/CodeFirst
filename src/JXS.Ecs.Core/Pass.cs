@@ -3,5 +3,6 @@
 public enum Pass
 {
 	Update,
+	FixedUpdate,
 	Draw
 }

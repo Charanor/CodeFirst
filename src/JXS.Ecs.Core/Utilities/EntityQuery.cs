@@ -10,7 +10,6 @@ namespace JXS.Ecs.Core.Utilities;
 /// </summary>
 public class EntityQuery
 {
-	private readonly World world;
 	private readonly List<EntityPredicate> entityFilters;
 	private readonly Thread creationThread;
 
@@ -19,7 +18,7 @@ public class EntityQuery
 
 	public EntityQuery(World world)
 	{
-		this.world = world;
+		World = world;
 		entityFilters = new List<EntityPredicate>();
 		entityAspect = new AspectBuilder();
 		creationThread = Thread.CurrentThread;
@@ -27,7 +26,7 @@ public class EntityQuery
 
 	private EntityQuery(EntityQuery other)
 	{
-		world = other.world;
+		World = other.World;
 		entityFilters = new List<EntityPredicate>();
 		entityFilters.AddRange(other.entityFilters);
 		entityAspect = new AspectBuilder(other.entityAspect);
@@ -45,6 +44,8 @@ public class EntityQuery
 			entityAspect = value;
 		}
 	}
+
+	public World World { get; set; }
 
 	/// <summary>
 	///     Copies this query to a new instance. This allows for multiple iteration at the same time, including multiple
@@ -75,7 +76,7 @@ public class EntityQuery
 			yield break;
 		}
 
-		cachedAspectMatchingEntities ??= world.GetEntitiesForAspect(EntityAspect);
+		cachedAspectMatchingEntities ??= World.GetEntitiesForAspect(EntityAspect);
 		using var handle = cachedAspectMatchingEntities.BeginHandle();
 		foreach (var entity in handle)
 		{
@@ -88,7 +89,7 @@ public class EntityQuery
 		}
 	}
 
-	private bool EntityMatchesFilters(Entity entity) => entityFilters.All(entityFilter => entityFilter(world, entity));
+	private bool EntityMatchesFilters(Entity entity) => entityFilters.All(entityFilter => entityFilter(World, entity));
 
 	/// <summary>
 	///     Checks that some entity passes the given <paramref name="predicate" />.
@@ -133,7 +134,7 @@ public class EntityQuery
 	/// <returns><c>this</c>, for chaining</returns>
 	public EntityQuery ThatMatch<TComponent>(ComponentPredicate<TComponent> predicate) where TComponent : IComponent
 	{
-		var mapper = world.GetMapper<TComponent>();
+		var mapper = World.GetMapper<TComponent>();
 		return WithAllComponents<TComponent>().ThatMatch((_, entity) =>
 		{
 			ref readonly var component = ref mapper.Get(entity);
@@ -146,8 +147,8 @@ public class EntityQuery
 		where TComponent1 : IComponent
 		where TComponent2 : IComponent
 	{
-		var mapper1 = world.GetMapper<TComponent1>();
-		var mapper2 = world.GetMapper<TComponent2>();
+		var mapper1 = World.GetMapper<TComponent1>();
+		var mapper2 = World.GetMapper<TComponent2>();
 		return WithAllComponents<TComponent1, TComponent2>().ThatMatch((_, entity) =>
 		{
 			ref readonly var component1 = ref mapper1.Get(entity);
@@ -163,9 +164,9 @@ public class EntityQuery
 		where TComponent2 : IComponent
 		where TComponent3 : IComponent
 	{
-		var mapper1 = world.GetMapper<TComponent1>();
-		var mapper2 = world.GetMapper<TComponent2>();
-		var mapper3 = world.GetMapper<TComponent3>();
+		var mapper1 = World.GetMapper<TComponent1>();
+		var mapper2 = World.GetMapper<TComponent2>();
+		var mapper3 = World.GetMapper<TComponent3>();
 		return WithAllComponents<TComponent1, TComponent2, TComponent3>().ThatMatch((_, entity) =>
 		{
 			ref readonly var component1 = ref mapper1.Get(entity);
@@ -183,10 +184,10 @@ public class EntityQuery
 		where TComponent3 : IComponent
 		where TComponent4 : IComponent
 	{
-		var mapper1 = world.GetMapper<TComponent1>();
-		var mapper2 = world.GetMapper<TComponent2>();
-		var mapper3 = world.GetMapper<TComponent3>();
-		var mapper4 = world.GetMapper<TComponent4>();
+		var mapper1 = World.GetMapper<TComponent1>();
+		var mapper2 = World.GetMapper<TComponent2>();
+		var mapper3 = World.GetMapper<TComponent3>();
+		var mapper4 = World.GetMapper<TComponent4>();
 		return WithAllComponents<TComponent1, TComponent2, TComponent3, TComponent4>().ThatMatch((_, entity) =>
 		{
 			ref readonly var component1 = ref mapper1.Get(entity);
@@ -206,11 +207,11 @@ public class EntityQuery
 		where TComponent4 : IComponent
 		where TComponent5 : IComponent
 	{
-		var mapper1 = world.GetMapper<TComponent1>();
-		var mapper2 = world.GetMapper<TComponent2>();
-		var mapper3 = world.GetMapper<TComponent3>();
-		var mapper4 = world.GetMapper<TComponent4>();
-		var mapper5 = world.GetMapper<TComponent5>();
+		var mapper1 = World.GetMapper<TComponent1>();
+		var mapper2 = World.GetMapper<TComponent2>();
+		var mapper3 = World.GetMapper<TComponent3>();
+		var mapper4 = World.GetMapper<TComponent4>();
+		var mapper5 = World.GetMapper<TComponent5>();
 		return WithAllComponents<TComponent1, TComponent2, TComponent3, TComponent4, TComponent5>().ThatMatch(
 			(_, entity) =>
 			{

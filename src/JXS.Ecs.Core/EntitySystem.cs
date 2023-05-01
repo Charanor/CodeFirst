@@ -1,9 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
 using JXS.Ecs.Core.Attributes;
-using JXS.Ecs.Core.Utilities;
-using JXS.Utils.Collections;
-using JXS.Utils.Events;
 
 namespace JXS.Ecs.Core;
 
