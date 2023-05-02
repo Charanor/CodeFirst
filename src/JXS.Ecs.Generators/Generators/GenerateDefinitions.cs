@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -18,11 +19,6 @@ public class GenerateDefinitions : IIncrementalGenerator
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		// if (!Debugger.IsAttached)
-		// {
-		// 	Debugger.Launch();
-		// }
-
 		var files = context.AdditionalTextsProvider
 			.Where(static file => Path.GetExtension(file.Path) == FILE_EXTENSION)
 			.Select(static (file, ct) =>
@@ -42,7 +38,7 @@ public class GenerateDefinitions : IIncrementalGenerator
 	{
 		Execute(source.Files.CastArray<FileInfo>(), sourceProductionContext, source.Compilation);
 	}
-
+	
 	private static void Execute(ImmutableArray<FileInfo> definitions, SourceProductionContext context,
 		Compilation compilation)
 	{
@@ -56,9 +52,7 @@ public class GenerateDefinitions : IIncrementalGenerator
 			var inputStream = new AntlrInputStream(definition);
 			var lexer = new EcsLexer(inputStream);
 			var commonTokenStream = new CommonTokenStream(lexer);
-			var parser = new EcsParser(commonTokenStream)
-			{
-			};
+			var parser = new EcsParser(commonTokenStream);
 			parser.AddErrorListener(new DebugErrorListener(context, fileName));
 			var visitor = new EcsVisitor();
 			var programContext = parser.program();
@@ -69,7 +63,7 @@ public class GenerateDefinitions : IIncrementalGenerator
 				continue;
 			}
 
-			var source = new EcsDefinitionGenerator(program, compilation).GenerateSource();
+			var source = new EcsDefinitionGenerator(program).GenerateSource();
 			context.AddSource($"{fileName}.generated.cs", SourceText.From(source, Encoding.UTF8));
 		}
 	}

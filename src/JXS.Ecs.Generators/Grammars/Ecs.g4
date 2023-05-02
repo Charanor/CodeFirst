@@ -1,26 +1,50 @@
 ﻿grammar Ecs;
 
+tokens { INDENT, DEDENT }
+
+@lexer::header {
+    #nullable enable
+    using Ecs.Generators.Utils;
+}
+
+@lexer::members {
+    private DenterHelper denter;
+      
+    public override IToken NextToken()
+    {
+        if (denter == null)
+        {
+            denter = DenterHelper.Builder()
+                .Nl(NEWLINE)
+                .Indent(EcsParser.INDENT)
+                .Dedent(EcsParser.DEDENT)
+                .PullToken(base.NextToken);
+        }
+    
+        return denter.NextToken();
+    }
+}
+
 program: namespace? components systems EOF;
 
-namespace: NAMESPACE NAMESPACE_IDENTIFIER SEMI;
+namespace: NAMESPACE NamespaceIdentifier NEWLINE;
 
-components: component*;
-component: COMPONENT IDENTIFIER SEMI;
+components: (NEWLINE | component)*;
+component: SINGLETON? COMPONENT Identifier NEWLINE;
 
-systems: system*;
-system: SYSTEM IDENTIFIER BLOCK_START processParam aspectParam BLOCK_END;
+systems: (NEWLINE | system)*;
+system: ORDERED? SYSTEM Identifier COLON NEWLINE INDENT processParam aspectParam DEDENT;
 
-processParam: PROCESS COLON PROCESS_PASS SEMI;
+processParam: PROCESS COLON ProcessPass NEWLINE;
 
-aspectParam: ASPECT BLOCK_START aspectComponent+ BLOCK_END;
-aspectComponent: OPTIONAL? READONLY? IDENTIFIER SEMI;
+aspectParam: ASPECT COLON NEWLINE INDENT aspectComponent+ DEDENT;
+aspectComponent: transientComponent | nonTransientComponent;
+transientComponent: TRANSIENT Identifier NEWLINE;
+nonTransientComponent: OPTIONAL? READONLY? Identifier NEWLINE;
 
 // Tokens
-SEMI: ';';
 COLON: ':';
 DOT: '.';
-BLOCK_START: '{';
-BLOCK_END: '}';
 
 // Keywords
 NAMESPACE: 'namespace';
@@ -30,15 +54,19 @@ SYSTEM: 'system';
 PROCESS: 'process';
 ASPECT: 'aspect';
 
+ORDERED: 'ordered';
 OPTIONAL: 'optional';
 READONLY: 'readonly';
-
-PROCESS_PASS: 'Update' | 'FixedUpdate' | 'Draw';
+SINGLETON: 'singleton';
+TRANSIENT: 'transient';
 
 // Compounds
-IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
-NAMESPACE_IDENTIFIER: IDENTIFIER (DOT NAMESPACE_IDENTIFIER)?;
+ProcessPass: 'Update' | 'FixedUpdate' | 'Draw';
+Identifier: [a-zA-Z_][a-zA-Z_0-9]*;
+NamespaceIdentifier: Identifier (DOT NamespaceIdentifier)?;
+
+
+NEWLINE: ('\r'? '\n' | 'r' | '\f') (' ' | '\t')*;
 
 // Skips
-WHITESPACE: [ \t\r\n\f]+ -> skip;
-COMMENT: ('//' ~('\n'|'\r')* '\r'? '\n') -> skip ;
+COMMENT: ('//' ~('\n'|'\r')* '\r'? '\n') -> skip;
