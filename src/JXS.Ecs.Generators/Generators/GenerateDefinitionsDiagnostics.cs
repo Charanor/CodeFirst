@@ -12,7 +12,7 @@ public static class GenerateDefinitionsDiagnostics
 		title: "Parsing error",
 		messageFormat: "Parsing failed at {0}:{1} {2}",
 		category: "Antlr",
-		DiagnosticSeverity.Error,
+		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
 
 	public static void ReportParsingError(this SourceProductionContext ctx, string filePath, IToken offendingSymbol,

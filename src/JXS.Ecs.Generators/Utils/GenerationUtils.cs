@@ -214,24 +214,34 @@ internal static class GenerationUtils
 		return builder.Generate();
 	}
 
-	private static void AssignmentOp(this ClassBuilder builder, string variable, IConvertible value)
+	public static void AssignmentOp(this ClassBuilder builder, string variable, IConvertible value)
 	{
 		builder.IndentedLn($"{variable} = {value};");
 	}
 
-	private static void FunctionCall(
+	public static void FunctionCall(
 		this ClassBuilder builder,
 		string funcName,
 		params string[] arguments
 	) => builder.FunctionCall(funcName, arguments.AsEnumerable());
 
-	private static void FunctionCall(
+	public static void FunctionCall(
 		this ClassBuilder builder,
 		string funcName,
 		IEnumerable<string> arguments
 	)
 	{
 		builder.IndentedLn($"{funcName}({string.Join(separator: ", ", arguments)});");
+	}
+
+	public static void FunctionCall(
+		this ClassBuilder builder,
+		string funcName,
+		string firstArgument,
+		IEnumerable<string> arguments
+	)
+	{
+		builder.IndentedLn($"{funcName}({firstArgument}, {string.Join(separator: ", ", arguments)});");
 	}
 
 	private static string Quote(string str) => $@"""{str}""";

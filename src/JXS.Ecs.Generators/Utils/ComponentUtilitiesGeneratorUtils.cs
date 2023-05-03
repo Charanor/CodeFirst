@@ -13,49 +13,49 @@ public static class ComponentUtilitiesGeneratorUtils
 		var componentTypename = componentNamespace == null ? componentName : $"{componentNamespace}.{componentName}";
 
 		builder.IndentedLn("[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]");
-		if (isSingleton)
-		{
-			builder.IndentedLn(
-				$"private readonly {SingletonComponentMapperType}<{componentTypename}> {fieldName} = null!;");
-		}
-		else
-		{
-			builder.IndentedLn($"private readonly {ComponentMapperType}<{componentTypename}> {fieldName} = null!;");
-		}
+		builder.IndentedLn(
+			isSingleton
+				? $"private readonly {SingletonComponentMapperType}<{componentTypename}> {fieldName} = null!;"
+				: $"private readonly {ComponentMapperType}<{componentTypename}> {fieldName} = null!;");
 
 		return new ComponentMapperContext(fieldName, componentName, componentNamespace, isSingleton, isIteratingSystem);
 	}
 
-	public static void UtilityMethods(this ClassBuilder builder, ComponentMapperContext context)
+	public static void UtilityMethods(this ClassBuilder builder, ComponentMapperContext context,
+		bool isReadOnly = false)
 	{
 		if (context.IsSingleton)
 		{
-			SingletonField(builder, context);
+			SingletonField(builder, context, isReadOnly);
 			return;
 		}
 
 		HasComponentUtilityMethod(builder, context);
-		GetComponentUtilityMethod(builder, context);
-		CreateComponentUtilityMethod(builder, context);
+		GetComponentUtilityMethod(builder, context, isReadOnly);
+		if (!isReadOnly)
+		{
+			CreateComponentUtilityMethod(builder, context);
+		}
 	}
 
-	private static void SingletonField(ClassBuilder builder, ComponentMapperContext context)
+	private static void SingletonField(ClassBuilder builder, ComponentMapperContext context, bool isReadOnly)
 	{
 		var (fieldName, name, ns, _, _) = context;
 		var componentTypename = ns == null ? name : $"{ns}.{name}";
-		builder.IndentedLn($"private ref {componentTypename} {name} => ref {fieldName}.SingletonInstance;");
+		builder.IndentedLn(
+			$"private {(isReadOnly ? "ref readonly" : "ref")} {componentTypename} {name} => ref {fieldName}.SingletonInstance;");
 	}
 
-	private static void GetComponentUtilityMethod(ClassBuilder builder, ComponentMapperContext context)
+	private static void GetComponentUtilityMethod(ClassBuilder builder, ComponentMapperContext context, bool isReadOnly)
 	{
 		var (fieldName, name, ns, _, isIteratingSystem) = context;
 		var componentTypename = ns == null ? name : $"{ns}.{name}";
 		builder.IndentedLn(
-			$"private ref {componentTypename} Get{name}ForEntity({EntityType} entity) => ref {fieldName}.Get(entity);");
+			$"private {(isReadOnly ? "ref readonly" : "ref")} {componentTypename} Get{name}ForEntity({EntityType} entity) => ref {fieldName}.Get(entity);");
 		if (isIteratingSystem)
 		{
 			builder.IndentedLn(
-				$"private ref {componentTypename} {name} => ref Get{name}ForEntity(CurrentEntity);");
+				$"private {(isReadOnly ? "ref readonly" : "ref")} {componentTypename} {name} => ref Get{name}ForEntity(CurrentEntity);");
 		}
 	}
 
@@ -96,6 +96,6 @@ public static class ComponentUtilitiesGeneratorUtils
 	#endregion
 }
 
-public record ComponentMapperContext(string ComponentMapperFieldName, string ComponentName, string? ComponentNamespace,
+public record ComponentMapperContext(string FieldName, string ComponentName, string? ComponentNamespace,
 	bool IsSingleton,
 	bool IsIteratingSystem);

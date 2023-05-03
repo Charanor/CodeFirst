@@ -25,7 +25,7 @@ tokens { INDENT, DEDENT }
     }
 }
 
-program: namespace? components systems EOF;
+program: namespace? components systems world EOF;
 
 namespace: NAMESPACE NamespaceIdentifier NEWLINE;
 
@@ -37,25 +37,44 @@ system: ORDERED? SYSTEM Identifier COLON NEWLINE INDENT processParam aspectParam
 
 processParam: PROCESS COLON ProcessPass NEWLINE;
 
-aspectParam: ASPECT COLON NEWLINE INDENT aspectComponent+ DEDENT;
+aspectParam: EXTERNAL? ASPECT COLON NEWLINE INDENT aspectComponent+ DEDENT;
 aspectComponent: transientComponent | nonTransientComponent;
 transientComponent: TRANSIENT Identifier NEWLINE;
-nonTransientComponent: OPTIONAL? READONLY? Identifier NEWLINE;
+nonTransientComponent: OPTIONAL? EXTERNAL? READONLY? Identifier NEWLINE;
+
+world: WORLD Identifier? COLON NEWLINE INDENT worldBody DEDENT;
+worldBody:
+    PreWildcard=worldSystemDeclarations WILDCARD NEWLINE PostWildcard=worldSystemDeclarations |
+    PreWildcard=worldSystemDeclarations WILDCARD NEWLINE |
+    WILDCARD NEWLINE PostWildcard=worldSystemDeclarations |
+    WILDCARD NEWLINE?
+;
+worldSystemDeclarations: worldSystemDeclaration+;
+worldSystemDeclaration: (worldSystem | worldSystemList) NEWLINE;
+worldSystem: Identifier;
+worldSystemList: LIST_START worldSystemChain LIST_END;
+worldSystemChain: worldSystem (LIST_SEPARATOR worldSystemChain)?;
 
 // Tokens
 COLON: ':';
 DOT: '.';
+WILDCARD: '*';
+LIST_START: '[';
+LIST_END: ']';
+LIST_SEPARATOR: ',';
 
 // Keywords
 NAMESPACE: 'namespace';
 COMPONENT: 'component';
 SYSTEM: 'system';
+WORLD: 'world';
 
 PROCESS: 'process';
 ASPECT: 'aspect';
 
 ORDERED: 'ordered';
 OPTIONAL: 'optional';
+EXTERNAL: 'external';
 READONLY: 'readonly';
 SINGLETON: 'singleton';
 TRANSIENT: 'transient';
@@ -64,7 +83,6 @@ TRANSIENT: 'transient';
 ProcessPass: 'Update' | 'FixedUpdate' | 'Draw';
 Identifier: [a-zA-Z_][a-zA-Z_0-9]*;
 NamespaceIdentifier: Identifier (DOT NamespaceIdentifier)?;
-
 
 NEWLINE: ('\r'? '\n' | 'r' | '\f') (' ' | '\t')*;
 

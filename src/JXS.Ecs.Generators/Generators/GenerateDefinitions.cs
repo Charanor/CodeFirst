@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -36,11 +35,10 @@ public class GenerateDefinitions : IIncrementalGenerator
 	private static void Execute(SourceProductionContext sourceProductionContext,
 		(Compilation Compilation, ImmutableArray<FileInfo?> Files) source)
 	{
-		Execute(source.Files.CastArray<FileInfo>(), sourceProductionContext, source.Compilation);
+		Execute(source.Files.CastArray<FileInfo>(), sourceProductionContext);
 	}
 	
-	private static void Execute(ImmutableArray<FileInfo> definitions, SourceProductionContext context,
-		Compilation compilation)
+	private static void Execute(ImmutableArray<FileInfo> definitions, SourceProductionContext context)
 	{
 		if (definitions.IsDefaultOrEmpty)
 		{
