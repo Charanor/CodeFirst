@@ -50,6 +50,16 @@ public class InputSystem
 
 	public float Axis(string name) => GetAxisObject(name)?.Value ?? 0;
 
+	public Vector2 Axis2D(string horizontal, string vertical, bool normalize = true)
+	{
+		var direction = new Vector2(Axis(horizontal), Axis(vertical));
+		if (normalize && direction.LengthSquared > 0)
+		{
+			direction.Normalize();
+		}
+		return direction;
+	}
+
 	public bool Button(string buttonName) => GetAxisObject(buttonName)?.Pressed ?? false;
 
 	public bool JustPressed(string buttonName) => GetAxisObject(buttonName)?.JustPressed ?? false;
