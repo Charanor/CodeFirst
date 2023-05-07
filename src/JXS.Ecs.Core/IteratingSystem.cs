@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using JXS.Ecs.Core.Attributes;
 using JXS.Ecs.Core.Utilities;
 using JXS.Utils.Collections;
@@ -8,6 +9,7 @@ namespace JXS.Ecs.Core;
 /// <summary>
 ///     An <see cref="EntitySystem" /> that iterates over the entities in its <see cref="Aspect" /> one-by-one.
 /// </summary>
+[PublicAPI]
 public abstract class IteratingSystem : EntitySystem
 {
 	private IReadOnlySnapshotList<Entity> internalEntities;

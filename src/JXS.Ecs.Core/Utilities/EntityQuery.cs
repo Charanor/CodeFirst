@@ -135,11 +135,7 @@ public class EntityQuery
 	public EntityQuery ThatMatch<TComponent>(ComponentPredicate<TComponent> predicate) where TComponent : IComponent
 	{
 		var mapper = World.GetMapper<TComponent>();
-		return WithAllComponents<TComponent>().ThatMatch((_, entity) =>
-		{
-			ref readonly var component = ref mapper.Get(entity);
-			return predicate(in component);
-		});
+		return WithAllComponents<TComponent>().ThatMatch((_, entity) => predicate(in mapper.Get(entity)));
 	}
 
 	/// <inheritdoc cref="ThatMatch{T}" />
@@ -149,12 +145,8 @@ public class EntityQuery
 	{
 		var mapper1 = World.GetMapper<TComponent1>();
 		var mapper2 = World.GetMapper<TComponent2>();
-		return WithAllComponents<TComponent1, TComponent2>().ThatMatch((_, entity) =>
-		{
-			ref readonly var component1 = ref mapper1.Get(entity);
-			ref readonly var component2 = ref mapper2.Get(entity);
-			return predicate(in component1, in component2);
-		});
+		return WithAllComponents<TComponent1, TComponent2>()
+			.ThatMatch((_, entity) => predicate(in mapper1.Get(entity), in mapper2.Get(entity)));
 	}
 
 	/// <inheritdoc cref="ThatMatch{T}" />
@@ -168,12 +160,7 @@ public class EntityQuery
 		var mapper2 = World.GetMapper<TComponent2>();
 		var mapper3 = World.GetMapper<TComponent3>();
 		return WithAllComponents<TComponent1, TComponent2, TComponent3>().ThatMatch((_, entity) =>
-		{
-			ref readonly var component1 = ref mapper1.Get(entity);
-			ref readonly var component2 = ref mapper2.Get(entity);
-			ref readonly var component3 = ref mapper3.Get(entity);
-			return predicate(in component1, in component2, in component3);
-		});
+			predicate(in mapper1.Get(entity), in mapper2.Get(entity), in mapper3.Get(entity)));
 	}
 
 	/// <inheritdoc cref="ThatMatch{T}" />
@@ -189,13 +176,7 @@ public class EntityQuery
 		var mapper3 = World.GetMapper<TComponent3>();
 		var mapper4 = World.GetMapper<TComponent4>();
 		return WithAllComponents<TComponent1, TComponent2, TComponent3, TComponent4>().ThatMatch((_, entity) =>
-		{
-			ref readonly var component1 = ref mapper1.Get(entity);
-			ref readonly var component2 = ref mapper2.Get(entity);
-			ref readonly var component3 = ref mapper3.Get(entity);
-			ref readonly var component4 = ref mapper4.Get(entity);
-			return predicate(in component1, in component2, in component3, in component4);
-		});
+			predicate(in mapper1.Get(entity), in mapper2.Get(entity), in mapper3.Get(entity), in mapper4.Get(entity)));
 	}
 
 	/// <inheritdoc cref="ThatMatch{T}" />
@@ -213,15 +194,8 @@ public class EntityQuery
 		var mapper4 = World.GetMapper<TComponent4>();
 		var mapper5 = World.GetMapper<TComponent5>();
 		return WithAllComponents<TComponent1, TComponent2, TComponent3, TComponent4, TComponent5>().ThatMatch(
-			(_, entity) =>
-			{
-				ref readonly var component1 = ref mapper1.Get(entity);
-				ref readonly var component2 = ref mapper2.Get(entity);
-				ref readonly var component3 = ref mapper3.Get(entity);
-				ref readonly var component4 = ref mapper4.Get(entity);
-				ref readonly var component5 = ref mapper5.Get(entity);
-				return predicate(in component1, in component2, in component3, in component4, in component5);
-			});
+			(_, entity) => predicate(in mapper1.Get(entity), in mapper2.Get(entity), in mapper3.Get(entity),
+				in mapper4.Get(entity), in mapper5.Get(entity)));
 	}
 
 	#endregion
