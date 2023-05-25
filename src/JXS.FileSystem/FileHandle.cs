@@ -19,6 +19,8 @@ public record FileHandle(string FilePath)
 
 	public string FilePath { get; } = Minimize(Sanitize(FilePath));
 
+	public string FileNameWithoutExtension { get; } = Path.GetFileNameWithoutExtension(Minimize(Sanitize(FilePath)));
+
 	public virtual FileType Type => File.Exists(FilePath)
 		? FileType.File
 		: Directory.Exists(FilePath)
@@ -32,6 +34,11 @@ public record FileHandle(string FilePath)
 	public virtual string ReadAllText() => Type == FileType.File
 		? File.ReadAllText(FilePath)
 		: DevTools.DebugReturn<string, FileHandle>(string.Empty,
+			new FileNotFoundException($"Tried to {nameof(ReadAllText)} on {this}."));
+
+	public virtual IEnumerable<string> StreamAllLines() => Type == FileType.File
+		? File.ReadLines(FilePath)
+		: DevTools.DebugReturn<IEnumerable<string>, FileHandle>(Enumerable.Empty<string>(),
 			new FileNotFoundException($"Tried to {nameof(ReadAllText)} on {this}."));
 
 	public virtual byte[] ReadAllBytes() => Type == FileType.File
@@ -92,7 +99,7 @@ public record FileHandle(string FilePath)
 		}
 	}
 
-	public FileHandle Parent() => new(Path.Combine(FilePath, path2: ".."));
+	public FileHandle Parent() => new(Path.Combine(FilePath, ".."));
 	public FileHandle Child(string path) => new(Path.Combine(FilePath, Sanitize(path)));
 	public FileHandle Sibling(string path) => Parent().Child(path);
 	public FileHandle AppendToPath(string extra) => new($"{FilePath}{extra}");
@@ -119,13 +126,17 @@ public record FileHandle(string FilePath)
 		}
 		: Enumerable.Empty<FileHandle>();
 
+	/// <summary>
+	///     Creates a file or directory in the specified path.
+	/// </summary>
+	/// <remarks>Files (but not directories!) that already exist are overwritten</remarks>
+	/// <param name="typeHint">
+	///     a hint of which type (file, directory) to create. If <see cref="FileType.Invalid" /> is given,
+	///     the type will try to be assumed from the file path format.
+	/// </param>
+	/// <returns><c>true</c> if the creation was successful, <c>false</c> otherwise.</returns>
 	public bool Create(FileType typeHint = FileType.Invalid)
 	{
-		if (Type != FileType.Invalid)
-		{
-			return true;
-		}
-
 		var assumedFileType = Path.HasExtension(FilePath) ? FileType.File : FileType.Directory;
 		var creationType = typeHint == FileType.Invalid
 			? assumedFileType
@@ -196,8 +207,8 @@ public record FileHandle(string FilePath)
 	{
 		while (OneDotRegex.IsMatch(path) || TwoDotsRegex.IsMatch(path))
 		{
-			path = OneDotRegex.Replace(path, replacement: "/");
-			path = TwoDotsRegex.Replace(path, replacement: "");
+			path = OneDotRegex.Replace(path, "/");
+			path = TwoDotsRegex.Replace(path, "");
 		}
 
 		return path;
