@@ -23,15 +23,15 @@ public class GenerateProcessEntityMethod : IIncrementalGenerator
 	{
 		var declarations = context.SyntaxProvider
 			.CreateSyntaxProvider(
-				predicate: static (syntaxNode, _) => IsEntitySystem(syntaxNode),
-				transform: static (ctx, _) => TransformSyntaxToEntitySystemSyntax(ctx)
+				static (syntaxNode, _) => IsEntitySystem(syntaxNode),
+				static (ctx, _) => TransformSyntaxToEntitySystemSyntax(ctx)
 			)
 			.Where(static syntax => syntax is not null);
 
 		var compilationSystems = context.CompilationProvider.Combine(declarations.Collect());
 		context.RegisterSourceOutput(
 			compilationSystems,
-			action: static (spc, source) =>
+			static (spc, source) =>
 				Execute(
 					source.Item1,
 					source.Item2.CastArray<ProcessEntityIntermediateSyntax>(),
@@ -123,7 +123,7 @@ public class GenerateProcessEntityMethod : IIncrementalGenerator
 
 		var result = GenerationUtils.GenerateSystemClasses(systemsToGenerate.ToImmutableList());
 		context.AddSource(
-			hintName: "GeneratedSystems.g.cs",
+			"GeneratedSystems.g.cs",
 			SourceText.From(result, Encoding.UTF8)
 		);
 	}

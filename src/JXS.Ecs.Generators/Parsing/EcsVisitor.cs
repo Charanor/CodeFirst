@@ -25,14 +25,14 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 	}
 
 	public override IEnumerable<EcsDefinition> VisitNamespace(EcsParser.NamespaceContext context) =>
-		Single(new EcsNamespace(context.NamespaceIdentifier().ToString()));
+		Single(new EcsNamespace(context.NamespaceIdentifier().GetText()));
 
 	public override IEnumerable<EcsDefinition> VisitComponent(EcsParser.ComponentContext context) =>
-		Single(new EcsComponent(context.Identifier().ToString(), context.SINGLETON() != null));
+		Single(new EcsComponent(context.Identifier().GetText(), context.SINGLETON() != null));
 
 	public override IEnumerable<EcsDefinition> VisitSystem(EcsParser.SystemContext context)
 	{
-		var name = context.Identifier().ToString();
+		var name = context.Identifier().GetText();
 		var processPass = context.processParam().Accept(this).OfType<EcsProcessPassParameter>().FirstOrDefault();
 		if (processPass == null)
 		{
@@ -54,7 +54,7 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 	public override IEnumerable<EcsDefinition> VisitProcessParam(EcsParser.ProcessParamContext context)
 	{
 		// ReSharper disable once ConvertIfStatementToReturnStatement
-		if (!Enum.TryParse<ProcessPass>(context.ProcessPass().ToString(), ignoreCase: false, out var pass))
+		if (!Enum.TryParse<ProcessPass>(context.ProcessPass().GetText(), ignoreCase: false, out var pass))
 		{
 			// TODO: Report error
 			return Empty;
@@ -67,29 +67,30 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 	{
 		var aspectComponents =
 			context.aspectComponent().SelectMany(cmp => cmp.Accept(this)).OfType<EcsAspectComponent>();
-		return Single(new EcsAspectParameter(aspectComponents, context.EXTERNAL() != null));
+		var tagComponents = context.tagComponent().SelectMany(cmp => cmp.Accept(this)).OfType<EcsTagComponent>();
+		var excludedComponents = context.excludedComponent().SelectMany(cmp => cmp.Accept(this))
+			.OfType<EcsExcludedComponent>();
+		return Single(new EcsAspectParameter(aspectComponents, tagComponents, excludedComponents,
+			context.EXTERNAL() != null));
 	}
 
-	public override IEnumerable<EcsDefinition> VisitTransientComponent(EcsParser.TransientComponentContext context) =>
-		Single(new EcsAspectComponent(context.Identifier().ToString(),
-			IsTransient: true,
-			IsOptional: false, // Transients are never optional
-			IsReadonly: true, // Transients are always readonly
-			IsExternal: false // Transients are never external
-		));
+	public override IEnumerable<EcsDefinition> VisitTagComponent(EcsParser.TagComponentContext context) =>
+		Single(new EcsTagComponent(context.Identifier().GetText()));
 
-	public override IEnumerable<EcsDefinition> VisitNonTransientComponent(
-		EcsParser.NonTransientComponentContext context)
+	public override IEnumerable<EcsDefinition> VisitExcludedComponent(EcsParser.ExcludedComponentContext context) =>
+		Single(new EcsExcludedComponent(context.Identifier().GetText()));
+
+	public override IEnumerable<EcsDefinition> VisitAspectComponent(
+		EcsParser.AspectComponentContext context)
 		=> Single(new EcsAspectComponent(
-			context.Identifier().ToString(),
-			IsTransient: false,
+			context.Identifier().GetText(),
 			context.OPTIONAL() != null,
 			context.READONLY() != null,
 			context.EXTERNAL() != null
 		));
 
 	public override IEnumerable<EcsDefinition> VisitWorld(EcsParser.WorldContext context) => Single(new EcsWorld(
-		context.Identifier()?.ToString(),
+		context.Identifier()?.GetText(),
 		(
 			context.worldBody().PreWildcard?.Accept(this).OfType<EcsWorldSystemCollection>() ??
 			Enumerable.Empty<EcsWorldSystemCollection>()
@@ -110,7 +111,7 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 	}
 
 	public override IEnumerable<EcsDefinition> VisitWorldSystem(EcsParser.WorldSystemContext context) =>
-		Single(new EcsWorldSystem(context.Identifier().ToString()));
+		Single(new EcsWorldSystem(context.Identifier().GetText()));
 }
 
 public abstract record EcsDefinition;
@@ -134,9 +135,20 @@ public enum ProcessPass
 	FixedUpdate
 }
 
-public record EcsAspectParameter(IEnumerable<EcsAspectComponent> Components, bool IsExternal) : EcsDefinition;
+public record EcsAspectParameter(
+	IEnumerable<EcsAspectComponent> Components,
+	IEnumerable<EcsTagComponent> Tags,
+	IEnumerable<EcsExcludedComponent> Excluded,
+	bool IsExternal
+) : EcsDefinition;
 
-public record EcsAspectComponent(string Name, bool IsTransient, bool IsOptional, bool IsReadonly, bool IsExternal) : EcsDefinition;
+public abstract record EcsAspectComponentBase(string Name) : EcsDefinition;
+
+public record EcsAspectComponent(string Name, bool IsOptional, bool IsReadonly, bool IsExternal) : EcsAspectComponentBase(Name);
+
+public record EcsTagComponent(string Name) : EcsAspectComponentBase(Name);
+
+public record EcsExcludedComponent(string Name) : EcsAspectComponentBase(Name);
 
 public record EcsWorld(
 	string? Name,

@@ -8,7 +8,7 @@ public static class ComponentUtilitiesGeneratorUtils
 	public static ComponentMapperContext ComponentMapper(this ClassBuilder builder, string componentName,
 		string? componentNamespace, bool isSingleton, bool isIteratingSystem)
 	{
-		var ns = componentNamespace?.Replace(oldValue: ".", newValue: "_") ?? "";
+		var ns = componentNamespace?.Replace(".", "_") ?? "";
 		var fieldName = $"{GENERATED_FIELD_PREFIX}{ns}_{componentName}_mapper{GENERATED_MAPPER_SUFFIX}";
 		var componentTypename = componentNamespace == null ? componentName : $"{componentNamespace}.{componentName}";
 
@@ -22,7 +22,7 @@ public static class ComponentUtilitiesGeneratorUtils
 	}
 
 	public static void UtilityMethods(this ClassBuilder builder, ComponentMapperContext context,
-		bool isReadOnly = false)
+		bool isReadOnly = false, bool generateCurrentEntityVariants = true)
 	{
 		if (context.IsSingleton)
 		{
@@ -30,11 +30,11 @@ public static class ComponentUtilitiesGeneratorUtils
 			return;
 		}
 
-		HasComponentUtilityMethod(builder, context);
-		GetComponentUtilityMethod(builder, context, isReadOnly);
+		HasComponentUtilityMethod(builder, context, generateCurrentEntityVariants);
+		GetComponentUtilityMethod(builder, context, isReadOnly, generateCurrentEntityVariants);
 		if (!isReadOnly)
 		{
-			CreateComponentUtilityMethod(builder, context);
+			CreateComponentUtilityMethod(builder, context, generateCurrentEntityVariants);
 		}
 	}
 
@@ -46,37 +46,40 @@ public static class ComponentUtilitiesGeneratorUtils
 			$"private {(isReadOnly ? "ref readonly" : "ref")} {componentTypename} {name} => ref {fieldName}.SingletonInstance;");
 	}
 
-	private static void GetComponentUtilityMethod(ClassBuilder builder, ComponentMapperContext context, bool isReadOnly)
+	private static void GetComponentUtilityMethod(ClassBuilder builder, ComponentMapperContext context, bool isReadOnly,
+		bool generateCurrentEntityVariants)
 	{
 		var (fieldName, name, ns, _, isIteratingSystem) = context;
 		var componentTypename = ns == null ? name : $"{ns}.{name}";
 		builder.IndentedLn(
 			$"private {(isReadOnly ? "ref readonly" : "ref")} {componentTypename} Get{name}ForEntity({EntityType} entity) => ref {fieldName}.Get(entity);");
-		if (isIteratingSystem)
+		if (isIteratingSystem && generateCurrentEntityVariants)
 		{
 			builder.IndentedLn(
 				$"private {(isReadOnly ? "ref readonly" : "ref")} {componentTypename} {name} => ref Get{name}ForEntity(CurrentEntity);");
 		}
 	}
 
-	private static void HasComponentUtilityMethod(ClassBuilder builder, ComponentMapperContext context)
+	private static void HasComponentUtilityMethod(ClassBuilder builder, ComponentMapperContext context,
+		bool generateCurrentEntityVariants)
 	{
 		var (fieldName, name, _, _, isIteratingSystem) = context;
 		builder.IndentedLn($"private bool EntityHas{name}({EntityType} entity) => {fieldName}.Has(entity);");
-		if (isIteratingSystem)
+		if (isIteratingSystem && generateCurrentEntityVariants)
 		{
 			builder.IndentedLn($"private bool Has{name} => EntityHas{name}(CurrentEntity);");
 		}
 	}
 
-	private static void CreateComponentUtilityMethod(ClassBuilder builder, ComponentMapperContext context)
+	private static void CreateComponentUtilityMethod(ClassBuilder builder, ComponentMapperContext context,
+		bool generateCurrentEntityVariants)
 	{
 		var (fieldName, name, ns, _, isIteratingSystem) = context;
 		var componentTypename = ns == null ? name : $"{ns}.{name}";
 		builder.IndentedLn(
 			$"private ref {componentTypename} Create{name}ForEntity({EntityType} entity, in {componentTypename} component) => ref {fieldName}.AddIfMissing(entity, in component);");
 
-		if (isIteratingSystem)
+		if (isIteratingSystem && generateCurrentEntityVariants)
 		{
 			builder.IndentedLn(
 				$"private ref {componentTypename} Create{name}(in {componentTypename} component) => ref Create{name}ForEntity(CurrentEntity, in component);");

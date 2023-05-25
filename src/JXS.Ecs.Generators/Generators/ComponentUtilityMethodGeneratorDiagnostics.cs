@@ -6,10 +6,10 @@ namespace Ecs.Generators.Generators;
 public static class ComponentUtilityMethodGeneratorDiagnostics
 {
 	private static readonly DiagnosticDescriptor MethodsGenerated = new(
-		id: "DRG0001",
-		title: "Invalid XML file",
-		messageFormat: "Generated utility methods for component {0} in system {1}",
-		category: "Prefabs",
+		"DRG0001",
+		"Invalid XML file",
+		"Generated utility methods for component {0} in system {1}",
+		"Prefabs",
 		DiagnosticSeverity.Info,
 		isEnabledByDefault: true);
 

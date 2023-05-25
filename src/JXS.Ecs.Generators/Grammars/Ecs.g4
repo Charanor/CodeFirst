@@ -25,7 +25,7 @@ tokens { INDENT, DEDENT }
     }
 }
 
-program: namespace? components systems world EOF;
+program: NEWLINE* namespace? components systems NEWLINE* world NEWLINE* EOF;
 
 namespace: NAMESPACE NamespaceIdentifier NEWLINE;
 
@@ -37,10 +37,10 @@ system: ORDERED? SYSTEM Identifier COLON NEWLINE INDENT processParam aspectParam
 
 processParam: PROCESS COLON ProcessPass NEWLINE;
 
-aspectParam: EXTERNAL? ASPECT COLON NEWLINE INDENT aspectComponent+ DEDENT;
-aspectComponent: transientComponent | nonTransientComponent;
-transientComponent: TRANSIENT Identifier NEWLINE;
-nonTransientComponent: OPTIONAL? EXTERNAL? READONLY? Identifier NEWLINE;
+aspectParam: EXTERNAL? ASPECT COLON NEWLINE INDENT tagComponent* aspectComponent+ excludedComponent* DEDENT;
+tagComponent: TAG Identifier NEWLINE;
+aspectComponent: OPTIONAL? EXTERNAL? READONLY? Identifier NEWLINE;
+excludedComponent: EXCLUDE Identifier NEWLINE;
 
 world: WORLD Identifier? COLON NEWLINE INDENT worldBody DEDENT;
 worldBody:
@@ -77,7 +77,8 @@ OPTIONAL: 'optional';
 EXTERNAL: 'external';
 READONLY: 'readonly';
 SINGLETON: 'singleton';
-TRANSIENT: 'transient';
+TAG: 'tag';
+EXCLUDE: 'exclude';
 
 // Compounds
 ProcessPass: 'Update' | 'FixedUpdate' | 'Draw';

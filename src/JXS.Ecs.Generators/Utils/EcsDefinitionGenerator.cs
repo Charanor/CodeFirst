@@ -67,7 +67,7 @@ public class EcsDefinitionGenerator
 
 	private void GenerateSystem(EcsSystem system)
 	{
-		AttributeLine(name: "ProcessPass", $"{CORE_NAMESPACE}.Pass.{system.ProcessPass.Pass.ToString()}");
+		AttributeLine("ProcessPass", $"{CORE_NAMESPACE}.Pass.{system.ProcessPass.Pass.ToString()}");
 
 		// TODO: Change this logic when we implement multiple aspects
 		if (system is { IsOrdered: true, Aspect.IsExternal: true })
@@ -89,11 +89,11 @@ public class EcsDefinitionGenerator
 	private void GenerateExternalAspectSystem(EcsSystem system)
 	{
 		var components = system.Aspect.Components.ToList();
-		using (SystemBlock(system.Name, baseClass: "EntitySystem"))
+		using (SystemBlock(system.Name, "EntitySystem"))
 		{
-			var mapperContexts = components.Where(cmp => !cmp.IsTransient).ToDictionary(
-				keySelector: cmp => cmp.Name,
-				elementSelector: cmp => builder.ComponentMapper(
+			var mapperContexts = components.ToDictionary(
+				cmp => cmp.Name,
+				cmp => builder.ComponentMapper(
 					cmp.Name,
 					program.Namespace?.Name,
 					IsSingleton(cmp),
@@ -102,7 +102,7 @@ public class EcsDefinitionGenerator
 			foreach (var component in components)
 			{
 				var mapperContext = mapperContexts[component.Name];
-				builder.UtilityMethods(mapperContext, component.IsReadonly);
+				builder.UtilityMethods(mapperContext, component.IsReadonly, component.IsOptional);
 			}
 
 			GenerateRemoveComponentMethods(components, mapperContexts);
@@ -114,17 +114,25 @@ public class EcsDefinitionGenerator
 		var components = system.Aspect.Components.ToList();
 		var mandatory = components
 			.Where(component => !component.IsOptional && !IsSingleton(component))
+			.Cast<EcsAspectComponentBase>()
+			.Concat(system.Aspect.Tags)
 			.ToList();
 		if (mandatory.Count > 0)
 		{
-			AttributeLine(name: "All", string.Join(separator: ",", mandatory.Select(c => $"typeof({c.Name})")));
+			AttributeLine("All", string.Join(",", mandatory.Select(c => $"typeof({c.Name})")));
+		}
+
+		var excluded = system.Aspect.Excluded.ToList();
+		if (excluded.Count > 0)
+		{
+			AttributeLine("None", string.Join(",", excluded.Select(c => $"typeof({c.Name})")));
 		}
 
 		using (SystemBlock(system.Name, system.IsOrdered ? "OrderedIteratingSystem" : "IteratingSystem"))
 		{
-			var mapperContexts = components.Where(cmp => !cmp.IsTransient).ToDictionary(
-				keySelector: cmp => cmp.Name,
-				elementSelector: cmp => builder.ComponentMapper(
+			var mapperContexts = components.ToDictionary(
+				cmp => cmp.Name,
+				cmp => builder.ComponentMapper(
 					cmp.Name,
 					program.Namespace?.Name,
 					IsSingleton(cmp),
@@ -137,36 +145,35 @@ public class EcsDefinitionGenerator
 			//
 			// builder.IndentedLn($"public new {WorldName} World {{ get; internal set; }}");
 
-			foreach (var optionalComponent in components.Where(component =>
+			foreach (var component in components.Where(component =>
 				         component.IsOptional ||
 				         component.IsExternal ||
 				         IsSingleton(component)))
 			{
-				var mapperContext = mapperContexts[optionalComponent.Name];
-				builder.UtilityMethods(mapperContext, optionalComponent.IsReadonly);
+				var mapperContext = mapperContexts[component.Name];
+				builder.UtilityMethods(mapperContext, component.IsReadonly, component.IsOptional);
 			}
-
 
 			GenerateRemoveComponentMethods(components, mapperContexts);
 
 			// Generate current entity remove methods
 			foreach (var component in components.Where(cmp => cmp is
-				         { IsReadonly: false, IsTransient: false, IsOptional: false } && !IsSingleton(cmp)))
+				         { IsReadonly: false, IsOptional: false } && !IsSingleton(cmp)))
 			{
 				var mapperContext = mapperContexts[component.Name];
 				using (builder.Block($"private void Remove(ref {component.Name} {ToCamelCase(component.Name)})"))
 				{
-					builder.FunctionCall(funcName: "AssertHasEntity", "nameof(Remove)");
+					builder.FunctionCall("AssertHasEntity", "nameof(Remove)");
 					builder.IndentedLn($"{mapperContext.FieldName}.Remove(CurrentEntity);");
 				}
 			}
 
 			var paramComponents = components
-				.Where(cmp => cmp is { IsTransient: false, IsOptional: false } && !IsSingleton(cmp))
+				.Where(cmp => cmp is { IsOptional: false } && !IsSingleton(cmp))
 				.ToList();
 			using (builder.Block("protected override void Update(Entity entity, float delta)"))
 			{
-				builder.AssignmentOp(variable: "CurrentEntity", value: "entity");
+				builder.AssignmentOp("CurrentEntity", "entity");
 				foreach (var component in paramComponents)
 				{
 					var mapperContext = mapperContexts[component.Name];
@@ -178,15 +185,15 @@ public class EcsDefinitionGenerator
 				var paramList = paramComponents.Select(
 					cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {ToCamelCase(cmp.Name)}"
 				).ToList();
-				builder.FunctionCall(funcName: "ProcessEntity", paramList);
-				builder.FunctionCall(funcName: "ProcessEntity", firstArgument: "delta", paramList);
-				builder.AssignmentOp(variable: "CurrentEntity", value: "Entity.Invalid");
+				builder.FunctionCall("ProcessEntity", paramList);
+				builder.FunctionCall("ProcessEntity", "delta", paramList);
+				builder.AssignmentOp("CurrentEntity", "Entity.Invalid");
 			}
 
 			builder.IndentedLn(
-				$"partial void ProcessEntity(float delta, {string.Join(separator: ",", paramComponents.Select(cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {cmp.Name} {ToCamelCase(cmp.Name)}"))});");
+				$"partial void ProcessEntity(float delta, {string.Join(",", paramComponents.Select(cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {cmp.Name} {ToCamelCase(cmp.Name)}"))});");
 			builder.IndentedLn(
-				$"partial void ProcessEntity({string.Join(separator: ",", paramComponents.Select(cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {cmp.Name} {ToCamelCase(cmp.Name)}"))});");
+				$"partial void ProcessEntity({string.Join(",", paramComponents.Select(cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {cmp.Name} {ToCamelCase(cmp.Name)}"))});");
 		}
 	}
 
@@ -194,7 +201,7 @@ public class EcsDefinitionGenerator
 		IReadOnlyDictionary<string, ComponentMapperContext> mapperContexts)
 	{
 		foreach (var component in components.Where(cmp =>
-			         cmp is { IsReadonly: false, IsTransient: false } && !IsSingleton(cmp)))
+			         cmp is { IsReadonly: false } && !IsSingleton(cmp)))
 		{
 			var mapperContext = mapperContexts[component.Name];
 			using (builder.Block(

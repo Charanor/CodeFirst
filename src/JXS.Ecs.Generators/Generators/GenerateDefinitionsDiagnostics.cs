@@ -8,10 +8,10 @@ namespace Ecs.Generators.Generators;
 public static class GenerateDefinitionsDiagnostics
 {
 	private static readonly DiagnosticDescriptor ParsingError = new(
-		id: "DRG0101",
-		title: "Parsing error",
-		messageFormat: "Parsing failed at {0}:{1} {2}",
-		category: "Antlr",
+		"DRG0101",
+		"Parsing error",
+		"Parsing failed at {0}:{1} {2}",
+		"Antlr",
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
 

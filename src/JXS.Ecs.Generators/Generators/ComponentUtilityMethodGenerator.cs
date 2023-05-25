@@ -26,15 +26,15 @@ public class ComponentUtilityMethodGenerator : IIncrementalGenerator
 	{
 		var declarations = context.SyntaxProvider
 			.CreateSyntaxProvider(
-				predicate: static (syntaxNode, _) => HasAttribute(syntaxNode),
-				transform: static (ctx, _) => TransformSyntax(ctx)
+				static (syntaxNode, _) => HasAttribute(syntaxNode),
+				static (ctx, _) => TransformSyntax(ctx)
 			)
 			.Where(static syntax => syntax is not null);
 
 		var compilationSystems = context.CompilationProvider.Combine(declarations.Collect());
 		context.RegisterSourceOutput(
 			compilationSystems,
-			action: static (sourceProductionContext, source) =>
+			static (sourceProductionContext, source) =>
 				Execute(
 					source.Left,
 					source.Right.CastArray<IntermediateSyntax>(),
@@ -117,7 +117,7 @@ public class ComponentUtilityMethodGenerator : IIncrementalGenerator
 		foreach (var ((className, classNamespace), isIteratingSystem, typesToGenerate) in classes)
 		{
 			var fullSystemName = $"{classNamespace}.{className}";
-			var fileName = $"{fullSystemName.Replace(oldValue: ".", newValue: "_")}.generated.cs";
+			var fileName = $"{fullSystemName.Replace(".", "_")}.generated.cs";
 
 			builder.Clear();
 			builder.BeginBlock($"namespace {classNamespace}");

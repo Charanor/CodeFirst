@@ -93,7 +93,7 @@ internal static class GenerationUtils
 				// Generate component mapper definitions
 				foreach (var parameterDeclaration in componentParameters)
 				{
-					builder.DocstringBlock(tag: "summary", COMPONENT_MAPPER_DOC_SUMMARY);
+					builder.DocstringBlock("summary", COMPONENT_MAPPER_DOC_SUMMARY);
 					builder.IndentedLn(HIDE_ATTRIBUTE);
 					builder.IndentedLn(
 						$"private readonly {COMPONENT_MAPPER_NAMESPACE}.ComponentMapper<{parameterDeclaration.Type}> {MapperName(parameterDeclaration.Type)} = null!;"
@@ -231,7 +231,7 @@ internal static class GenerationUtils
 		IEnumerable<string> arguments
 	)
 	{
-		builder.IndentedLn($"{funcName}({string.Join(separator: ", ", arguments)});");
+		builder.IndentedLn($"{funcName}({string.Join(", ", arguments)});");
 	}
 
 	public static void FunctionCall(
@@ -241,7 +241,7 @@ internal static class GenerationUtils
 		IEnumerable<string> arguments
 	)
 	{
-		builder.IndentedLn($"{funcName}({firstArgument}, {string.Join(separator: ", ", arguments)});");
+		builder.IndentedLn($"{funcName}({firstArgument}, {string.Join(", ", arguments)});");
 	}
 
 	private static string Quote(string str) => $@"""{str}""";
