@@ -18,15 +18,18 @@ internal class HelloWorld
 	private void CreateTestEntities()
 	{
 		var random = new Random();
-		var entityCount = random.Next(3, 6);
+		var entityCount = random.Next(minValue: 3, maxValue: 6);
 		Console.WriteLine($"Creating {entityCount} entities");
 		for (var i = 0; i < entityCount; i++)
 		{
 			// The EntityBuilder is a utility class that simplifies creation of entities. Note that the EntityBuilder
-			// is VERY slow compared to manually building an entity, but for prototyping it's quite useful.
+			// is slow compared to manually building an entity, but for prototyping it's quite useful.
 			// The EntityBuilder automatically creates a new entity and adds it to the world when constructed.
 			var entity = new EntityBuilder(world);
-			entity.Add(new HelloWorldComponent(random.Next(0, 5)));
+			entity.Add(new HelloWorldComponent
+			{
+				WorldCount = random.Next(minValue: 0, maxValue: 5)
+			});
 		}
 	}
 
@@ -48,14 +51,13 @@ internal class HelloWorld
 
 	public static void Main()
 	{
-		var entity = default(Entity);
-		Console.WriteLine(entity.IsValid);
-		Console.WriteLine(entity);
-		
 		new HelloWorld();
 	}
 
-	private record HelloWorldComponent(int WorldCount) : IComponent;
+	private struct HelloWorldComponent : IComponent
+	{
+		public int WorldCount { get; set; }
+	}
 
 	private class HelloWorldSystem : IteratingSystem
 	{
@@ -76,8 +78,10 @@ internal class HelloWorld
 
 		protected override void Update(Entity entity, float delta)
 		{
-			// Naming convention is to add "C" as a suffix to component instance variables.
-			var helloWorldC = helloWorldMapper.Get(entity);
+			// Components are passed as references from component mappers. See the primary README for JXS.Ecs.Core to
+			// understand why we are using mutable structs and passing them by reference instead of using reference types.
+			// "C" is sometimes used as a shorthand suffix for "C"omponent instance variable names.
+			ref readonly var helloWorldC = ref helloWorldMapper.Get(entity);
 
 			var worldString = "";
 			for (var i = 0; i < helloWorldC.WorldCount; i++)

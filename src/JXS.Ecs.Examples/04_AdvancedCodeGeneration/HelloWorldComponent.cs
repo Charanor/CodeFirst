@@ -1,6 +1,6 @@
 ﻿using JXS.Ecs.Core;
 
-namespace JXS.Ecs.Examples._03_GeneratingCode;
+namespace JXS.Ecs.Examples._04_AdvancedCodeGeneration;
 
 internal struct HelloWorldComponent : IComponent
 {

@@ -1,7 +1,7 @@
 ﻿using JXS.Ecs.Core;
 using JXS.Ecs.Core.Utilities;
 
-namespace JXS.Ecs.Examples._03_GeneratingCode;
+namespace JXS.Ecs.Examples._04_AdvancedCodeGeneration;
 
 internal class GeneratingCode
 {
@@ -32,7 +32,7 @@ internal class GeneratingCode
 
 	private void AddSystems()
 	{
-		world.AddSystem(new _04_AdvancedCodeGeneration.HelloWorldSystem());
+		world.AddSystem(new HelloWorldSystem());
 	}
 
 	private void RunOnce()
