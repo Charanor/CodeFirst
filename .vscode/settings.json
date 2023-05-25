@@ -10,6 +10,7 @@
 		"async",
 		"audio",
 		"files",
-		"ai"
+		"ai",
+		"source-generator-utils"
 	]
 }
