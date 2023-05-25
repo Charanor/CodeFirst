@@ -7,8 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\JXS.FileSystem\JXS.FileSystem.csproj" />
-        <ProjectReference Include="..\JXS.Utils\JXS.Utils.csproj" />
+        <ProjectReference Include="..\JXS.FileSystem\JXS.FileSystem.csproj"/>
+        <ProjectReference Include="..\JXS.Utils\JXS.Utils.csproj"/>
     </ItemGroup>
 
 </Project>

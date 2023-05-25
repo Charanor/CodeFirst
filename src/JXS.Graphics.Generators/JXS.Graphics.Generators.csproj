@@ -43,4 +43,8 @@
         <Antlr4 Include="Grammars\GLSL.g4"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\JXS.SourceGeneratorUtils\JXS.SourceGeneratorUtils.csproj" GeneratePathProperty="true" PrivateAssets="all" OutputItemType="Analyzer"/>
+    </ItemGroup>
+
 </Project>

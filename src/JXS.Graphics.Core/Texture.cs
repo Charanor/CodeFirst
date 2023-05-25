@@ -33,6 +33,9 @@ public abstract class Texture : NativeResource
 		Depth = depth;
 		Dimensions = new Vector3i(width, height, depth);
 
+		MinFilter = TextureMinFilter.Linear;
+		MagFilter = TextureMagFilter.Linear;
+
 		fixed (byte* ptr = data)
 		{
 			// ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
@@ -79,6 +82,11 @@ public abstract class Texture : NativeResource
 						$"Unable to create texture for {nameof(TextureTarget)}.{Enum.GetName(target)} = ({target}): Unsupported target.");
 			}
 		}
+	}
+
+	protected Texture()
+	{
+		Handle = TextureHandle.Zero;
 	}
 
 	public TextureHandle Handle { get; }

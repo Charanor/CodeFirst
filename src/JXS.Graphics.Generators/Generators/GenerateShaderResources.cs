@@ -42,7 +42,7 @@ public class GenerateShaderResources : IIncrementalGenerator
 
 		var compilationAndFiles = context.CompilationProvider.Combine(files.Collect());
 		context.RegisterSourceOutput(compilationAndFiles,
-			action: static (sourceProductionContext, source) =>
+			static (sourceProductionContext, source) =>
 				Execute(source.Right.CastArray<ShaderFileInfo>(), sourceProductionContext));
 	}
 

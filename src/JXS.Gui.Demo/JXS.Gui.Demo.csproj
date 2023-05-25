@@ -8,29 +8,32 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\JXS.Gui\JXS.Gui.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\JXS.Graphics.Generators\JXS.Graphics.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false">
             <ExcludeAssets>runtime</ExcludeAssets>
         </ProjectReference>
-        <ProjectReference Include="..\JXS.Gui\JXS.Gui.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <AdditionalFiles Include="Shaders\**\*" />
+        <AdditionalFiles Include="Shaders\**\*"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="Fonts\IMMORTAL.mtsdf.json" />
-      <Content Include="Fonts\IMMORTAL.mtsdf.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-      <None Remove="Fonts\IMMORTAL.mtsdf.png" />
-      <Content Include="Fonts\IMMORTAL.mtsdf.png">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
-      <None Remove="Layouts\TextExample.xml" />
-      <Content Include="Layouts\TextExample.xml">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
+        <None Remove="Fonts\IMMORTAL.mtsdf.json"/>
+        <Content Include="Fonts\IMMORTAL.mtsdf.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <None Remove="Fonts\IMMORTAL.mtsdf.png"/>
+        <Content Include="Fonts\IMMORTAL.mtsdf.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <None Remove="Layouts\TextExample.xml"/>
+        <Content Include="Layouts\TextExample.xml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>

@@ -5,6 +5,6 @@ public record VertexInfo(Type VertexType, params VertexAttribute[] VertexAttribu
 	public int SizeInBytes { get; } =
 		VertexAttributes.Aggregate(
 			seed: 0,
-			func: (total, attribute) => total + attribute.Size
+			(total, attribute) => total + attribute.Size
 		);
 }

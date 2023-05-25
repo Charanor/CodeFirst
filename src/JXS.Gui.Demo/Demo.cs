@@ -50,7 +50,7 @@ public class Demo : GameWindow
 		GL.Enable(EnableCap.DebugOutput);
 		GL.Enable(EnableCap.DebugOutputSynchronous);
 		GL.DebugMessageCallback(
-			callback: (source, type, id, severity, length, message, _) =>
+			(source, type, id, severity, length, message, _) =>
 			{
 				Console.WriteLine($"{source}, {type}, {id}, {severity}, {Marshal.PtrToStringAnsi(message, length)}");
 			}, IntPtr.Zero);

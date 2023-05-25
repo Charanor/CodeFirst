@@ -2,6 +2,8 @@
 
 public class Texture2D : Texture
 {
+	public static readonly Texture2D Empty = new();
+
 	public Texture2D(ReadOnlySpan<byte> data, int width, int height, int mipMapLevels = 1,
 		SizedInternalFormat internalFormat = SizedInternalFormat.Rgba8, PixelFormat format = PixelFormat.Rgba,
 		PixelType type = PixelType.Float) : base(TextureTarget.Texture2d, data, width, height, depth: 0, mipMapLevels,
@@ -13,6 +15,10 @@ public class Texture2D : Texture
 		SizedInternalFormat internalFormat = SizedInternalFormat.Rgba8, PixelFormat format = PixelFormat.Rgba,
 		PixelType type = PixelType.Float) : this(data: default, width, height, mipMapLevels, internalFormat, format,
 		type)
+	{
+	}
+
+	private Texture2D()
 	{
 	}
 }

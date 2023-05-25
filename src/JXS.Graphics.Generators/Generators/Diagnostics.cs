@@ -8,19 +8,18 @@ namespace JXS.Graphics.Generators.Generators;
 public static class Diagnostics
 {
 	private static readonly DiagnosticDescriptor UnknownShaderType = new(
-		id: "SRG0001",
-		title: "Unknown shader type",
-		messageFormat: "Could not determine shader type. Expected file ending to be one of: {0}",
-		category: "Shaders",
+		"SRG0001",
+		"Unknown shader type",
+		"Could not determine shader type. Expected file ending to be one of: {0}",
+		"Shaders",
 		DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
 
 	private static readonly DiagnosticDescriptor IllegalInlineStructSpecifier = new(
-		id: "SRG0002",
-		title: "Illegal inline struct specifier",
-		messageFormat:
+		"SRG0002",
+		"Illegal inline struct specifier",
 		"Shader contains an inline struct specifier. Inline struct specifiers can not be processed, please extract the struct specifier to a named struct in the outer scope.",
-		category: "Shaders",
+		"Shaders",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
 
@@ -31,7 +30,7 @@ public static class Diagnostics
 		var textSpan = TextSpan.FromBounds(start: -1, end: -1);
 		var linePositionSpan = new LinePositionSpan(LinePosition.Zero, LinePosition.Zero);
 		var location = Location.Create(shaderFilePath, textSpan, linePositionSpan);
-		var fileEndingsArrayText = $"[{string.Join(separator: ",", validShaderFileEndings)}]";
+		var fileEndingsArrayText = $"[{string.Join(",", validShaderFileEndings)}]";
 		SourceProductionContext.ReportDiagnostic(Diagnostic.Create(UnknownShaderType, location, fileEndingsArrayText));
 	}
 

@@ -48,8 +48,8 @@ public static class GLSLUtils
 		null => throw new ArgumentNullException(nameof(glslType)),
 		"" => throw new ArgumentException($"{nameof(glslType)} cannot be empty", nameof(glslType)),
 		"int" or "float" or "bool" => glslType,
-		_ when glslType.StartsWith("vec") => glslType.Replace(oldValue: "vec", newValue: "Vector"),
-		_ when glslType.StartsWith("mat") => glslType.Replace(oldValue: "mat", newValue: "Matrix"),
+		_ when glslType.StartsWith("vec") => glslType.Replace("vec", "Vector"),
+		_ when glslType.StartsWith("mat") => glslType.Replace("mat", "Matrix"),
 		"sampler2D" => $"{GRAPHICS_CORE_NAMESPACE}.Texture2D",
 		"samplerCube" => "int", // TODO: Replace "int" with "CubeTexture" or something
 		_ => throw new ArgumentException($"Can not convert GLSL type {glslType} to OpenTK type", nameof(glslType))
@@ -72,5 +72,5 @@ public static class GLSLUtils
 		$"GL.GetInteger(GetPName.{GetGLConstantForGLSLConstant(glslConstantName)}, ref {refVariableName});";
 
 	private static string GetGLConstantForGLSLConstant(string glslConstantName) =>
-		glslConstantName.Replace(oldValue: "gl_", newValue: "");
+		glslConstantName.Replace("gl_", "");
 }

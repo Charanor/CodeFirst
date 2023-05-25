@@ -1,4 +1,5 @@
-﻿using JXS.Graphics.Core.Utils;
+﻿using JetBrains.Annotations;
+using JXS.Graphics.Core.Utils;
 using JXS.Utils.Math;
 using OpenTK.Mathematics;
 
@@ -13,8 +14,10 @@ public abstract class Camera
 		new Vector3(x: -1, y: -1, z: -1), new Vector3(x: 1, y: -1, z: -1), new Vector3(x: 1, y: 1, z: -1),
 		new Vector3(x: -1, y: 1, z: -1), // near plane
 		new Vector3(x: -1, y: -1, z: 1), new Vector3(x: 1, y: -1, z: 1), new Vector3(x: 1, y: 1, z: 1),
-		new Vector3(x: -1, y: 1, z: 1) // far flane
+		new Vector3(x: -1, y: 1, z: 1) // far plane
 	};
+
+	private Vector2 windowSize;
 
 	protected Camera(float worldWidth, float worldHeight)
 	{
@@ -79,7 +82,24 @@ public abstract class Camera
 	}
 
 	public Viewport Viewport { get; private set; }
-	public Vector2 WindowSize { get; private set; }
+
+	/// <summary>
+	///     The size (in pixels) of the OpenGL window. If the window size changes the new size should be assigned here
+	///     so the camera can properly calculate the new viewport.
+	/// </summary>
+	public Vector2 WindowSize
+	{
+		get => windowSize;
+		set
+		{
+			windowSize = value;
+			ApplyViewport();
+		}
+	}
+
+	/// <summary>
+	///     The size (in "world units") of the virtual world that the camera is displaying.
+	/// </summary>
 	public Vector2 WorldSize { get; set; }
 
 	public float NearClippingPlane { get; set; } = 1;
@@ -89,16 +109,14 @@ public abstract class Camera
 
 	public abstract Matrix4 Projection { get; }
 	public abstract Matrix4 View { get; }
-	
+
 	public abstract Frustum Frustum { get; }
 
 	protected abstract Viewport UpdateViewport(int windowWidth, int windowHeight);
 
-	[Obsolete($"Use {nameof(UpdateWindowSize)} instead")]
-	public void Update(int newWidth, int newHeight)
-	{
-		UpdateWindowSize(newWidth, newHeight);
-	}
+	[Obsolete($"Set {nameof(WindowSize)} directly instead")]
+	public void Update(int newWidth, int newHeight) =>
+		WindowSize = new Vector2(newWidth, newHeight);
 
 	/// <summary>
 	///     Adjusts this camera's viewport to match the new window width and height. Important to do after the window is
@@ -106,10 +124,13 @@ public abstract class Camera
 	/// </summary>
 	/// <param name="newWindowWidth">the new window width</param>
 	/// <param name="newWindowHeight">the new window height</param>
-	public void UpdateWindowSize(int newWindowWidth, int newWindowHeight)
-	{
+	[Obsolete($"Set {nameof(WindowSize)} directly instead")]
+	public void UpdateWindowSize(int newWindowWidth, int newWindowHeight) =>
 		WindowSize = new Vector2(newWindowWidth, newWindowHeight);
-		Viewport = UpdateViewport(newWindowWidth, newWindowHeight);
+
+	public void ApplyViewport()
+	{
+		Viewport = UpdateViewport((int)WindowSize.X, (int)WindowSize.Y);
 		Viewport.Apply();
 	}
 
@@ -154,12 +175,38 @@ public abstract class Camera
 		Position -= Vector3.Transform(offset, Quaternion.FromAxisAngle(axis, angleRadians));
 	}
 
+	[Pure]
+	public Vector3 UnProject(Vector3 screenCoords)
+	{
+		var (viewportX, viewportY, viewportWidth, viewportHeight) = Viewport;
+		var x = screenCoords.X - viewportX;
+		var y = WindowSize.Y - screenCoords.Y - viewportY;
+		screenCoords.X = x * 2 / viewportWidth - 1;
+		screenCoords.Y = y * 2 / viewportHeight - 1;
+
+		var vec4 = new Vector4(screenCoords, w: 1);
+		vec4 *= Matrix4.Invert(Projection);
+		vec4 *= Matrix4.Invert(View);
+
+		if (vec4.W is > float.Epsilon or < -float.Epsilon)
+		{
+			var w = vec4.W;
+			vec4 /= vec4.W;
+			vec4.W = w;
+		}
+
+		return vec4.Xyz;
+		// return Vector3.Unproject(screenCoords, viewportX, viewportY, viewportWidth, viewportHeight, NearClippingPlane,
+		// 	FarClippingPlane, Matrix4.Invert(Combined * Matrix4.CreateTranslation(Position)));
+	}
+
+	[Pure]
+	public Vector2 UnProject(Vector2 screenCoords) => UnProject(new Vector3(screenCoords)).Xy;
+
 	// public Ray ScreenPointToRay(Vector2 point)
 	// {
-	// 	var nearPoint =
-	// 		latestViewport.Unproject(point.AsXY(latestViewport.MinDepth), Projection, View, Matrix4.Identity);
-	// 	var farPoint =
-	// 		latestViewport.Unproject(point.AsXY(latestViewport.MaxDepth), Projection, View, Matrix4.Identity);
+	// 	var nearPoint = latestViewport.Unproject(point.AsXY(latestViewport.MinDepth), Projection, View, Matrix4.Identity);
+	// 	var farPoint = latestViewport.Unproject(point.AsXY(latestViewport.MaxDepth), Projection, View, Matrix4.Identity);
 	// 	var direction = (farPoint - nearPoint).Normalized();
 	// 	return new Ray(nearPoint, direction);
 	// }

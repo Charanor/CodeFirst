@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using JXS.Graphics.Generators.Parsing;
 using JXS.Graphics.Generators.Utils;
+using JXS.SourceGeneratorUtils;
 
 namespace JXS.Graphics.Generators.Generators;
 
@@ -280,7 +281,7 @@ public class ShaderClassGenerator
 				var compoundName = Quote(identifier is { Length: > 0 }
 					? $"{identifier}.{childIdentifier}"
 					: childIdentifier);
-				var arraySuffix = string.Concat(Enumerable.Repeat(element: "Array", arrayRanks));
+				var arraySuffix = string.Concat(Enumerable.Repeat("Array", arrayRanks));
 				classBuilder.IndentedLn(
 					$"Set{GLSLUtils.FirstCharToUpper(csChildType)}{arraySuffix}({compoundName}, {fieldName});");
 			}
@@ -353,7 +354,7 @@ public class ShaderClassGenerator
 						: throw new InvalidOperationException(
 							$"Can not determine constant size of {estimatedSizeName} for {locationName}. It is probably a 'const' or '#define' constant (not supported). Please use a raw number of a 'gl_' constant.");
 
-				classBuilder.IndentedLn($"{offsetField} = {string.Join(separator: "+", textureOffsetSizes)} + 0;");
+				classBuilder.IndentedLn($"{offsetField} = {string.Join("+", textureOffsetSizes)} + 0;");
 				// Add should be after we add the field!
 				textureOffsetSizes.Add(estimatedSize);
 			}
@@ -434,7 +435,7 @@ public class ShaderClassGenerator
 	private static string ParamList(IEnumerable<GLSLMember> members, Func<string, string>? nameTransformer = null)
 	{
 		var inputs = members.Where(def => def is { HasConcreteType: true, HasIdentifier: true });
-		return string.Join(separator: ", ", inputs.Select(Parameter));
+		return string.Join(", ", inputs.Select(Parameter));
 
 		// Functions
 		string Parameter(GLSLMember member)
@@ -449,7 +450,7 @@ public class ShaderClassGenerator
 	}
 
 	private static string Array(string type, int ranks) =>
-		$"{type}{string.Concat(Enumerable.Repeat(element: "[]", ranks))}";
+		$"{type}{string.Concat(Enumerable.Repeat("[]", ranks))}";
 
 	private static string CreateVersionType(string versionNumber, string versionProfile) =>
 		$"(VersionNumber: {Quote(versionNumber)}, VersionProfile: {Quote(versionProfile)})";

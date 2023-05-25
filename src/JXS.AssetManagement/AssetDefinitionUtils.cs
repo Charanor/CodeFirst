@@ -73,7 +73,7 @@ public static class AssetDefinitionUtils
 				var validProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
 					.Select(prop => $"({prop.Name}, {prop.PropertyType})");
 				Logger.Error(
-					$"No property {attributeName} exists on type {type}. Valid properties:\n{string.Join(separator: "\n    ", validProperties)}");
+					$"No property {attributeName} exists on type {type}. Valid properties:\n{string.Join("\n    ", validProperties)}");
 				continue;
 			}
 
@@ -102,7 +102,7 @@ public static class AssetDefinitionUtils
 				var validProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
 					.Select(prop => $"({prop.Name}, {prop.PropertyType})");
 				Logger.Error(
-					$"No property {elementName} exists on type {type}. Valid properties:\n{string.Join(separator: "\n    ", validProperties)}");
+					$"No property {elementName} exists on type {type}. Valid properties:\n{string.Join("\n    ", validProperties)}");
 				continue;
 			}
 

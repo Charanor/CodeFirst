@@ -63,31 +63,31 @@ public class FrameBuffer : NativeResource
 		if (width <= 0 || height <= 0)
 		{
 			throw new InvalidOperationException(
-				$"Can not set attachment for {nameof(FrameBuffer)} {handle}; Either give with and height as arguments or use the constructor that takes a width and a height.");
+				$"Can not set attachment for {nameof(FrameBuffer)} {handle}; Either give width and height as arguments or use the constructor that takes a width and a height.");
 		}
 
 		switch (attachment)
 		{
 			case FramebufferAttachment.DepthStencilAttachment:
-				var depthStencilBuffer = new RenderBuffer(InternalFormat.Depth24Stencil8, Width, Height);
+				var depthStencilBuffer = new RenderBuffer(InternalFormat.Depth24Stencil8, width, height);
 				SetAttachment(attachment, depthStencilBuffer);
-				managedResources.Add(depthStencilBuffer);
+				AddManagedResource(depthStencilBuffer);
 				break;
 			case FramebufferAttachment.DepthAttachment:
-				var depthBuffer = new RenderBuffer(InternalFormat.DepthComponent16, Width, Height);
+				var depthBuffer = new RenderBuffer(InternalFormat.DepthComponent16, width, height);
 				SetAttachment(attachment, depthBuffer);
-				managedResources.Add(depthBuffer);
+				AddManagedResource(depthBuffer);
 				break;
 			case FramebufferAttachment.StencilAttachment:
-				var stencilBuffer = new RenderBuffer(InternalFormat.StencilIndex8, Width, Height);
+				var stencilBuffer = new RenderBuffer(InternalFormat.StencilIndex8, width, height);
 				SetAttachment(attachment, stencilBuffer);
-				managedResources.Add(stencilBuffer);
+				AddManagedResource(stencilBuffer);
 				break;
 			default:
 				// It's a color attachment
-				var texture = new Texture2D(Width, Height);
+				var texture = new Texture2D(width, height);
 				SetAttachment(attachment, texture, level);
-				managedResources.Add(texture);
+				AddManagedResource(texture);
 				break;
 		}
 	}
@@ -137,6 +137,9 @@ public class FrameBuffer : NativeResource
 		attachmentTextures.TryGetValue(attachment, out texture);
 
 	public bool HasAttachment(FramebufferAttachment attachment) => attachmentTextures.ContainsKey(attachment);
+
+	public void AddManagedResource(NativeResource resource) => managedResources.Add(resource);
+	public void RemoveManagedResource(NativeResource resource) => managedResources.Remove(resource);
 
 	protected override void DisposeNativeResources()
 	{

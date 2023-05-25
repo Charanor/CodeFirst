@@ -82,7 +82,7 @@ public class ShaderProgram : NativeResource
 
 	public void SetUniform(int location, ReadOnlySpan<TextureHandle> values)
 	{
-		SetUniform(location, Array.ConvertAll(values.ToArray(), converter: textureHandle => textureHandle.Handle));
+		SetUniform(location, Array.ConvertAll(values.ToArray(), textureHandle => textureHandle.Handle));
 	}
 
 	// Float operations
@@ -197,7 +197,7 @@ public class ShaderProgram : NativeResource
 
 	private static string InjectDefinesToShaderSource(string source)
 	{
-		var lines = Regex.Split(source, pattern: "\n").ToList();
+		var lines = Regex.Split(source, "\n").ToList();
 
 		// NOTE: the 0th item is the "#version ..." so we add the definitions after that
 
@@ -206,7 +206,7 @@ public class ShaderProgram : NativeResource
 			lines.Insert(index: 1, $"#define {location.GetConstantName()} {(uint)location}");
 		}
 
-		return string.Join(separator: "\n", lines);
+		return string.Join("\n", lines);
 	}
 
 	public record ActiveUniformInfo(int Location, string Name, int ByteSize, UniformType Type);

@@ -48,7 +48,7 @@ public class Mesh : IDisposable
 			vertexArray.Unbind();
 			return;
 		}
-
+		
 		Material.ModelMatrix = model;
 		Material.ViewMatrix = view;
 		Material.ProjectionMatrix = projection;
@@ -64,12 +64,13 @@ public class Mesh : IDisposable
 		Material.Shader.Unbind();
 	}
 
-	public readonly record struct Vertex(Vector3 Position, Vector3 Normal, Vector2 TexCoord)
+	public readonly record struct Vertex(Vector3 Position, Vector3 Normal, Color4<Rgba> Color, Vector2 TexCoord)
 	{
 		public static readonly VertexInfo VertexInfo = new(
 			typeof(Vertex),
 			VertexAttribute.Vector3(VertexAttributeLocation.Position),
 			VertexAttribute.Vector3(VertexAttributeLocation.Normal),
+			VertexAttribute.Color4(VertexAttributeLocation.Color),
 			VertexAttribute.Vector2(VertexAttributeLocation.TexCoords)
 		);
 	}

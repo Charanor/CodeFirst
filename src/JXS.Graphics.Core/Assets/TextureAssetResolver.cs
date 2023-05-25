@@ -14,12 +14,15 @@ public class TextureAssetResolver : IAssetResolver
 
 	private static readonly ILogger Logger = LoggingManager.Get<TextureAssetResolver>();
 
-	public TextureAssetResolver()
+	private readonly TextureAssetDefinition defaultDefinition;
+
+	public TextureAssetResolver(TextureAssetDefinition? defaultDefinition = default)
 	{
+		this.defaultDefinition = defaultDefinition ?? new TextureAssetDefinition();
 		StbImage.stbi_set_flip_vertically_on_load(1);
 	}
 
-	public bool CanLoadAssetOfType(Type type) => type == typeof(Texture);
+	public bool CanLoadAssetOfType(Type type) => type == typeof(Texture) || type.IsAssignableTo(typeof(Texture));
 
 	public bool TryLoadAsset(FileHandle fileHandle, [NotNullWhen(true)] out object? asset)
 	{
@@ -37,7 +40,7 @@ public class TextureAssetResolver : IAssetResolver
 		}
 
 		var definition = AssetDefinitionUtils.LoadAssetDefinition<TextureAssetDefinition>(fileHandle.FilePath) ??
-		                 new TextureAssetDefinition();
+		                 defaultDefinition;
 
 		Logger.Trace($"Loading asset {definition}");
 		var (mipMapLevels, minFilter, magFilter, wrapS, wrapT) = definition;
