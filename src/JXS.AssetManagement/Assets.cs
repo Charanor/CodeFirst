@@ -59,11 +59,117 @@ public static class Assets
 		}
 
 		var assetTask = AssetTasks.GetOrAdd(asset,
-			valueFactory: key => Task.Run(() => LoadAsset(key, scheme, path, assetType)));
-		await assetTask;
+			key => Task.Run(() => LoadAsset(key, scheme, path, assetType)));
+		try
+		{
+			await assetTask;
+		}
+		catch (Exception e)
+		{
+			DevTools.ThrowStatic(typeof(Assets), e);
+		}
+
+		if (assetTask.IsFaulted)
+		{
+			DevTools.ThrowStatic(typeof(Assets), assetTask.Exception!);
+		}
+
 		return assetTask.IsCompletedSuccessfully;
 	}
 
+	/// <inheritdoc cref="PrecacheSync(string,Type)" />
+	public static bool PrecacheSync<TAssetType>([UriString] string asset) => PrecacheSync(asset, typeof(TAssetType));
+
+	/// <inheritdoc cref="PrecacheSync(string,Type,out object?)" />
+	public static bool PrecacheSync<TAssetType>([UriString] string asset,
+		[NotNullWhen(true)] out TAssetType? loadedAsset)
+	{
+		if (!PrecacheSync(asset, typeof(TAssetType), out var untypedAsset))
+		{
+			loadedAsset = default;
+			return false;
+		}
+
+		if (untypedAsset is not TAssetType typedAsset)
+		{
+			loadedAsset = default;
+			return false;
+		}
+
+		loadedAsset = typedAsset;
+		return true;
+	}
+
+
+	/// <inheritdoc cref="PrecacheSync(string,Type,out object?)" />
+	public static bool PrecacheSync([UriString] string asset, Type assetType) => PrecacheSync(asset, assetType, out _);
+
+	/// <summary>
+	///     Synchronously loads the given asset to memory and saves it to the cache for future use.
+	/// </summary>
+	/// <param name="asset"></param>
+	/// <param name="assetType">
+	///     The type of the asset. If left blank, or <c>null</c>, the type will be guessed by the asset
+	///     loaders.
+	/// </param>
+	/// <param name="loadedAsset">The loaded asset, if it could be successfully loaded</param>
+	/// <returns></returns>
+	public static bool PrecacheSync([UriString] string asset, Type assetType,
+		[NotNullWhen(true)] out object? loadedAsset)
+	{
+		if (asset is not { Length: > 0 })
+		{
+			// This asset was probably due to the asset string not being initialized. This is logically an error, 
+			// but due to how some libraries that use this asset module work (e.g. the ECS library), it is undesirable
+			// to throw an error. So in this case we just warn the user that a default asset was supplied and return false.
+			Logger.Debug($"{nameof(Precache)}({asset}): Default asset URI supplied.");
+			loadedAsset = default;
+			return false;
+		}
+
+		// ReSharper disable once InvertIf
+		if (!IsValidAssetUri(asset, out string? scheme, out var path))
+		{
+			Logger.Warn($"{nameof(Precache)}({asset}): Invalid asset uri; aborting preload.");
+			loadedAsset = default;
+			return false;
+		}
+
+		if (scheme == GENERATED_ASSET_SCHEME)
+		{
+			Logger.Warn($"{nameof(Precache)}({asset}): Asset is a generated asset; aborting preload.");
+			loadedAsset = default;
+			return false;
+		}
+
+		try
+		{
+			loadedAsset = LoadAsset(asset, scheme, path, assetType);
+			var newTask = Task.FromResult(loadedAsset);
+			var task = AssetTasks.GetOrAdd(asset, newTask);
+			if (task == newTask)
+			{
+				return true;
+			}
+
+			// We have already loaded this asset, or something. Dispose of it if necessary.
+			if (loadedAsset is IDisposable disposable)
+			{
+				disposable.Dispose();
+			}
+
+			loadedAsset = task.Result;
+			return true; // SIC! "true", because we didn't fail to load the asset, it already exists
+		}
+		catch (Exception e)
+		{
+			DevTools.ThrowStatic(typeof(Assets), e);
+			loadedAsset = default;
+			return false;
+		}
+	}
+
+	/// <inheritdoc cref="Precache" />
 	public static Task<bool> Precache<TAssetType>([UriString] string asset) =>
 		Precache(asset, typeof(TAssetType));
 
@@ -126,7 +232,7 @@ public static class Assets
 
 		void DisposeTaskAsset()
 		{
-			if (assetTask.Result is IDisposable disposable)
+			if (assetTask is { IsCompletedSuccessfully: true, Result: IDisposable disposable })
 			{
 				disposable.Dispose();
 			}
@@ -171,6 +277,27 @@ public static class Assets
 
 		if (!AssetTasks.TryGetValue(asset, out var assetTask))
 		{
+			// We have not loaded this asset yet
+
+			if (MainThread.IsRunningOnMainThread)
+			{
+				// If we are on the main thread, do all of the loading immediately
+				if (!PrecacheSync(asset, typeof(TAsset), out var loadedAsset))
+				{
+					Logger.Warn($"{nameof(Get)}({asset}): Asset failed to load.");
+					throw new UnloadedAssetException(asset);
+				}
+
+				if (loadedAsset is not TAsset typedAsset)
+				{
+					// ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+					throw new WrongAssetTypeException(asset, typeof(TAsset), loadedAsset?.GetType());
+				}
+
+				return typedAsset;
+			}
+
+			// If we are not on the main thread, start a task and wait for the main thread to handle tasks
 			var precacheTask = Precache<TAsset>(asset);
 			precacheTask.WaitWhileHandlingMainThreadTasks();
 			if (!precacheTask.Result)
@@ -192,13 +319,13 @@ public static class Assets
 			assetTask.WaitWhileHandlingMainThreadTasks();
 		}
 
-		if (assetTask.Result is not TAsset typedAsset)
+		if (assetTask.Result is not TAsset assetTaskTypedAsset)
 		{
 			// ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
 			throw new WrongAssetTypeException(asset, typeof(TAsset), assetTask.Result?.GetType());
 		}
 
-		return typedAsset;
+		return assetTaskTypedAsset;
 	}
 
 	/// <summary>
@@ -223,7 +350,7 @@ public static class Assets
 			return true;
 		}
 		// We don't want to catch any other exceptions, since they should be "impossible".
-		catch (WrongAssetTypeException e)
+		catch (WrongAssetTypeException)
 		{
 			result = default;
 			return false;
@@ -266,7 +393,7 @@ public static class Assets
 			return true;
 		}
 		// We don't want to catch any other exceptions, since they should be "impossible".
-		catch (WrongAssetTypeException e)
+		catch (WrongAssetTypeException)
 		{
 			result = default;
 			failReason = LoadFailReason.WrongAssetType;
@@ -338,7 +465,7 @@ public static class Assets
 		if (!found)
 		{
 			Logger.Debug(
-				$"{nameof(IsValidAssetUri)}({asset}): Asset has unknown scheme \"{scheme}\"; expected one of [{string.Join(separator: ", ", SchemeResolvers.Keys)}].");
+				$"{nameof(IsValidAssetUri)}({asset}): Asset has unknown scheme \"{scheme}\"; expected one of [{string.Join(", ", SchemeResolvers.Keys)}].");
 			return false;
 		}
 
