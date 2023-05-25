@@ -22,8 +22,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <AdditionalFiles Include="Shaders\BasicGraphics.frag"/>
-        <AdditionalFiles Include="Shaders\BasicGraphics.vert"/>
+        <AdditionalFiles Include="Shaders\*.frag"/>
+        <AdditionalFiles Include="Shaders\*.vert"/>
+        <AdditionalFiles Include="Shaders\BasicGraphics.frag.BAK"/>
     </ItemGroup>
 
     <PropertyGroup>

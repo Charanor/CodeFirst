@@ -11,6 +11,8 @@ public interface IGuiInputProvider
 	bool JustPressed(GuiInputAction action);
 	bool JustReleased(GuiInputAction action);
 
+	bool IsPressed(GuiInputAction action);
+
 	event EventHandler<IGuiInputProvider, string>? OnTextInput;
 }
 

@@ -24,13 +24,13 @@ public class Image : Component<Style>
 		{
 			graphicsProvider.BeginOverflow();
 			{
-				graphicsProvider.DrawImage(CalculatedBounds, Texture);
+				graphicsProvider.DrawImage(TransformedBounds, Texture);
 			}
 			graphicsProvider.EndOverflow();
 		}
 		else
 		{
-			graphicsProvider.DrawImage(CalculatedBounds, Texture);
+			graphicsProvider.DrawImage(TransformedBounds, Texture);
 		}
 	}
 }

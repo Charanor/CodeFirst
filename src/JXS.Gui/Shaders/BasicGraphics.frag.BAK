@@ -1,0 +1,89 @@
+﻿#version 460 core
+
+const float BORDER_ANTI_ALIASING = 1.0;
+
+in vec2 texCoords;
+
+out vec4 fragColor;
+
+uniform vec4 backgroundColor;
+uniform sampler2D texture0;
+uniform bool hasTexture;
+
+uniform float borderTopLeftRadius;
+uniform float borderTopRightRadius;
+uniform float borderBottomLeftRadius;
+uniform float borderBottomRightRadius;
+
+uniform float borderLeftWidth;
+uniform float borderRightWidth;
+uniform float borderTopWidth;
+uniform float borderBottomWidth;
+
+uniform vec4 borderColor;
+
+uniform vec2 size;
+
+vec4 radii = vec4(borderTopRightRadius, borderBottomRightRadius, borderTopLeftRadius, borderBottomLeftRadius);
+
+float signedDistance(vec2 inPosition, vec2 inSize) {
+    // This 'magic' here is picking the correct corner radius
+    vec2 leftRight = (inPosition.x > 0.0) ? radii.xy : radii.zw;
+    float radius = (inPosition.y > 0.0) ? leftRight.x : leftRight.y;
+    vec2 q = abs(inPosition) - (inSize / 2.0) + radius;
+    return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radius;
+}
+
+float calculateBorderWidth() {
+    vec2 position = size * texCoords;
+    float leftDistance = abs(position.x);
+    float rightDistance = abs(position.x - size.x);
+    float topDistance = abs(position.y);
+    float bottomDistance = abs(position.y - size.y);
+
+    float minDistance = min(min(leftDistance, rightDistance), min(topDistance, bottomDistance));
+    if (leftDistance == minDistance) {
+        return borderLeftWidth;
+    } else if (rightDistance == minDistance) {
+        return borderRightWidth;
+    } else if (topDistance == minDistance) {
+        return borderTopWidth;
+    } else {
+        return borderBottomWidth;
+    }
+}
+
+void main() {
+    //    if (hasTexture) {
+    //        fragColor = texture(texture0, texCoords);
+    //    } else {
+    //        fragColor = backgroundColor;
+    //    }
+    //
+    //    vec2 fragmentPosition = gl_FragCoord.xy;
+    //    vec4 radii = vec4(borderTopRightRadius, borderBottomRightRadius, borderTopLeftRadius, borderBottomLeftRadius);
+    //    float dst = signedDistance(fragmentPosition - rectPosition, rectSize, radii);
+    //    float dst = simpleDistance();
+    //    float blendAmount = smoothstep(-BORDER_ANTI_ALIASING, BORDER_ANTI_ALIASING, abs(dst));
+    //    fragColor = mix(fragColor, vec4(1.0, 0.0, 0.0, 1.0), blendAmount);
+
+    float borderWidth = calculateBorderWidth();
+    vec2 innerSize = size - vec2(borderLeftWidth + borderRightWidth, borderTopWidth + borderBottomWidth);
+    vec2 innerPosition = vec2(borderLeftWidth, borderBottomWidth);
+
+    vec2 position = size * texCoords;
+    bool isInInnerRectangle = 
+    position.x >= innerPosition.x && position.x <= (innerPosition.x + innerSize.x) &&
+    position.y >= innerPosition.y && position.y <= (innerPosition.y + innerSize.y);
+
+    if(isInInnerRectangle) {
+        float dist = signedDistance(innerSize * ((position - innerPosition) / innerSize) - innerSize / 2.0, innerSize);
+        vec4 color = hasTexture ? texture(texture0, texCoords) : backgroundColor;
+        fragColor = (dist < 0.0) ? color : vec4(0.0);
+    } else {
+        float dist = signedDistance(size * texCoords - size / 2.0, size);
+        fragColor = (dist < 0.0) ? borderColor : vec4(0.0);
+    }
+    //float blendAmount = smoothstep(0, borderWidth, abs(dist));
+    //fragColor = mix(borderColor, color, blendAmount);
+}

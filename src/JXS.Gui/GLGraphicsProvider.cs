@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using JetBrains.Annotations;
 using JXS.Graphics.Core;
 using JXS.Graphics.Core.Utils;
 using JXS.Graphics.Generated;
@@ -72,7 +73,6 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 
 	public void Begin()
 	{
-		GLEnableCapSwitcher.PushState();
 		GL.Enable(EnableCap.Blend);
 		GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
@@ -84,6 +84,7 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 
 		GL.Disable(EnableCap.DepthTest);
 
+		camera.Position = new Vector3(camera.WorldSize.X / 2, camera.WorldSize.Y / 2, z: 1);
 		shader.ProjectionMatrix = camera.Projection;
 		shader.ViewMatrix = camera.View;
 		ActiveShader = shader;
@@ -98,7 +99,9 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		ActiveShader = null;
 
 		GL.Clear(ClearBufferMask.StencilBufferBit);
-		GLEnableCapSwitcher.Popstate();
+		GL.Disable(EnableCap.Blend);
+		GL.Disable(EnableCap.StencilTest);
+		GL.Disable(EnableCap.DepthTest);
 	}
 
 	public void BeginOverflow()
@@ -119,8 +122,9 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		var prevShader = ActiveShader;
 		ActiveShader = shader;
 		{
+			var convertedY = camera.WorldSize.Y - bounds.Size.Y - bounds.Y;
 			shader.ModelMatrix = Matrix4.CreateScale(bounds.Size.X, bounds.Size.Y, z: 1) *
-			                     Matrix4.CreateTranslation(bounds.X, bounds.Y, z: 0);
+			                     Matrix4.CreateTranslation(bounds.X, convertedY, z: 0);
 			shader.HasTexture = true;
 			shader.Texture0 = texture;
 			GL.DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
@@ -140,47 +144,61 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		fontShader.ViewMatrix = camera.View;
 		ActiveShader = fontShader;
 		{
-			var virtualCursor = position - new Vector2(x: 0, font.ScaleEmToFontSize(font.Metrics.Descender, fontSize));
+			var virtualCursor = position;// - new Vector2(x: 0, font.ScaleEmToFontSize(font.Metrics.Descender, fontSize));
+			// virtualCursor.Y = camera.WorldSize.Y - virtualCursor.Y;
+			// var yOffset = font.ScalePixelsToFontSize(camera.WorldSize.Y, fontSize) - ;
 			FontGlyph? previousGlyph = null;
 			foreach (var glyph in row.Glyphs)
 			{
-				virtualCursor = DrawGlyph(font, fontSize, glyph, previousGlyph, virtualCursor);
+				var lineHeight = font.ScalePixelsToFontSize(row.Size.Y, fontSize);
+				virtualCursor = DrawGlyph(font, fontSize, glyph, previousGlyph, virtualCursor, lineHeight);
 				previousGlyph = glyph;
 			}
 		}
 		ActiveShader = prevShader;
 	}
 
-	public void DrawRect(Box2 bounds, Color4<Rgba> color, float borderTop = default, float borderBottom = default,
-		float borderLeft = default, float borderRight = default, Color4<Rgba> borderColor = default)
+	public void DrawRect(Box2 bounds, Color4<Rgba> color,
+		float borderTopLeftRadius = default,
+		float borderTopRightRadius = default,
+		float borderBottomLeftRadius = default,
+		float borderBottomRightRadius = default)
 	{
 		var prevShader = ActiveShader;
 		ActiveShader = shader;
 		{
+			var convertedY = camera.WorldSize.Y - bounds.Size.Y - bounds.Y;
 			shader.ModelMatrix = Matrix4.CreateScale(bounds.Size.X, bounds.Size.Y, z: 1) *
-			                     Matrix4.CreateTranslation(bounds.X, bounds.Y, z: 0);
+			                     Matrix4.CreateTranslation(bounds.X, convertedY, z: 0);
 			shader.BackgroundColor = color.ToVector4();
-			shader.BorderLeft = borderLeft / bounds.Size.X;
-			shader.BorderRight = borderRight / bounds.Size.X;
-			shader.BorderTop = borderTop / bounds.Size.Y;
-			shader.BorderBottom = borderBottom / bounds.Size.Y;
-			shader.BorderColor = borderColor.ToVector4();
 			shader.HasTexture = false;
+
+			shader.Size = bounds.Size;
+
+			shader.BorderTopLeftRadius = borderTopLeftRadius;
+			shader.BorderTopRightRadius = borderTopRightRadius;
+			shader.BorderBottomLeftRadius = borderBottomLeftRadius;
+			shader.BorderBottomRightRadius = borderBottomRightRadius;
+
 			GL.DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
 		}
 		ActiveShader = prevShader;
 	}
 
-	private Vector2 DrawGlyph(Font font, int fontSize, FontGlyph glyph, FontGlyph? previousGlyph, Vector2 virtualCursor)
+	private Vector2 DrawGlyph(Font font, int fontSize, FontGlyph glyph, FontGlyph? previousGlyph, Vector2 virtualCursor, float lineHeight)
 	{
 		var fontShader = font.Shader;
 		fontShader.UvBounds = RemapUV(font.Atlas.Texture, glyph.AtlasBounds);
 
 		var kerning = previousGlyph == null ? 0 : font.GetKerningBetween(previousGlyph, glyph);
 		var offset = font.ScaleEmToFontSize(glyph.Offset, fontSize);
-		var position = virtualCursor + offset.Location + new Vector2(kerning, y: 0);
+		var location = offset.Location;
+		//location.Y = font.ScalePixelsToFontSize(glyph.Size.Y, fontSize) - location.Y;
+		location.Y *= -1; // Gotta invert coordinate system 
+		location.Y += lineHeight; // Move origin to top left corner instead of bottom left
+		var position = virtualCursor + location + new Vector2(kerning, y: 0);
 		fontShader.ModelMatrix = Matrix4.CreateScale(offset.Size.X, offset.Size.Y, z: 1) *
-		                         Matrix4.CreateTranslation(position.X, position.Y, z: 0);
+		                         Matrix4.CreateTranslation(position.X, camera.WorldSize.Y - position.Y, z: 0);
 
 		GL.DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
 
@@ -195,6 +213,7 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		return new Vector4(min.X, min.Y, max.X, max.Y);
 	}
 
+	[UsedImplicitly]
 	public readonly record struct Vertex(Vector2 Position)
 	{
 		public static readonly VertexInfo VertexInfo = new(

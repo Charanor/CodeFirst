@@ -13,8 +13,11 @@ public interface IGraphicsProvider
 	void BeginOverflow();
 	void EndOverflow();
 
-	void DrawRect(Box2 bounds, Color4<Rgba> color, float borderTop = default, float borderBottom = default,
-		float borderLeft = default, float borderRight = default, Color4<Rgba> borderColor = default);
+	void DrawRect(Box2 bounds, Color4<Rgba> color,
+		float borderTopLeftRadius = default,
+		float borderTopRightRadius = default,
+		float borderBottomLeftRadius = default,
+		float borderBottomRightRadius = default);
 
 	void DrawImage(Box2 bounds, Texture2D texture);
 

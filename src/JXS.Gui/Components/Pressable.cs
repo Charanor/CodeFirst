@@ -36,14 +36,13 @@ public class Pressable : View
 		var mousePos = InputProvider?.MousePosition ?? Vector2.Zero;
 		var hit = Scene!.Hit(mousePos);
 		var hitsThisOrChild = hit is not null && (hit == this || HasChild(hit));
-		Vector2? hitPos = hit is null ? null : mousePos - hit.CalculatedBounds.Min;
+		Vector2? hitPos = hit is null ? null : mousePos - hit.TransformedBounds.Min;
 
 		foreach (var action in Enum.GetValues<GuiInputAction>())
 		{
 			if ((InputProvider?.JustPressed(action) ?? false) && hitsThisOrChild)
 			{
-				OnPressDown?.Invoke(this,
-					new PressArgs(hit!, action, hitPos));
+				OnPressDown?.Invoke(this, new PressArgs(hit, action, hitPos));
 				pressedDown.Add(action);
 			}
 

@@ -98,7 +98,7 @@ public class ScrollView : View
 			if (args.Component != horizontalKnob)
 				// We didn't touch the knob, scroll the knob to where we pressed
 			{
-				knobOffset.X = args.Position!.Value.X - horizontalKnob.CalculatedBounds.Width / 2;
+				knobOffset.X = args.Position!.Value.X - horizontalKnob.TransformedBounds.Width / 2;
 			}
 		};
 		verticalScrollBar.OnPressDown += (_, args) =>
@@ -112,14 +112,14 @@ public class ScrollView : View
 			if (args.Component != verticalKnob)
 				// We didn't touch the knob, scroll the knob to where we pressed
 			{
-				knobOffset.Y = args.Position!.Value.Y - verticalKnob.CalculatedBounds.Height / 2;
+				knobOffset.Y = args.Position!.Value.Y - verticalKnob.TransformedBounds.Height / 2;
 			}
 		};
 
 		knobOffset = new Vector2();
 	}
 
-	private Vector2 ContentContainerSize => contentContainerContainer.CalculatedBounds.Size;
+	private Vector2 ContentContainerSize => contentContainerContainer.TransformedBounds.Size;
 
 	public override void AddChild(Component component) => contentContainer.AddChild(component);
 
@@ -184,8 +184,8 @@ public class ScrollView : View
 		prevMousePos = mousePos;
 
 		var maxKnobOffsets = new Vector2(
-			horizontalScrollBar.CalculatedBounds.Width - horizontalKnob.CalculatedBounds.Width,
-			verticalScrollBar.CalculatedBounds.Height - verticalKnob.CalculatedBounds.Height
+			horizontalScrollBar.TransformedBounds.Width - horizontalKnob.TransformedBounds.Width,
+			verticalScrollBar.TransformedBounds.Height - verticalKnob.TransformedBounds.Height
 		);
 		if (!float.IsNaN(maxKnobOffsets.X))
 		{

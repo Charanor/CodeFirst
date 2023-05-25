@@ -23,6 +23,9 @@ public record Style
 		Display = ParseEnum(GetValue(element, nameof(Display), values), Display);
 		Overflow = ParseEnum(GetValue(element, nameof(Overflow), values), Overflow);
 		Flex = ParseFloat(GetValue(element, nameof(Flex), values), Flex);
+		FlexShrink = ParseFloat(GetValue(element, nameof(FlexShrink), values), FlexShrink);
+		FlexGrow = ParseFloat(GetValue(element, nameof(FlexGrow), values), FlexGrow);
+		FlexBasis = ParseYogaValue(GetValue(element, nameof(FlexBasis), values), FlexBasis);
 		FlexDirection = ParseEnum(GetValue(element, nameof(FlexDirection), values), FlexDirection);
 		AspectRatio = ParseFloat(GetValue(element, nameof(AspectRatio), values), AspectRatio);
 		JustifyContent = ParseEnum(GetValue(element, nameof(JustifyContent), values), JustifyContent);
@@ -61,10 +64,13 @@ public record Style
 		BorderBottomWidth = ParseFloat(GetValue(element, nameof(BorderBottomWidth), values), BorderBottomWidth);
 		BorderTopWidth = ParseFloat(GetValue(element, nameof(BorderTopWidth), values), BorderTopWidth);
 		BorderRadius = ParseFloat(GetValue(element, nameof(BorderRadius), values), BorderRadius);
-		BorderLeftRadius = ParseFloat(GetValue(element, nameof(BorderLeftRadius), values), BorderLeftRadius);
-		BorderRightRadius = ParseFloat(GetValue(element, nameof(BorderRightRadius), values), BorderRightRadius);
-		BorderBottomRadius = ParseFloat(GetValue(element, nameof(BorderBottomRadius), values), BorderBottomRadius);
-		BorderTopRadius = ParseFloat(GetValue(element, nameof(BorderTopRadius), values), BorderTopRadius);
+		BorderBottomLeftRadius =
+			ParseFloat(GetValue(element, nameof(BorderBottomLeftRadius), values), BorderBottomLeftRadius);
+		BorderBottomRightRadius = ParseFloat(GetValue(element, nameof(BorderBottomRightRadius), values),
+			BorderBottomRightRadius);
+		BorderTopLeftRadius = ParseFloat(GetValue(element, nameof(BorderTopLeftRadius), values), BorderTopLeftRadius);
+		BorderTopRightRadius =
+			ParseFloat(GetValue(element, nameof(BorderTopRightRadius), values), BorderTopRightRadius);
 	}
 
 	private static Color4<Rgba> RandomColor
@@ -80,7 +86,10 @@ public record Style
 	public YogaDisplay Display { get; init; } = YogaDisplay.Flex;
 	public YogaOverflow Overflow { get; init; } = YogaOverflow.Visible;
 
-	public float Flex { get; init; }
+	public float Flex { get; init; } = float.NaN;
+	public float FlexShrink { get; init; } = float.NaN;
+	public float FlexGrow { get; init; } = float.NaN;
+	public YogaValue FlexBasis { get; init; } = YogaValue.Auto();
 	public YogaFlexDirection FlexDirection { get; init; } = YogaFlexDirection.Row;
 
 	public float AspectRatio { get; init; } = float.NaN;
@@ -118,17 +127,17 @@ public record Style
 	public YogaValue MaxWidth { get; init; } = YogaValue.Undefined();
 	public YogaValue MaxHeight { get; init; } = YogaValue.Undefined();
 
-	public float BorderWidth { get; init; }
+	public float BorderWidth { get; init; } // Not NaN!
 	public float BorderBottomWidth { get; init; } = float.NaN;
 	public float BorderTopWidth { get; init; } = float.NaN;
 	public float BorderLeftWidth { get; init; } = float.NaN;
 	public float BorderRightWidth { get; init; } = float.NaN;
 
-	public float BorderRadius { get; init; }
-	public float BorderBottomRadius { get; init; } = float.NaN;
-	public float BorderTopRadius { get; init; } = float.NaN;
-	public float BorderLeftRadius { get; init; } = float.NaN;
-	public float BorderRightRadius { get; init; } = float.NaN;
+	public float BorderRadius { get; init; } // Not NaN!
+	public float BorderTopLeftRadius { get; init; } = float.NaN;
+	public float BorderTopRightRadius { get; init; } = float.NaN;
+	public float BorderBottomLeftRadius { get; init; } = float.NaN;
+	public float BorderBottomRightRadius { get; init; } = float.NaN;
 
 	public Color4<Rgba> BorderColor { get; init; }
 
@@ -145,6 +154,9 @@ public record Style
 			Display = Select(target.Display, source.Display, Default.Display),
 			Overflow = Select(target.Overflow, source.Overflow, Default.Overflow),
 			Flex = Select(target.Flex, source.Flex, Default.Flex),
+			FlexShrink = Select(target.FlexShrink, source.FlexShrink, Default.FlexShrink),
+			FlexGrow = Select(target.FlexGrow, source.FlexGrow, Default.FlexGrow),
+			FlexBasis = Select(target.FlexBasis, source.FlexBasis, Default.FlexBasis),
 			AspectRatio = Select(target.AspectRatio, source.AspectRatio, Default.AspectRatio),
 			AlignContent = Select(target.AlignContent, source.AlignContent, Default.AlignContent),
 			JustifyContent = Select(target.JustifyContent, source.JustifyContent, Default.JustifyContent),

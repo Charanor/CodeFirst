@@ -78,7 +78,7 @@ public static class ParseUtils
 
 		if (colorString.StartsWith("rgba"))
 		{
-			var match = Regex.Match(colorString, pattern: @"rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)");
+			var match = Regex.Match(colorString, @"rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)");
 			if (!match.Success)
 			{
 				return defaultValue;
@@ -94,7 +94,7 @@ public static class ParseUtils
 		if (colorString.StartsWith("#"))
 		{
 			var match = Regex.Match(colorString,
-				pattern: @"^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})?$");
+				@"^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})?$");
 			if (!match.Success)
 			{
 				return defaultValue;

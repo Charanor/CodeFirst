@@ -23,6 +23,13 @@ public abstract class Component<TStyle> : Component where TStyle : Style, new()
 		NaNSwitch(Style.BorderBottomWidth, Style.BorderWidth)
 	);
 
+	public override (float topLeft, float topRight, float bottomLeft, float bottomRight) BorderRadii => (
+		NaNSwitch(Style.BorderTopLeftRadius, Style.BorderRadius),
+		NaNSwitch(Style.BorderTopRightRadius, Style.BorderRadius),
+		NaNSwitch(Style.BorderBottomLeftRadius, Style.BorderRadius),
+		NaNSwitch(Style.BorderBottomRightRadius, Style.BorderRadius)
+	);
+
 	public override Color4<Rgba> BorderColor => Style.BorderColor;
 
 	public override void ApplyStyle()
@@ -36,6 +43,9 @@ public abstract class Component<TStyle> : Component where TStyle : Style, new()
 		Node.Display = style.Display;
 		Node.Overflow = style.Overflow;
 		Node.Flex = style.Flex;
+		Node.FlexBasis = style.FlexBasis;
+		Node.FlexGrow = style.FlexGrow;
+		Node.FlexShrink = style.FlexShrink;
 		Node.FlexDirection = style.FlexDirection;
 		Node.AspectRatio = style.AspectRatio;
 		Node.JustifyContent = style.JustifyContent;

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using JXS.Gui.Components;
 using OpenTK.Mathematics;
 
@@ -111,7 +112,8 @@ public class Scene : IEnumerable<Component>
 		throw new NullReferenceException($"No component with id {id} exists.");
 	}
 
-	public bool TryGetComponent<TComponent>(string id, out TComponent? outComponent) where TComponent : Component
+	public bool TryGetComponent<TComponent>(string id, [NotNullWhen(true)] out TComponent? outComponent)
+		where TComponent : Component
 	{
 		foreach (var component in components)
 		{

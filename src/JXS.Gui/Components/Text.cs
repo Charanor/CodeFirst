@@ -121,10 +121,10 @@ public class Text : Component<TextStyle>
 		var maxTextWidth = Node.LayoutWidth - Node.LayoutPaddingLeft - Node.LayoutPaddingRight;
 		if (maxTextWidth == 0)
 		{
-			maxTextWidth = CalculatedBounds.Size.X;
+			maxTextWidth = TransformedBounds.Size.X;
 			if (maxTextWidth == 0)
 			{
-				maxTextWidth = Parent?.CalculatedBounds.Size.X ?? 0;
+				maxTextWidth = Parent?.TransformedBounds.Size.X ?? 0;
 				if (maxTextWidth == 0)
 				{
 					maxTextWidth = float.PositiveInfinity;
@@ -135,22 +135,26 @@ public class Text : Component<TextStyle>
 		if (dirty)
 		{
 			textRows.Clear();
-			textRows.AddRange(layout.LineBreak(TextContent,
-				maxTextWidth * (font.Atlas.CharacterPixelSize / Style.FontSize), Style.TextBreakStrategy));
+			var rows = TextContent
+				.Split('\n')
+				.SelectMany(hardRow =>
+					layout.LineBreak(hardRow, maxTextWidth * (font.Atlas.CharacterPixelSize / Style.FontSize),
+						Style.TextBreakStrategy));
+			textRows.AddRange(rows);
 			dirty = false;
 		}
 
 		var textSize = font.ScalePixelsToFontSize(TextSize, Style.FontSize);
 
-		var textAreaSize = CalculatedBounds.Size;
-		var position = CalculatedBounds.Location;
-		position.Y += font.ScaleEmToFontSize(font.Metrics.LineHeight, Style.FontSize) * (textRows.Count - 1);
+		var textAreaSize = TransformedBounds.Size;
+		textAreaSize.X = textAreaSize.X <= 0 ? maxTextWidth : MathF.Min(textAreaSize.X, maxTextWidth);
+		var position = TransformedBounds.Location;
 		var emptyVerticalSpace = textAreaSize.Y - textSize.Y;
 		position.Y += Style.TextAlign switch
 		{
-			var align when align.HasFlag(TextAlign.Top) => emptyVerticalSpace,
+			var align when align.HasFlag(TextAlign.Bottom) => emptyVerticalSpace,
 			var align when align.HasFlag(TextAlign.VerticalCenter) => emptyVerticalSpace / 2f,
-			_ => 0 // Bottom align is default, no need to check for it
+			_ => 0 // Top align is default, no need to check for it
 		};
 
 		if (Style.Overflow == YogaOverflow.Hidden)
@@ -176,10 +180,10 @@ public class Text : Component<TextStyle>
 					var align when align.HasFlag(TextAlign.HorizontalCenter) => emptyHorizontalSpace / 2f,
 					_ => 0 // Left align is default, no need to check for it
 				};
-				var positionOffset = new Vector2(offsetX, offsetY);
 
+				var positionOffset = new Vector2(offsetX, offsetY);
 				graphicsProvider.DrawText(Font, row, Style.FontSize, position + positionOffset, Style.FontColor);
-				offsetY -= font.ScalePixelsToFontSize(row.Size.Y, Style.FontSize);
+				offsetY += font.ScaleEmToFontSize(font.Metrics.LineHeight, Style.FontSize);
 			}
 		}
 	}

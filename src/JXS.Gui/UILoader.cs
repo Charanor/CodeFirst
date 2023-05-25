@@ -115,8 +115,8 @@ public class UILoader
 			}
 
 			var properties = xElement.Attributes().ToDictionary(
-				keySelector: xAttribute => xAttribute.Name.LocalName.ToLowerInvariant(),
-				elementSelector: xAttribute => xAttribute.Value);
+				xAttribute => xAttribute.Name.LocalName.ToLowerInvariant(),
+				xAttribute => xAttribute.Value);
 			var textValue = xElement.Nodes().OfType<XText>().FirstOrDefault();
 			if (textValue != null && textValue.Value.Length > 0 && !properties.ContainsKey(VALUE_PROPERTY))
 			{
@@ -145,7 +145,7 @@ public class UILoader
 			catch (InvalidOperationException)
 			{
 				Logger.Error(
-					$"No constructor on type {componentType} matches given properties: {string.Join(separator: ", ", properties.Keys)}");
+					$"No constructor on type {componentType} matches given properties: {string.Join(", ", properties.Keys)}");
 				return;
 			}
 
@@ -183,7 +183,7 @@ public class UILoader
 			var unusedProperties = properties.Select(p => p.Key).Where(p => !parameterNames.Contains(p)).ToList();
 			if (unusedProperties.Count > 0)
 			{
-				Logger.Trace($"Properties ({string.Join(separator: ", ", unusedProperties)}) not used in constructor.");
+				Logger.Trace($"Properties ({string.Join(", ", unusedProperties)}) not used in constructor.");
 			}
 
 			var component = (Component)Activator.CreateInstance(componentType,
@@ -211,7 +211,7 @@ public class UILoader
 
 			if (unusedProperties.Count > 0)
 			{
-				Logger.Trace($"Properties ({string.Join(separator: ", ", unusedProperties)}) are unused.");
+				Logger.Trace($"Properties ({string.Join(", ", unusedProperties)}) are unused.");
 			}
 
 			if (parent is null)
