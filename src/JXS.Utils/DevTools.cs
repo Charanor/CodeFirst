@@ -6,6 +6,14 @@ public static class DevTools
 {
 	private static readonly ILogger Logger = LoggingManager.Get(nameof(DevTools));
 
+	public static Func<bool> IsDevMode { get; set; } = () =>
+	{
+#if DEBUG
+		return true;
+#endif
+		return false;
+	};
+
 	/// <summary>
 	///     Throws the given exception if DEBUG is defined, otherwise does nothing.
 	/// </summary>
@@ -14,9 +22,25 @@ public static class DevTools
 	public static void Throw<TResponsible>(Exception exception)
 	{
 		LoggingManager.Get<TResponsible>().Error(exception.Message);
-#if DEBUG
-		throw exception;
-#endif
+		if (IsDevMode())
+		{
+			throw exception;
+		}
+	}
+
+	/// <summary>
+	///     Throws the given exception if DEBUG is defined, otherwise does nothing.
+	/// </summary>
+	/// <param name="throwingClass">the class that is throwing this exception</param>
+	/// <param name="exception"></param>
+	/// <exception cref="Exception"></exception>
+	public static void ThrowStatic(Type throwingClass, Exception exception)
+	{
+		LoggingManager.Get(throwingClass.Name).Error(exception.Message);
+		if (IsDevMode())
+		{
+			throw exception;
+		}
 	}
 
 	/// <summary>
@@ -27,9 +51,10 @@ public static class DevTools
 	public static void ThrowStatic(Exception exception)
 	{
 		Logger.Error(exception.Message);
-#if DEBUG
-		throw exception;
-#endif
+		if (IsDevMode())
+		{
+			throw exception;
+		}
 	}
 
 	/// <summary>
