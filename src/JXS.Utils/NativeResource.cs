@@ -2,7 +2,7 @@
 
 public abstract class NativeResource : IDisposable
 {
-	public bool IsDisposed { get; set; }
+	public bool IsDisposed { get; private set; }
 
 	public void Dispose()
 	{
@@ -12,9 +12,9 @@ public abstract class NativeResource : IDisposable
 		}
 
 		IsDisposed = true;
-		DisposeManagedResources();
+        GC.SuppressFinalize(this);
+        DisposeManagedResources();
 		DisposeNativeResources();
-		GC.SuppressFinalize(this);
 	}
 
 	~NativeResource()

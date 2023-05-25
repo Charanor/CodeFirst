@@ -36,6 +36,7 @@ public enum FetchMode
 	/// <remarks>
 	///     This mode <b>WILL</b> write the fetched data to the cache, overriding any existing data.
 	/// </remarks>
+	/// <seealso cref="NoCache" />
 	SourceOnly,
 
 	/// <summary>
@@ -44,5 +45,6 @@ public enum FetchMode
 	/// <remarks>
 	///     This mode <b>WILL NOT</b> write any data to the cache.
 	/// </remarks>
+	/// <seealso cref="SourceOnly" />
 	NoCache
 }

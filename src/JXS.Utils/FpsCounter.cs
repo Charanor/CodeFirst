@@ -3,7 +3,7 @@
 public class FpsCounter
 {
 	private const double ONE_SECOND = 1f;
-	
+
 	private int updateCount;
 	private double updateTimer;
 

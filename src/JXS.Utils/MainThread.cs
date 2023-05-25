@@ -2,6 +2,9 @@
 
 namespace JXS.Utils;
 
+/// <summary>
+///     Utility methods to run actions on the main thread. Especially useful for initializing OpenGL objects.
+/// </summary>
 public static class MainThread
 {
 	private static readonly ConcurrentBag<Task> PostedTasks = new();
