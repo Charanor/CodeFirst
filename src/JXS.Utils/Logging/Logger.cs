@@ -2,12 +2,13 @@ using System.Text;
 
 namespace JXS.Utils.Logging;
 
-internal class Logger : ILogger
+public class Logger : ILogger
 {
-	private const string FORMAT = "[{0:HH:mm:ss.fff}] {1,5}: {4}({3}) {2}\n";
+	protected static readonly string Format = "[{0:HH:mm:ss.fff}] {1,5}: {4}({3}) {2}\n";
+
 	private int indentation;
 
-	internal Logger(string name)
+	protected internal Logger(string name)
 	{
 		Name = name;
 	}
@@ -18,27 +19,27 @@ internal class Logger : ILogger
 
 	public void Trace(string msg)
 	{
-		Log(prefix: "Trace", msg, Name, CreateIndentString());
+		Log("Trace", msg, Name, CreateIndentString());
 	}
 
 	public void Debug(string msg)
 	{
-		Log(prefix: "Debug", msg, Name, CreateIndentString());
+		Log("Debug", msg, Name, CreateIndentString());
 	}
 
 	public void Info(string msg)
 	{
-		Log(prefix: "Info", msg, Name, CreateIndentString());
+		Log("Info", msg, Name, CreateIndentString());
 	}
 
 	public void Warn(string msg)
 	{
-		Log(prefix: "Warn", msg, Name, CreateIndentString());
+		Log("Warn", msg, Name, CreateIndentString());
 	}
 
 	public void Error(string msg)
 	{
-		Log(prefix: "Error", msg, Name, CreateIndentString(), isError: true);
+		Log("Error", msg, Name, CreateIndentString(), isError: true);
 	}
 
 	public void Indent()
@@ -53,9 +54,9 @@ internal class Logger : ILogger
 
 	private string CreateIndentString() => indentation > 0 ? Repeat(IndentString, indentation) : string.Empty;
 
-	private static void Log(string prefix, string msg, string name, string indentation, bool isError = false)
+	protected virtual void Log(string prefix, string msg, string name, string indentString, bool isError = false)
 	{
-		var format = string.Format(FORMAT, DateTime.Now, prefix, msg, name, indentation);
+		var format = string.Format(Format, DateTime.Now, prefix, msg, name, indentString);
 		LoggingManager.Write(format);
 
 		var textWriter = isError ? Console.Error : Console.Out;

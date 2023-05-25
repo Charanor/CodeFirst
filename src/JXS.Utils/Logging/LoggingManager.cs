@@ -8,8 +8,9 @@ public static class LoggingManager
 	private static readonly StringBuilder LogBuilder = new();
 
 	public static string LogsDirectory { get; set; } = "Logs";
+	public static Func<string, ILogger> LoggerFactory { get; set; } = CreateLogger;
 
-	internal static void Write(string text) => LogBuilder.Append(text);
+	public static void Write(string text) => LogBuilder.Append(text);
 
 	/// <summary>
 	///     Saves the
@@ -38,9 +39,7 @@ public static class LoggingManager
 			sw.Flush();
 		}
 		catch (Exception e) when (
-			e is ObjectDisposedException ||
-			e is NotSupportedException ||
-			e is IOException)
+			e is ObjectDisposedException or NotSupportedException or IOException)
 		{
 			return false;
 		}
@@ -52,11 +51,13 @@ public static class LoggingManager
 	{
 		if (!Loggers.ContainsKey(name))
 		{
-			Loggers[name] = new Logger(name);
+			Loggers[name] = LoggerFactory(name);
 		}
 
 		return Loggers[name];
 	}
 
 	public static ILogger Get<T>() => Get(typeof(T).Name);
+
+	private static ILogger CreateLogger(string name) => new Logger(name);
 }
