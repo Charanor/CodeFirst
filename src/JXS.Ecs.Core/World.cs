@@ -13,10 +13,6 @@ public class World : IDisposable
 {
 	private readonly ISet<Entity> entities;
 	private readonly ISet<Entity> removedEntities;
-
-	private readonly IList<EntitySystem> updateSystems;
-	private readonly IList<EntitySystem> fixedUpdateSystems;
-	private readonly IList<EntitySystem> drawSystems;
 	private readonly ISet<Entity> dirtyEntities;
 
 	private readonly IDictionary<Type, IComponentMapper> mappers;
@@ -31,9 +27,9 @@ public class World : IDisposable
 		entities = new HashSet<Entity>();
 		removedEntities = new HashSet<Entity>();
 
-		updateSystems = new List<EntitySystem>();
-		fixedUpdateSystems = new List<EntitySystem>();
-		drawSystems = new List<EntitySystem>();
+		UpdateSystems = new List<EntitySystem>();
+		FixedUpdateSystems = new List<EntitySystem>();
+		DrawSystems = new List<EntitySystem>();
 		dirtyEntities = new HashSet<Entity>();
 
 		mappers = new Dictionary<Type, IComponentMapper>();
@@ -41,6 +37,10 @@ public class World : IDisposable
 
 		entitiesForAspects = new Dictionary<Aspect, SnapshotList<Entity>>();
 	}
+
+	protected IList<EntitySystem> UpdateSystems { get; }
+	protected IList<EntitySystem> FixedUpdateSystems { get; }
+	protected IList<EntitySystem> DrawSystems { get; }
 
 	/// <summary>
 	///     The delta time of the fixed update step. For example a value of <c>0.01</c> would mean that the fixed update
@@ -56,19 +56,19 @@ public class World : IDisposable
 	{
 		GC.SuppressFinalize(this);
 		// ReSharper disable once SuspiciousTypeConversion.Global
-		foreach (var system in drawSystems.OfType<IDisposable>())
+		foreach (var system in DrawSystems.OfType<IDisposable>())
 		{
 			system.Dispose();
 		}
 
 		// ReSharper disable once SuspiciousTypeConversion.Global
-		foreach (var system in updateSystems.OfType<IDisposable>())
+		foreach (var system in UpdateSystems.OfType<IDisposable>())
 		{
 			system.Dispose();
 		}
 
 		// ReSharper disable once SuspiciousTypeConversion.Global
-		foreach (var system in fixedUpdateSystems.OfType<IDisposable>())
+		foreach (var system in FixedUpdateSystems.OfType<IDisposable>())
 		{
 			system.Dispose();
 		}
@@ -80,7 +80,7 @@ public class World : IDisposable
 	/// <param name="delta">time since last Update()</param>
 	public void Update(float delta)
 	{
-		foreach (var system in updateSystems)
+		foreach (var system in UpdateSystems)
 		{
 			if (!system.ShouldUpdate())
 			{
@@ -113,7 +113,7 @@ public class World : IDisposable
 
 	private void UpdateFixed(float delta)
 	{
-		foreach (var system in fixedUpdateSystems)
+		foreach (var system in FixedUpdateSystems)
 		{
 			if (!system.ShouldUpdate())
 			{
@@ -133,7 +133,7 @@ public class World : IDisposable
 	/// <param name="delta">time since last Draw()</param>
 	public void Draw(float delta)
 	{
-		foreach (var system in drawSystems)
+		foreach (var system in DrawSystems)
 		{
 			if (!system.ShouldUpdate())
 			{
@@ -264,31 +264,31 @@ public class World : IDisposable
 		switch (system.Pass)
 		{
 			case Pass.Update:
-				if (updateSystems.Any(sys => sys.GetType() == system.GetType()))
+				if (UpdateSystems.Any(sys => sys.GetType() == system.GetType()))
 				{
 					throw new InvalidOperationException(
 						$"A system of type {system.GetType()} already exists in world.");
 				}
 
-				updateSystems.Add(system);
+				UpdateSystems.Add(system);
 				break;
 			case Pass.FixedUpdate:
-				if (fixedUpdateSystems.Any(sys => sys.GetType() == system.GetType()))
+				if (FixedUpdateSystems.Any(sys => sys.GetType() == system.GetType()))
 				{
 					throw new InvalidOperationException(
 						$"A system of type {system.GetType()} already exists in world.");
 				}
 
-				fixedUpdateSystems.Add(system);
+				FixedUpdateSystems.Add(system);
 				break;
 			case Pass.Draw:
-				if (drawSystems.Any(sys => sys.GetType() == system.GetType()))
+				if (DrawSystems.Any(sys => sys.GetType() == system.GetType()))
 				{
 					throw new InvalidOperationException(
 						$"A system of type {system.GetType()} already exists in world.");
 				}
 
-				drawSystems.Add(system);
+				DrawSystems.Add(system);
 				break;
 			default:
 				throw new InvalidOperationException($"Invalid {nameof(system.Pass)} {system.Pass}");
@@ -302,9 +302,9 @@ public class World : IDisposable
 	public bool HasSystem<TSystem>() where TSystem : EntitySystem => HasSystem(typeof(TSystem));
 
 	public bool HasSystem(Type type) =>
-		updateSystems.Any(updateSystem => updateSystem.GetType() == type) ||
-		fixedUpdateSystems.Any(updateSystem => updateSystem.GetType() == type) ||
-		drawSystems.Any(updateSystem => updateSystem.GetType() == type);
+		UpdateSystems.Any(updateSystem => updateSystem.GetType() == type) ||
+		FixedUpdateSystems.Any(updateSystem => updateSystem.GetType() == type) ||
+		DrawSystems.Any(updateSystem => updateSystem.GetType() == type);
 
 	/// <summary>
 	///     Injects any injectable dependencies registered with this world into the given object,
@@ -415,23 +415,23 @@ public class World : IDisposable
 	/// <param name="type">the type of system to remove</param>
 	public void RemoveSystem(Type type)
 	{
-		var system = updateSystems.FirstOrDefault(updateSystem => updateSystem.GetType() == type);
+		var system = UpdateSystems.FirstOrDefault(updateSystem => updateSystem.GetType() == type);
 		if (system != null)
 		{
-			updateSystems.Remove(system);
+			UpdateSystems.Remove(system);
 			return;
 		}
 
-		system = fixedUpdateSystems.FirstOrDefault(fixedUpdateSystem => fixedUpdateSystem.GetType() == type);
+		system = FixedUpdateSystems.FirstOrDefault(fixedUpdateSystem => fixedUpdateSystem.GetType() == type);
 		if (system != null)
 		{
-			fixedUpdateSystems.Remove(system);
+			FixedUpdateSystems.Remove(system);
 		}
 
-		system = drawSystems.FirstOrDefault(drawSystem => drawSystem.GetType() == type);
+		system = DrawSystems.FirstOrDefault(drawSystem => drawSystem.GetType() == type);
 		if (system != null)
 		{
-			drawSystems.Remove(system);
+			DrawSystems.Remove(system);
 		}
 	}
 
@@ -442,9 +442,9 @@ public class World : IDisposable
 	/// <param name="system">the system to remove</param>
 	public void RemoveSystem(EntitySystem system)
 	{
-		updateSystems.Remove(system);
-		fixedUpdateSystems.Remove(system);
-		drawSystems.Remove(system);
+		UpdateSystems.Remove(system);
+		FixedUpdateSystems.Remove(system);
+		DrawSystems.Remove(system);
 	}
 
 	/// <summary>

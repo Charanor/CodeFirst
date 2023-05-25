@@ -18,4 +18,16 @@ public record Aspect(ComponentFlags All, ComponentFlags Some, ComponentFlags Non
 		var containsNone = None.IsEmpty || flags.ContainsNone(None);
 		return containsAll && containsSome && containsNone;
 	}
+
+	public static Aspect operator &(Aspect left, Aspect right) => new(
+		left.All & right.All,
+		left.Some & right.Some,
+		left.None & right.None
+	);
+
+	public static Aspect operator |(Aspect left, Aspect right) => new(
+		left.All | right.All,
+		left.Some | right.Some,
+		left.None | right.None
+	);
 }

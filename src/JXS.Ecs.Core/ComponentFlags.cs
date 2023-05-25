@@ -18,7 +18,7 @@ public record ComponentFlags
 
 	public bool IsEmpty { get; }
 
-	public override string ToString() => string.Join(separator: ", ", componentFlags
+	public override string ToString() => string.Join(", ", componentFlags
 		.Select((flag, i) => flag ? ComponentManager.GetType(i).Name : string.Empty)
 		.Where(str => str != string.Empty));
 
@@ -70,5 +70,38 @@ public record ComponentFlags
 
 	public bool ContainsNone(ComponentFlags other) => !ContainsSome(other);
 
+	public IEnumerable<int> GetComponentIds() => componentFlags
+		.Select((flag, i) => new { Flag = flag, Index = i })
+		.Where(item => item.Flag)
+		.Select(item => item.Index);
+
 	public static implicit operator ComponentFlags(bool[] values) => new(values);
+
+	public static ComponentFlags operator &(ComponentFlags left, ComponentFlags right)
+	{
+		var flagCount = Math.Max(left.componentFlags.Length, right.componentFlags.Length);
+		var flags = new bool[flagCount];
+		for (var i = 0; i < flagCount; i++)
+		{
+			var f1 = i < left.componentFlags.Length && left.componentFlags[i];
+			var f2 = i < right.componentFlags.Length && right.componentFlags[i];
+			flags[i] = f1 && f2;
+		}
+
+		return flags;
+	}
+
+	public static ComponentFlags operator |(ComponentFlags left, ComponentFlags right)
+	{
+		var flagCount = Math.Max(left.componentFlags.Length, right.componentFlags.Length);
+		var flags = new bool[flagCount];
+		for (var i = 0; i < flagCount; i++)
+		{
+			var f1 = i < left.componentFlags.Length && left.componentFlags[i];
+			var f2 = i < right.componentFlags.Length && right.componentFlags[i];
+			flags[i] = f1 || f2;
+		}
+
+		return flags;
+	}
 }

@@ -1,6 +1,6 @@
 ﻿namespace JXS.Ecs.Core;
 
-internal static class ComponentManager
+public static class ComponentManager
 {
 	private const int DEFAULT_COMPONENT_COUNT = 32;
 
@@ -38,7 +38,7 @@ internal static class ComponentManager
 
 	internal static int GetId<T>() where T : IComponent => GetId(typeof(T));
 
-	internal static Type GetType(int id)
+	public static Type GetType(int id)
 	{
 		lock (componentTypes)
 		{
