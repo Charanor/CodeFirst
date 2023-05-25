@@ -4,9 +4,9 @@ using OpenTK.Mathematics;
 namespace JXS.Ai.Steering.Behaviors;
 
 [PublicAPI]
-public class Seek<TSteerable> : ISteeringBehavior<TSteerable> where TSteerable : ISteerable
+public class SeekBehavior<TSteerable> : ISteeringBehavior<TSteerable> where TSteerable : ISteerable
 {
-	public Seek(Vector3 target)
+	public SeekBehavior(Vector3 target)
 	{
 		Target = target;
 	}

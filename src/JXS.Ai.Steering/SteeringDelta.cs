@@ -6,6 +6,8 @@ namespace JXS.Ai.Steering;
 [PublicAPI]
 public readonly record struct SteeringDelta(Vector3 LinearVelocity, float AngularVelocity)
 {
+	public static readonly SteeringDelta Zero = default;
+	
 	public static implicit operator SteeringDelta(Vector3 linearVelocity) => new(linearVelocity, AngularVelocity: 0);
 	public static implicit operator SteeringDelta(float angularVelocity) => new(Vector3.Zero, angularVelocity);
 

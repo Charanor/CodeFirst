@@ -1,9 +1,12 @@
-﻿using JetBrains.Annotations;
+﻿using System.Collections;
+using JetBrains.Annotations;
 
 namespace JXS.Ai.Steering.Behaviors;
 
 [PublicAPI]
-public class AggregateBehavior<TSteerable> : ISteeringBehavior<TSteerable> where TSteerable : ISteerable
+public class AggregateBehavior<TSteerable>
+	: ISteeringBehavior<TSteerable>, IEnumerable<ISteeringBehavior<TSteerable>>
+	where TSteerable : ISteerable
 {
 	private readonly List<ISteeringBehavior<TSteerable>> steeringBehaviors;
 
@@ -11,6 +14,9 @@ public class AggregateBehavior<TSteerable> : ISteeringBehavior<TSteerable> where
 	{
 		steeringBehaviors = new List<ISteeringBehavior<TSteerable>>();
 	}
+
+	public IEnumerator<ISteeringBehavior<TSteerable>> GetEnumerator() => steeringBehaviors.GetEnumerator();
+	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 	public SteeringDelta Calculate(in TSteerable steerable)
 	{
