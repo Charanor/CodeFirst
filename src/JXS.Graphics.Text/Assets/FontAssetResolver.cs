@@ -27,7 +27,7 @@ public class FontAssetResolver : IAssetResolver
 		var fontName = Path.GetFileName(Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(path)));
 
 		var fileContents = File.ReadAllText(path);
-		var atlasFileHandle = new FileHandle(Path.ChangeExtension(path, extension: ".png"));
+		var atlasFileHandle = new FileHandle(Path.ChangeExtension(path, ".png"));
 		if (!textureAssetResolver.TryLoadAsset(atlasFileHandle, out Texture? textureAtlas))
 		{
 			asset = default;

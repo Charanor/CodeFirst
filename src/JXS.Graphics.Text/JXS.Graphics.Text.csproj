@@ -9,10 +9,12 @@
     <ItemGroup>
         <ProjectReference Include="..\JXS.AssetManagement\JXS.AssetManagement.csproj"/>
         <ProjectReference Include="..\JXS.Graphics.Core\JXS.Graphics.Core.csproj"/>
+        <ProjectReference Include="..\JXS.Graphics.Utils\JXS.Graphics.Utils.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
         <ProjectReference Include="..\JXS.Graphics.Generators\JXS.Graphics.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false">
             <ExcludeAssets>runtime</ExcludeAssets>
         </ProjectReference>
-        <ProjectReference Include="..\JXS.Graphics.Utils\JXS.Graphics.Utils.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

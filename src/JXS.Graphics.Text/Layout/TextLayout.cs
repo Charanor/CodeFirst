@@ -105,24 +105,14 @@ public class TextLayout
 
 	public Vector2 CalculateTextSize(IEnumerable<TextRow> rows, bool skipFirstLine = false)
 	{
-		var sizes = rows.Select(row => row.Size);
-
-		var width = 0f;
-		var height = 0f;
-
-		var isFirst = true;
-		foreach (var (x, y) in sizes)
+		var rowList = rows.ToList();
+		if (!rowList.Any())
 		{
-			if (isFirst && skipFirstLine)
-			{
-				isFirst = false;
-				continue;
-			}
-
-			width = Math.Max(width, x);
-			height += y;
+			return Vector2.Zero;
 		}
 
+		var width = rowList.Max(row => row.Size.X);
+		var height = rowList[0].Size.Y + font.ScaleEmToPixelSize(font.Metrics.LineHeight) * (rowList.Count - 1);
 		return new Vector2(width, height);
 	}
 }
