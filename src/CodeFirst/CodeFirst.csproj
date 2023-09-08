@@ -11,12 +11,13 @@
         <Folder Include="Ai" />
         <Folder Include="Ecs\Utils" />
         <Folder Include="Graphics\Utils" />
-        <Folder Include="Gui" />
     </ItemGroup>
 
     <ItemGroup>
         <AdditionalFiles Include="Graphics\Text\Shaders\MtsdfFont.frag" />
         <AdditionalFiles Include="Graphics\Text\Shaders\MtsdfFont.vert" />
+        <AdditionalFiles Include="Gui\Shaders\BasicGraphics.frag" />
+        <AdditionalFiles Include="Gui\Shaders\BasicGraphics.vert" />
     </ItemGroup>
 
     <ItemGroup>
@@ -25,6 +26,7 @@
         <PackageReference Include="NVorbis" Version="0.10.5" />
         <PackageReference Include="OpenTK" Version="5.0.0-pre.8" />
         <PackageReference Include="StbImageSharp" Version="2.27.13" />
+        <PackageReference Include="IceReaper.YogaSharp" Version="1.18.0.3" />
     </ItemGroup>
 
     <ItemGroup>
