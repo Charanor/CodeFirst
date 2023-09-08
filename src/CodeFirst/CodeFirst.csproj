@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Folder Include="Ai" />
+        <Folder Include="Ecs\Utils" />
+        <Folder Include="Graphics\Utils" />
+        <Folder Include="Gui" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="Graphics\Text\Shaders\MtsdfFont.frag" />
+        <AdditionalFiles Include="Graphics\Text\Shaders\MtsdfFont.vert" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AssimpNet" Version="5.0.0-beta1" />
+        <PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
+        <PackageReference Include="NVorbis" Version="0.10.5" />
+        <PackageReference Include="OpenTK" Version="5.0.0-pre.8" />
+        <PackageReference Include="StbImageSharp" Version="2.27.13" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\CodeFirst.Generators\CodeFirst.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false">
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </ProjectReference>
+    </ItemGroup>
+
+</Project>
