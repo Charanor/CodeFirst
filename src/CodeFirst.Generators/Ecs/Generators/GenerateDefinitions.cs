@@ -18,6 +18,11 @@ public class GenerateDefinitions : IIncrementalGenerator
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
+		if (!Debugger.IsAttached)
+		{
+			// Debugger.Launch();
+		}
+		
 		var files = context.AdditionalTextsProvider
 			.Where(static file => Path.GetExtension(file.Path) == FILE_EXTENSION)
 			.Select(static (file, ct) =>

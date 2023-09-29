@@ -22,12 +22,10 @@ public class GenerateShaderResources : IIncrementalGenerator
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-#if DEBUG
 		if (!Debugger.IsAttached)
 		{
 			// Debugger.Launch();
 		}
-#endif
 
 		var files = context.AdditionalTextsProvider
 			.Where(static file => ValidShaderFileEndings.Contains(Path.GetExtension(file.Path)))

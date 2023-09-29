@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -21,6 +22,11 @@ public class GenerateProcessEntityMethod : IIncrementalGenerator
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
+		if (!Debugger.IsAttached)
+		{
+			// Debugger.Launch();
+		}
+		
 		var declarations = context.SyntaxProvider
 			.CreateSyntaxProvider(
 				static (syntaxNode, _) => IsEntitySystem(syntaxNode),
