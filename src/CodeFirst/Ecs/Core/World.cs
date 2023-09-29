@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using CodeFirst.Ecs.Core.Exceptions;
-using CodeFirst.Ecs.Core.Utilities;
+using CodeFirst.Ecs.Utils;
 using CodeFirst.Utils;
 using CodeFirst.Utils.Collections;
 
@@ -172,6 +172,11 @@ public class World : IDisposable
 					aspectEntities.Remove(removedEntity);
 				}
 			}
+			
+			foreach (var (_, mapper) in mappers)
+			{
+				mapper.Remove(removedEntity);
+			}
 		}
 
 		removedEntities.Clear();
@@ -298,6 +303,11 @@ public class World : IDisposable
 		system.World = this;
 		system.Initialize(this);
 	}
+
+	public TSystem? GetSystem<TSystem>() where TSystem : EntitySystem =>
+		(UpdateSystems.FirstOrDefault(updateSystem => updateSystem.GetType() == typeof(TSystem)) ??
+		 FixedUpdateSystems.FirstOrDefault(updateSystem => updateSystem.GetType() == typeof(TSystem)) ??
+		 DrawSystems.FirstOrDefault(updateSystem => updateSystem.GetType() == typeof(TSystem))) as TSystem;
 
 	public bool HasSystem<TSystem>() where TSystem : EntitySystem => HasSystem(typeof(TSystem));
 
@@ -581,7 +591,11 @@ public class World : IDisposable
 	{
 		if (!HasEntity(entity))
 		{
-			DevTools.Throw<World>(new EntityDoesNotExistException(entity));
+			// If we are removing this entity we don't need to throw; it is expected to not exist
+			if (!removedEntities.Contains(entity))
+			{
+				DevTools.Throw<World>(new EntityDoesNotExistException(entity));
+			}
 			return;
 		}
 

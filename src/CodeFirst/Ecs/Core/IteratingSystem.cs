@@ -1,5 +1,5 @@
 using CodeFirst.Ecs.Core.Attributes;
-using CodeFirst.Ecs.Core.Utilities;
+using CodeFirst.Ecs.Utils;
 using CodeFirst.Utils.Collections;
 using CodeFirst.Utils.Events;
 using JetBrains.Annotations;

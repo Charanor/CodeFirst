@@ -1,4 +1,6 @@
-﻿namespace CodeFirst.Ecs.Core.Utilities;
+﻿using CodeFirst.Ecs.Core;
+
+namespace CodeFirst.Ecs.Utils;
 
 public static class EntityQueryExtensions
 {

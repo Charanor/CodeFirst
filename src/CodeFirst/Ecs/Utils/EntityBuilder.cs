@@ -1,4 +1,6 @@
-﻿namespace CodeFirst.Ecs.Core.Utilities;
+﻿using CodeFirst.Ecs.Core;
+
+namespace CodeFirst.Ecs.Utils;
 
 /// <summary>
 ///     A utility class that enables an OOP way of handling components on an entity. Considerably slower than using
@@ -7,21 +9,25 @@
 /// </summary>
 public class EntityBuilder
 {
-	private readonly World world;
-
 	/// <summary>
 	///     Constructs a new EntityBuilder linked to the given <see cref="World" />.
 	/// </summary>
 	/// <param name="world">the world</param>
 	/// <param name="entity">
-	///     [optional] the entity to edit. If <c>null</c> (or not specified) the entity builder will
+	///     [optional] the entity to edit. If <c>default</c> (or not specified) the entity builder will
 	///     automatically create a new entity.
 	/// </param>
 	public EntityBuilder(World world, Entity entity = default)
 	{
-		this.world = world;
+		World = world;
 		Entity = entity.IsValid ? entity : world.CreateEntity();
+		Console.WriteLine(Entity.Id);
 	}
+
+	/// <summary>
+	///     The world this EntityBuilder is registered on.
+	/// </summary>
+	public World World { get; }
 
 	/// <summary>
 	///     The entity connected to this builder.
@@ -31,10 +37,23 @@ public class EntityBuilder
 	public T Create<T>() where T : IComponent, new() => Add(new T());
 
 	public ref T Add<T>(in T component) where T : IComponent =>
-		ref world.GetMapper<T>().Add(Entity, in component);
+		ref World.GetMapper<T>().Add(Entity, in component);
 
 	public ref T Get<T>() where T : IComponent =>
-		ref world.GetMapper<T>().Get(Entity);
+		ref World.GetMapper<T>().Get(Entity);
 
-	public bool Has<T>() where T : IComponent => world.GetMapper<T>().Has(Entity);
+	public bool Has<T>() where T : IComponent => World.GetMapper<T>().Has(Entity);
+
+	public bool Remove<T>() where T : IComponent
+	{
+		if (!Has<T>())
+		{
+			return false;
+		}
+
+		World.GetMapper<T>().Remove(Entity);
+		return true;
+	}
+
+	public static implicit operator Entity(EntityBuilder builder) => builder.Entity;
 }

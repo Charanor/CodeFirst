@@ -1,7 +1,8 @@
 ﻿using System.Reflection;
+using CodeFirst.Ecs.Core;
 using CodeFirst.Ecs.Core.Attributes;
 
-namespace CodeFirst.Ecs.Core.Utilities;
+namespace CodeFirst.Ecs.Utils;
 
 /// <summary>
 ///     A utility class for creating <see cref="Aspect" />s.

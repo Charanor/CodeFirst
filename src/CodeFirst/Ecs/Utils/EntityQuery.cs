@@ -1,7 +1,8 @@
-﻿using CodeFirst.Utils;
+﻿using CodeFirst.Ecs.Core;
+using CodeFirst.Utils;
 using CodeFirst.Utils.Collections;
 
-namespace CodeFirst.Ecs.Core.Utilities;
+namespace CodeFirst.Ecs.Utils;
 
 /// <summary>
 ///     Enables arbitrary querying of entities within a <see cref="World" />. Note that this is slower than doing the
@@ -33,7 +34,7 @@ public class EntityQuery
 		creationThread = Thread.CurrentThread;
 	}
 
-	private bool IsExecuting => cachedAspectMatchingEntities?.IsIterating ?? false;
+	public bool IsExecuting => cachedAspectMatchingEntities?.IsIterating ?? false;
 
 	private Aspect EntityAspect
 	{
@@ -45,7 +46,7 @@ public class EntityQuery
 		}
 	}
 
-	public World World { get; set; }
+	public World World { get; }
 
 	/// <summary>
 	///     Copies this query to a new instance. This allows for multiple iteration at the same time, including multiple
