@@ -13,19 +13,23 @@ public static class LoggingManager
 	public static void Write(string text) => LogBuilder.Append(text);
 
 	/// <summary>
-	///     Saves the
+	///     Asynchronously saves the current logs to a file. Does <b>not</b> clear the logs, any subsequent call to this
+	///     method will include all logs previously logged.
 	/// </summary>
-	public static void SaveToFile()
+	/// <param name="isCrash">if <c>true</c>,the file is saved as a crash file (<c>"-CRASH"</c> suffix)</param>
+	public static async Task<bool> SaveToFile(bool isCrash = false)
 	{
 		// Create the directory if it doesn't already exist
 		Directory.CreateDirectory(LogsDirectory);
 		var time = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
-		var logFileName = Path.Combine(LogsDirectory, $"{time}.txt");
-		WriteToStream(File.OpenWrite(logFileName));
-		File.WriteAllText(logFileName, LogBuilder.ToString());
+		var logFileName = Path.Combine(LogsDirectory, $"{time}{(isCrash ? "-CRASH" : "")}.txt");
+		return await WriteToStream(File.OpenWrite(logFileName));
 	}
 
-	public static bool WriteToStream(Stream stream)
+	/// <inheritdoc cref="SaveToFile" />
+	public static bool SaveToFileSynchronous(bool isCrash = false) => SaveToFile(isCrash).Result;
+
+	public static async Task<bool> WriteToStream(Stream stream)
 	{
 		if (!stream.CanWrite)
 		{
@@ -34,9 +38,9 @@ public static class LoggingManager
 
 		try
 		{
-			using var sw = new StreamWriter(stream);
-			sw.Write(LogBuilder.ToString());
-			sw.Flush();
+			await using var sw = new StreamWriter(stream);
+			await sw.WriteAsync(LogBuilder.ToString());
+			await sw.FlushAsync();
 		}
 		catch (Exception e) when (
 			e is ObjectDisposedException or NotSupportedException or IOException)
