@@ -19,6 +19,9 @@ public readonly record struct Ray(Vector3 Origin, Vector3 Direction)
 
 	public bool IntersectAabb(in Box3 aabb, out float distance) => Intersect.RayAabb(in this, in aabb, out distance);
 
+	public bool IntersectSphere(in Sphere sphere, out float distance) =>
+		Intersect.RaySphere(in this, in sphere, out distance);
+
 	public Vector3 NearestPoint(Vector3 point) =>
 		Origin + Direction * DistanceAlongDirection(point);
 

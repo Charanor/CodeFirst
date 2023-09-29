@@ -55,4 +55,34 @@ public static class Intersect
 		distance = Vector3.Dot(plane.PointOnPlane - ray.Origin, plane.Normal) / denominator;
 		return distance >= 0;
 	}
+
+	public static bool RaySphere(in Ray ray, in Sphere sphere, out float distance)
+	{
+		var towardsRay = ray.Origin - sphere.Center;
+		var raySphereAngle = Vector3.Dot(towardsRay, ray.Direction);
+		var sizeDiff = Vector3.Dot(towardsRay, towardsRay) - sphere.Radius * sphere.Radius;
+
+		// If ray's origin is outside of the sphere (denoted by sizeDiff > 0) and the ray is pointing away from the
+		// sphere (denoted by raySphereAngle > 0) then we are not intersecting the sphere.
+		if (sizeDiff > 0.0f && raySphereAngle > 0.0f)
+		{
+			distance = 0;
+			return false;
+		}
+
+		// A negative discriminant corresponds to ray missing sphere 
+		var discriminant = raySphereAngle * raySphereAngle - sizeDiff;
+		if (discriminant < 0.0f)
+		{
+			distance = 0;
+			return false;
+		}
+
+		// Ray intersects the sphere, compute smallest distance to intersection
+		distance = -(raySphereAngle + MathF.Sqrt(discriminant));
+
+		// If distance is negative the ray origin is inside the sphere (just clamp to zero, negative distance makes no sense) 
+		distance = MathF.Max(distance, y: 0);
+		return true;
+	}
 }
