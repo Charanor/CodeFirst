@@ -12,6 +12,7 @@
 		"files",
 		"ai",
 		"source-generator-utils",
-		"codefirst"
+		"codefirst",
+		"cartography"
 	]
 }

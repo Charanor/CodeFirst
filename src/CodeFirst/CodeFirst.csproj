@@ -5,13 +5,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <LangVersion>11</LangVersion>
     </PropertyGroup>
-
-    <ItemGroup>
-        <Folder Include="Ai" />
-        <Folder Include="Ecs\Utils" />
-        <Folder Include="Graphics\Utils" />
-    </ItemGroup>
 
     <ItemGroup>
         <AdditionalFiles Include="Graphics\Text\Shaders\MtsdfFont.frag" />
@@ -28,11 +23,18 @@
         <PackageReference Include="StbImageSharp" Version="2.27.13" />
         <PackageReference Include="IceReaper.YogaSharp" Version="1.18.0.3" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\CodeFirst.Generators\CodeFirst.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\CodeFirst.Generators\CodeFirst.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false">
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </ProjectReference>
+      <Compile Update="Cartography\TiledMap.Loader.cs">
+        <DependentUpon>TiledMap.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Cartography\TiledMapTileSet.Loader.cs">
+        <DependentUpon>TiledMapTileSet.cs</DependentUpon>
+      </Compile>
     </ItemGroup>
 
 </Project>
