@@ -1,6 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using CodeFirst.Utils;
 using CodeFirst.Utils.Logging;
-using CodeFirst.Utils.Math;
 using OpenTK.Mathematics;
 
 namespace CodeFirst.Physics;
@@ -12,16 +11,10 @@ public class PhysicsWorld
 	private readonly HashSet<Guid> items;
 	private readonly Dictionary<Guid, Box2> bodies;
 
-	/// <summary>
-	///     Used as persistent storage of already checked items when performing iterative collision resolution
-	/// </summary>
-	private readonly HashSet<Guid> alreadyChecked;
-
 	public PhysicsWorld()
 	{
 		items = new HashSet<Guid>();
 		bodies = new Dictionary<Guid, Box2>();
-		alreadyChecked = new HashSet<Guid>();
 	}
 
 	public Guid Create(float x, float y, float width, float height) =>
@@ -39,16 +32,12 @@ public class PhysicsWorld
 	}
 
 	/// <summary>
-	///     Moves this body to the new position. If any collision occurs at the new position the collision(s) will be
-	///     resolved and the body's position will be adjusted to not overlap any other bodies. For fast-moving bodies
-	///     it can be advisable to call <see cref="Sweep" /> instead since <see cref="Move" /> will not check for collisions
-	///     between the body's original position and its new position, only at the destination.
+	///     Moves this body to the new position, detecting collisions along its path.
 	/// </summary>
 	/// <param name="item">the item to move</param>
 	/// <param name="destination">the new position of the body</param>
 	/// <param name="filterFunction"></param>
 	/// <returns>the result of this move</returns>
-	/// <seealso cref="Sweep" />
 	/// <seealso cref="Place" />
 	public CollisionResult Move(Guid item, Vector2 destination, CollisionFilterFunction? filterFunction = null)
 	{
@@ -58,130 +47,124 @@ public class PhysicsWorld
 		}
 
 		filterFunction ??= DefaultCollisionFunction;
-		alreadyChecked.Clear();
-		alreadyChecked.Add(item);
 
 		var body = bodies[item];
-		body.Translate(destination - body.Location); // Move to destination
-
 		var collisions = new List<Collision>();
-		while (CheckCollision(item, body, filterFunction, out var collision))
+		while (true)
 		{
-			collisions.Add(collision);
-			alreadyChecked.Add(collision.Other);
+			var velocity = destination - body.Location;
+			var broadphaseRectangle =
+				CreateBroadphaseRectangle(body.X, body.Y, destination.X, destination.Y, body.Width, body.Height);
 
-			switch (collision.Resolution)
+			var hasCollision = false;
+			var closestTheta = 1f;
+			var closestNormal = Vector2.Zero;
+			var closestResolution = CollisionResolution.None;
+			Guid closestGuid = default;
+
+			foreach (var other in items)
+			{
+				if (other == item)
+				{
+					continue;
+				}
+
+				var otherBody = bodies[other];
+
+				// Broadphase
+				if (!broadphaseRectangle.IntersectsWith(otherBody))
+				{
+					continue;
+				}
+
+				// Narrow phase
+				if (!SweepCollides(body, otherBody, velocity, out var normal, out var theta))
+				{
+					continue;
+				}
+
+				// This collision was not closer
+				if (theta >= closestTheta)
+				{
+					continue;
+				}
+
+				var resolution = filterFunction(item, other);
+				if (resolution == CollisionResolution.None)
+				{
+					// No resolution to this collision
+					continue;
+				}
+
+				hasCollision = true;
+				closestTheta = theta;
+				closestNormal = normal;
+				closestResolution = resolution;
+				closestGuid = other;
+			}
+
+			// Move body all the way until it collides
+			// Also move body away from wall very slightly to prevent getting stuck on seams
+			const float seamMargin = 0.001f;
+			destination = body.Location + velocity * closestTheta + closestNormal * seamMargin;
+
+			if (!hasCollision)
+			{
+				// No collision, our work here is done
+				break;
+			}
+
+			var normalLengthSquared = Vector2.Dot(closestNormal, closestNormal);
+			if (normalLengthSquared == 0)
+			{
+				// No normal? :/
+				continue;
+			}
+
+			collisions.Add(new Collision(item, closestGuid, closestResolution, closestNormal, closestTheta));
+
+			var resolutionTheta = 1 - closestTheta;
+			switch (closestResolution)
 			{
 				case CollisionResolution.Slide:
 				{
-					// Slide along the smallest direction
-					var (slideDirection, separationDirection) =
-						MathF.Abs(collision.Normal.X) > MathF.Abs(collision.Normal.Y)
-							? (Vector2.UnitY, Vector2.UnitX)
-							: (Vector2.UnitX, Vector2.UnitY);
-					var slideVector = Project(collision.Separation, slideDirection);
-					var separationVector = Project(collision.Separation, separationDirection);
-					body.Translate(separationVector + slideVector);
+					var slideDot = resolutionTheta * Vector2.Dot(velocity, closestNormal);
+					var slideDirection = resolutionTheta * velocity - slideDot / normalLengthSquared * closestNormal;
+					destination += slideDirection;
 					break;
 				}
 				case CollisionResolution.Touch:
-				{
-					body.Translate(collision.Separation);
+					// Touch is already handled above, basically touch means only separate and nothing else
 					break;
-				}
 				case CollisionResolution.Bounce:
 				{
-					var separationVector = collision.Separation;
-					// Mirror along the smallest direction
-					if (MathF.Abs(collision.Normal.X) > MathF.Abs(collision.Normal.Y))
+					var bounceNormal = velocity.Normalized();
+					if (closestNormal.X != 0)
 					{
-						separationVector.Y *= -1;
+						// Normal is X-aligned, so reflect on Y-axis
+						bounceNormal.Y *= -1;
 					}
-					else
+					else if (closestNormal.Y != 0)
 					{
-						separationVector.X *= -1;
+						// Normal is Y-aligned, so reflect on X-axis
+						bounceNormal.X *= -1;
 					}
 
-					body.Translate(separationVector);
+					destination += bounceNormal * resolutionTheta;
 					break;
 				}
-				case CollisionResolution.Cross: // ! Fallthrough
-				case CollisionResolution.None: // ! Fallthrough
+				case CollisionResolution.Cross:
+					// No separation, only record collision
+					break;
+				case CollisionResolution.None: // Should never happen
 				default:
-					break; // No need to resolve these collisions
+					DevTools.Throw<PhysicsWorld>(new InvalidOperationException(
+						$"Unexpected resolution '{nameof(CollisionResolution.None)}' during resolution! This should be handled in a special case before."));
+					break;
 			}
 		}
 
-		bodies[item] = body;
-		return new CollisionResult(body.Location, collisions);
-	}
-
-	/// <summary>
-	///     Moves this body to the new position in a "sweeping" manner, reliably detecting all collisions along its path.
-	///     This is slower than moving a body normally but will prevent tunneling which makes this suitable for fast-moving
-	///     bodies such as bullets or other projectiles.
-	/// </summary>
-	/// <param name="item">the item to sweep</param>
-	/// <param name="destination">the new position of the body</param>
-	/// <param name="filterFunction"></param>
-	/// <returns>the result of this sweep</returns>
-	/// <seealso cref="Move" />
-	/// <seealso cref="Place" />
-	public CollisionResult Sweep(Guid item, Vector2 destination, CollisionFilterFunction? filterFunction = null)
-	{
-		if (!items.Contains(item))
-		{
-			throw new ArgumentException($"Item {item} was not created by this PhysicsWorld!", nameof(item));
-		}
-
-		filterFunction ??= DefaultCollisionFunction;
-		alreadyChecked.Clear();
-		alreadyChecked.Add(item);
-
-		var body = bodies[item];
-		var velocity = destination - body.Location;
-
-		var collisions = new List<Collision>();
-		while (CheckSweptCollision(item, body, velocity, filterFunction, out var collision))
-		{
-			collisions.Add(collision);
-			alreadyChecked.Add(collision.Other);
-
-			switch (collision.Resolution)
-			{
-				case CollisionResolution.Slide:
-				{
-					// Move to collision location
-					body.Translate(velocity * (1f - collision.Theta));
-					var slideVector = CalculateSlideVector(collision.Normal, velocity);
-					body.Translate(Project(velocity, slideVector) * collision.Theta);
-					// Slide along the smallest direction (also, SIC! on the DOT product calculation)
-					// var slideDot = velocity.X * collision.Normal.X + velocity.Y * collision.Normal.Y;
-					// body.Translate(collision.Normal * slideDot * collision.Theta);
-					break;
-				}
-				case CollisionResolution.Touch:
-				{
-					body.Translate(velocity * (1f - collision.Theta));
-					break;
-				}
-				case CollisionResolution.Bounce:
-				{
-					// TODO
-					break;
-				}
-				case CollisionResolution.Cross: // ! Fallthrough
-				case CollisionResolution.None: // ! Fallthrough
-				default:
-					break; // No need to resolve these collisions
-			}
-		}
-
-		if (collisions.Count == 0)
-		{
-			body.Translate(velocity);
-		}
-
+		body.Translate(destination - body.Location);
 		bodies[item] = body;
 		return new CollisionResult(body.Location, collisions);
 	}
@@ -190,15 +173,13 @@ public class PhysicsWorld
 	///     Places the body at the given position without checking for collisions in between. Use this to teleport objects.
 	///     By default this will report all collisions that occured at the new position but will <b>NOT</b> resolve
 	///     those collisions (i.e. treated as <see cref="CollisionResolution.Cross">CollisionResolution.Cross</see>.
-	///     If you wish to resolve this body to be moved outside of any colliding bodies use <see cref="Move" /> or
-	///     <see cref="Sweep" /> instead.
+	///     If you wish to resolve this body to be moved outside of any colliding bodies use <see cref="Move" /> instead.
 	/// </summary>
 	/// <param name="item">the item to place</param>
 	/// <param name="destination">the new position of the body</param>
 	/// <param name="filterFunction"></param>
 	/// <returns>the result of this place</returns>
 	/// <seealso cref="Move" />
-	/// <seealso cref="Sweep" />
 	public CollisionResult Place(Guid item, Vector2 destination, CollisionFilterFunction? filterFunction = null)
 	{
 		if (!items.Contains(item))
@@ -213,8 +194,13 @@ public class PhysicsWorld
 		bodies[item] = body;
 
 		var collisions = new List<Collision>();
-		foreach (var otherItem in items.Except(alreadyChecked).Where(otherItem => otherItem != item))
+		foreach (var otherItem in items)
 		{
+			if (otherItem == item)
+			{
+				continue;
+			}
+
 			var otherBody = bodies[otherItem];
 			if (!Collides(body, otherBody, out var normal, out var theta))
 			{
@@ -233,82 +219,7 @@ public class PhysicsWorld
 		return new CollisionResult(destination, collisions);
 	}
 
-	private bool CheckCollision(Guid item, Box2 body, CollisionFilterFunction filterFunction,
-		[NotNullWhen(true)] out Collision? collision)
-	{
-		collision = null;
-		foreach (var otherItem in items.Except(alreadyChecked).Where(otherItem => otherItem != item))
-		{
-			var otherBody = bodies[otherItem];
-			if (!Collides(body, otherBody, out var normal, out var theta))
-			{
-				continue;
-			}
-
-			var resolution = filterFunction(item, otherItem);
-			if (resolution == CollisionResolution.None)
-			{
-				continue;
-			}
-
-			if (collision == null)
-			{
-				collision = new Collision(item, otherItem, resolution, normal, theta);
-				break;
-			}
-
-			if (theta > collision.Theta)
-			{
-				collision = new Collision(item, otherItem, resolution, normal, theta);
-			}
-		}
-
-		return collision != null;
-	}
-
-	private bool CheckSweptCollision(Guid item, Box2 body, Vector2 velocity, CollisionFilterFunction filterFunction,
-		[NotNullWhen(true)] out Collision? collision)
-	{
-		collision = null;
-		var broadphaseRectangle = CreateBroadphaseRectangle(
-			body.X, body.Y,
-			body.X + velocity.X, body.Y + velocity.Y,
-			body.Width, body.Height
-		);
-		foreach (var otherItem in items.Except(alreadyChecked).Where(otherItem => otherItem != item))
-		{
-			var otherBody = bodies[otherItem];
-			if (!otherBody.IntersectsWith(broadphaseRectangle))
-			{
-				continue;
-			}
-
-			var resolution = filterFunction(item, otherItem);
-			if (resolution == CollisionResolution.None)
-			{
-				continue;
-			}
-			
-
-			if (!SweepCollides(body, otherBody, velocity, out var normal, out var theta))
-			{
-				continue;
-			}
-
-			if (collision == null)
-			{
-				collision = new Collision(item, otherItem, resolution, normal, theta);
-				break;
-			}
-
-			if (theta > collision.Theta)
-			{
-				collision = new Collision(item, otherItem, resolution, normal, theta);
-			}
-		}
-
-		return collision != null;
-	}
+	public Box2 GetBody(Guid item) => items.Contains(item) ? bodies[item] : Box2.Empty;
 
 	private static Box2 CreateBroadphaseRectangle(
 		float oldX, float oldY,
@@ -348,86 +259,49 @@ public class PhysicsWorld
 
 	private static bool SweepCollides(Box2 first, Box2 second, Vector2 velocity, out Vector2 normal, out float theta)
 	{
-		float xInvEntry;
-		float yInvEntry;
-		float xInvExit;
-		float yInvExit;
+		var combinedX = second.X - (first.X + first.SizeX);
+		var combinedY = second.Y - (first.Y + first.SizeY);
+		var combinedSizeX = first.SizeX + second.SizeX;
+		var combinedSizeY = first.SizeY + second.SizeY;
+		var (velocityX, velocityY) = velocity;
 
-		if (velocity.X > 0.0f)
-		{
-			xInvEntry = second.X - (first.X + first.Width);
-			xInvExit = second.X + second.Width - first.X;
-		}
-		else
-		{
-			xInvEntry = second.X + second.Width - first.X;
-			xInvExit = second.X - (first.X + first.Width);
-		}
+		// Original cond
+		theta = 1;
+		normal = Vector2.Zero;
 
-		if (velocity.Y > 0.0f)
+		var xMinDist = LineToPlane(velocityX, velocityY, combinedX, combinedY, nx: -1, ny: 0);
+		if (xMinDist >= 0 && velocityX > 0 && xMinDist < theta &&
+		    Between(xMinDist * velocityY, combinedY, combinedY + combinedSizeY))
 		{
-			yInvEntry = second.Y - (first.Y + first.Height);
-			yInvExit = second.Y + second.Height - first.Y;
-		}
-		else
-		{
-			yInvEntry = second.Y + second.Height - first.Y;
-			yInvExit = second.Y - (first.Y + first.Height);
+			theta = xMinDist;
+			normal = -Vector2.UnitX;
 		}
 
-		float xEntry;
-		float yEntry;
-		float xExit;
-		float yExit;
-
-		if (velocity.X == 0f)
+		var xMaxDist = LineToPlane(velocityX, velocityY, combinedX + combinedSizeX, combinedY, nx: 1, ny: 0);
+		if (xMaxDist >= 0 && velocityX < 0 && xMaxDist < theta &&
+		    Between(xMaxDist * velocityY, combinedY, combinedY + combinedSizeY))
 		{
-			xEntry = float.NegativeInfinity;
-			xExit = float.PositiveInfinity;
-		}
-		else
-		{
-			xEntry = xInvEntry / velocity.X;
-			xExit = xInvExit / velocity.X;
+			theta = xMaxDist;
+			normal = Vector2.UnitX;
 		}
 
-		if (velocity.Y == 0.0f)
+		var yMinDist = LineToPlane(velocityX, velocityY, combinedX, combinedY, nx: 0, ny: -1);
+		if (yMinDist >= 0 && velocityY > 0 && yMinDist < theta &&
+		    Between(yMinDist * velocityX, combinedX, combinedX + combinedSizeX))
 		{
-			yEntry = float.NegativeInfinity;
-			yExit = float.PositiveInfinity;
-		}
-		else
-		{
-			yEntry = yInvEntry / velocity.Y;
-			yExit = yInvExit / velocity.Y;
+			theta = yMinDist;
+			normal = -Vector2.UnitY;
 		}
 
-		// if (yEntry > 1.0f) yEntry = float.NegativeInfinity;
-		// if (xEntry > 1.0f) xEntry = float.NegativeInfinity;
-
-		var entryTime = MathF.Max(xEntry, yEntry);
-		var exitTime = MathF.Min(xExit, yExit);
-
-		if (entryTime > exitTime || (xEntry < 0.0f && yEntry < 0.0f) || xEntry > 1f || yEntry > 1f)
+		var yMaxDist = LineToPlane(velocityX, velocityY, combinedX, combinedY + combinedSizeY, nx: 0, ny: 1);
+		if (yMaxDist >= 0 && velocityY < 0 && yMaxDist < theta &&
+		    Between(yMaxDist * velocityX, combinedX, combinedX + combinedSizeX))
 		{
-			// No collision
-			normal = Vector2.Zero;
-			theta = 1f;
-			return false;
+			theta = yMaxDist;
+			normal = Vector2.UnitY;
 		}
 
-		if (xEntry > yEntry)
-		{
-			normal = xInvEntry < 0.0f ? Vector2.UnitX : -Vector2.UnitX;
-		}
-		else
-		{
-			normal = yInvEntry < 0.0f ? Vector2.UnitY : -Vector2.UnitY;
-		}
-
-		// TODO: Figure out if we want this to be 1 - entryTime or just entryTime
-		theta = 1f - entryTime;
-		return true;
+		return theta is > 0 and < 1;
 	}
 
 	private static bool TestSeparatingAxis(Vector2 referenceAxis, float firstMin, float firstMax, float secondMin,
@@ -467,35 +341,18 @@ public class PhysicsWorld
 
 	private static CollisionResolution DefaultCollisionFunction(Guid _, Guid __) => CollisionResolution.Slide;
 
-	private static Vector2 CalculateSlideVector(Vector2 normal, Vector2 velocity)
+	private static float LineToPlane(float ux, float uy, float vx, float vy, float nx, float ny)
 	{
-		if (MathF.Abs(normal.X) > MathF.Abs(normal.Y))
+		var normalDotPosition = nx * ux + ny * uy;
+		if (normalDotPosition == 0)
 		{
-			// Pointing in X direction, slide is in Y direction
-			return velocity.Y > 0 ? Vector2.UnitY : -Vector2.UnitY;
+			return float.PositiveInfinity;
 		}
 
-		// Pointing in Y direction, slide is in X direction
-		return velocity.X > 0 ? Vector2.UnitX : -Vector2.UnitX;
+		return (nx * vx + ny * vy) / normalDotPosition;
 	}
 
-	private static Vector2 Project(Vector2 source, Vector2 normal)
-	{
-		var lengthSquared = Vector2.Dot(normal, normal);
-		if (lengthSquared <= 0)
-		{
-			return Vector2.Zero;
-		}
-
-		return normal * Vector2.Dot(source, normal) / lengthSquared;
-	}
-
-	private static Box2 CalculateMinkowskiDifference(Box2 first, Box2 second)
-	{
-		var location = first.Min - second.Max;
-		var fullSize = first.Size + second.Size;
-		return Box2.FromSize(location, fullSize);
-	}
+	private static bool Between(float x, float a, float b) => x >= a && x <= b;
 }
 
 public record CollisionResult(Vector2 Position, List<Collision> Collisions)
