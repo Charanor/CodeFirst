@@ -31,6 +31,18 @@ public class PhysicsWorld
 		return newItem;
 	}
 
+	public void Destroy(Guid item)
+	{
+		if (!items.Contains(item))
+		{
+			DevTools.Throw<PhysicsWorld>(new ArgumentException($"Item {item} was not created by this PhysicsWorld!", nameof(item)));
+			return;
+		}
+
+		items.Remove(item);
+		bodies.Remove(item);
+	}
+
 	/// <summary>
 	///     Moves this body to the new position, detecting collisions along its path.
 	/// </summary>
@@ -43,7 +55,7 @@ public class PhysicsWorld
 	{
 		if (!items.Contains(item))
 		{
-			throw new ArgumentException($"Item {item} was not created by this PhysicsWorld!", nameof(item));
+			DevTools.Throw<PhysicsWorld>(new ArgumentException($"Item {item} was not created by this PhysicsWorld!", nameof(item)));
 		}
 
 		filterFunction ??= DefaultCollisionFunction;
