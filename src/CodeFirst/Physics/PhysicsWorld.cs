@@ -1,5 +1,6 @@
 ﻿using CodeFirst.Utils;
 using CodeFirst.Utils.Logging;
+using CodeFirst.Utils.Math;
 using OpenTK.Mathematics;
 
 namespace CodeFirst.Physics;
@@ -10,37 +11,75 @@ public class PhysicsWorld
 
 	private readonly HashSet<Guid> items;
 	private readonly Dictionary<Guid, Box2> bodies;
+	private readonly QuadTree quadTree;
+	private readonly Dictionary<Guid, int> quadTreeIds;
+	private readonly Dictionary<Guid, int> quadTreeElements;
 
-	public PhysicsWorld()
+	private readonly Queue<int> reclaimedIds;
+	private int nextId;
+
+	public PhysicsWorld(int width = short.MaxValue, int height = short.MinValue, int initialElementCount = 8192,
+		int initialMaxDepth = 3)
 	{
 		items = new HashSet<Guid>();
 		bodies = new Dictionary<Guid, Box2>();
+		quadTree = new QuadTree(width, height, initialElementCount, initialMaxDepth);
+		quadTreeIds = new Dictionary<Guid, int>();
+		quadTreeElements = new Dictionary<Guid, int>();
+
+		reclaimedIds = new Queue<int>();
 	}
 
 	public Guid Create(float x, float y, float width, float height) =>
-		Create(new Box2(x, y, x + width, y + height));
+		Create(new Box2(x - width / 2f, y - height / 2f, x + width / 2f, y + height / 2f));
 
-	public Guid Create(Vector2 position, Vector2 size) => Create(Box2.FromSize(position, size));
+	public Guid Create(Vector2 position, Vector2 size) => Create(Box2.FromSize(position - size / 2f, size));
 
 	public Guid Create(Box2 body)
 	{
 		var newItem = Guid.NewGuid();
 		items.Add(newItem);
 		bodies.Add(newItem, body);
-		Logger.Trace($"Created item {newItem} with body {body}.");
+
+		var id = GetNextQuadTreeId();
+		quadTreeIds.Add(newItem, id);
+		quadTreeElements.Add(newItem, quadTree.Insert(id, body.Left, body.Top, body.Right, body.Bottom));
+
 		return newItem;
+	}
+
+	private int GetNextQuadTreeId()
+	{
+		if (reclaimedIds.Count > 0)
+		{
+			return reclaimedIds.Dequeue();
+		}
+
+		var id = nextId;
+		nextId += 1;
+		return id;
 	}
 
 	public void Destroy(Guid item)
 	{
 		if (!items.Contains(item))
 		{
-			DevTools.Throw<PhysicsWorld>(new ArgumentException($"Item {item} was not created by this PhysicsWorld!", nameof(item)));
+			DevTools.Throw<PhysicsWorld>(new ArgumentException($"Item {item} was not created by this PhysicsWorld!",
+				nameof(item)));
 			return;
 		}
 
 		items.Remove(item);
 		bodies.Remove(item);
+		if (quadTreeIds.Remove(item, out var id))
+		{
+			reclaimedIds.Enqueue(id);
+		}
+
+		if (quadTreeElements.Remove(item, out var element))
+		{
+			quadTree.Remove(element);
+		}
 	}
 
 	/// <summary>
@@ -55,7 +94,9 @@ public class PhysicsWorld
 	{
 		if (!items.Contains(item))
 		{
-			DevTools.Throw<PhysicsWorld>(new ArgumentException($"Item {item} was not created by this PhysicsWorld!", nameof(item)));
+			DevTools.Throw<PhysicsWorld>(new ArgumentException($"Item {item} was not created by this PhysicsWorld!",
+				nameof(item)));
+			return CollisionResult.Default;
 		}
 
 		filterFunction ??= DefaultCollisionFunction;
@@ -64,16 +105,19 @@ public class PhysicsWorld
 		var collisions = new List<Collision>();
 		while (true)
 		{
-			var velocity = destination - body.Location;
-			var broadphaseRectangle =
-				CreateBroadphaseRectangle(body.X, body.Y, destination.X, destination.Y, body.Width, body.Height);
+			var velocity = destination - body.Center;
+			var broadphaseRectangle = CreateBroadphaseRectangle(
+				body.X, body.Y,
+				destination.X - body.Width / 2f, destination.Y - body.Height / 2f,
+				body.Width, body.Height
+			);
 
 			var hasCollision = false;
 			var closestTheta = 1f;
 			var closestNormal = Vector2.Zero;
 			var closestResolution = CollisionResolution.None;
 			Guid closestGuid = default;
-
+			
 			foreach (var other in items)
 			{
 				if (other == item)
@@ -118,7 +162,7 @@ public class PhysicsWorld
 			// Move body all the way until it collides
 			// Also move body away from wall very slightly to prevent getting stuck on seams
 			const float seamMargin = 0.001f;
-			destination = body.Location + velocity * closestTheta + closestNormal * seamMargin;
+			destination = body.Center + velocity * closestTheta + closestNormal * seamMargin;
 
 			if (!hasCollision)
 			{
@@ -176,9 +220,9 @@ public class PhysicsWorld
 			}
 		}
 
-		body.Translate(destination - body.Location);
+		body.Center = destination;
 		bodies[item] = body;
-		return new CollisionResult(body.Location, collisions);
+		return new CollisionResult(body.Center, collisions);
 	}
 
 	/// <summary>
@@ -196,13 +240,15 @@ public class PhysicsWorld
 	{
 		if (!items.Contains(item))
 		{
-			throw new ArgumentException($"Item {item} was not created by this PhysicsWorld!", nameof(item));
+			DevTools.Throw<PhysicsWorld>(new ArgumentException($"Item {item} was not created by this PhysicsWorld!",
+				nameof(item)));
+			return CollisionResult.Default;
 		}
 
 		filterFunction ??= DefaultCollisionFunction;
 
 		var body = bodies[item];
-		body.Translate(destination - body.Location); // Move to destination
+		body.Center = destination;
 		bodies[item] = body;
 
 		var collisions = new List<Collision>();
@@ -232,6 +278,63 @@ public class PhysicsWorld
 	}
 
 	public Box2 GetBody(Guid item) => items.Contains(item) ? bodies[item] : Box2.Empty;
+
+	public bool Raycast(in Ray2D ray, List<RaycastHit> hits)
+	{
+		hits.Clear();
+
+		foreach (var (otherItem, otherBody) in bodies)
+		{
+			if (!Intersect.RayAabb(in ray, in otherBody, out var distance))
+			{
+				continue;
+			}
+
+			hits.Add(new RaycastHit(otherItem, distance));
+		}
+
+		hits.Sort((first, second) => Comparer<float>.Default.Compare(first.Distance, second.Distance));
+		return hits.Count > 0;
+	}
+
+	public bool Raycast(in Ray2D ray, out List<RaycastHit> hits)
+	{
+		hits = new List<RaycastHit>();
+		return Raycast(in ray, hits);
+	}
+
+	public bool Raycast(in Ray2D ray, out RaycastHit firstHit)
+	{
+		var hasHit = false;
+		Guid nearestItem = default;
+		var nearestDistance = float.PositiveInfinity;
+
+		foreach (var (otherItem, otherBody) in bodies)
+		{
+			if (!Intersect.RayAabb(in ray, in otherBody, out var distance))
+			{
+				continue;
+			}
+
+			if (distance >= nearestDistance)
+			{
+				continue;
+			}
+
+			nearestItem = otherItem;
+			nearestDistance = distance;
+			hasHit = true;
+		}
+
+		if (!hasHit)
+		{
+			firstHit = default;
+			return false;
+		}
+
+		firstHit = new RaycastHit(nearestItem, nearestDistance);
+		return true;
+	}
 
 	private static Box2 CreateBroadphaseRectangle(
 		float oldX, float oldY,
@@ -365,9 +468,4 @@ public class PhysicsWorld
 	}
 
 	private static bool Between(float x, float a, float b) => x >= a && x <= b;
-}
-
-public record CollisionResult(Vector2 Position, List<Collision> Collisions)
-{
-	public static readonly CollisionResult Default = new(Vector2.Zero, new List<Collision>());
 }
