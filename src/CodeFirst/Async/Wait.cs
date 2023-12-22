@@ -44,6 +44,8 @@ public abstract class Wait
 
 	public static Wait ForSeconds(float seconds) => new WaitForSeconds(seconds);
 	public static Wait ForEvent(Event evt) => new WaitForEvent(evt);
+	public static Wait ForCoroutine(Coroutine coroutine) => coroutine;
+	public static Wait ForCoroutine(IEnumerator<Wait?> coroutine) => Coroutines.Start(coroutine);
 
 	public static implicit operator Wait(float seconds) => ForSeconds(seconds);
 	public static implicit operator Wait(Event evt) => ForEvent(evt);
