@@ -16,4 +16,33 @@ public static class VectorExtensions
 
 		return vector.Length > maxLength ? vector.OfLength(maxLength) : vector;
 	}
+
+	public static Vector2 Contain(this Vector2 vector, Box2 bounds) => vector.Clamp(bounds.Min, bounds.Max);
+
+	public static Vector2 Clamp(this Vector2 vector, Vector2 min, Vector2 max) => new(
+		MathHelper.Clamp(vector.X, min.X, max.X),
+		MathHelper.Clamp(vector.Y, min.Y, max.Y)
+	);
+
+	public static float AngleTowards(this Vector2 vector, Vector2 other)
+	{
+		var denominator = MathF.Sqrt(vector.LengthSquared * other.LengthSquared);
+		if (denominator <= 0.001f)
+		{
+			return 0;
+		}
+
+		var dot = Vector2.Dot(vector, other);
+		var scaledDot = MathHelper.Clamp(dot / denominator, min: -1f, max: 1f);
+		return MathF.Acos(scaledDot);
+	}
+
+	public static float SignedAngleTowards(this Vector2 vector, Vector2 other)
+	{
+		var sign = MathF.Sign(Vector2.PerpDot(vector, other));
+		return vector.AngleTowards(other) * sign;
+	}
+
+	public static float Angle(this Vector2 vector) => AngleTowards(Vector2.UnitX, vector);
+	public static float SignedAngle(this Vector2 vector) => SignedAngleTowards(Vector2.UnitX, vector);
 }

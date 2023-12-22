@@ -28,6 +28,27 @@ public static class Intersect
 		}
 	}
 
+	public static bool RayAabb(in Ray2D ray, in Box2 aabb, out float distance)
+	{
+		var tMin = 0f;
+		var tMax = float.PositiveInfinity;
+
+		CalculateT(ray.Origin.X, ray.InverseDirection.X, aabb.Min.X, aabb.Max.X);
+		CalculateT(ray.Origin.Y, ray.InverseDirection.Y, aabb.Min.Y, aabb.Max.Y);
+
+		distance = tMin;
+		return tMin > 0 && tMin <= tMax;
+
+		void CalculateT(float rayOrigin, float rayInverseDirection, float aabbMin, float aabbMax)
+		{
+			var t1 = (aabbMin - rayOrigin) * rayInverseDirection;
+			var t2 = (aabbMax - rayOrigin) * rayInverseDirection;
+
+			tMin = Min(Max(t1, tMin), Max(t2, tMin));
+			tMax = Max(Min(t1, tMax), Min(t2, tMax));
+		}
+	}
+
 	// NOTE: We can not use Math{F} built-in Min/Max functions, since they do not play nice with NaN
 	private static float Min(float x, float y) => x < y ? x : y;
 	private static float Max(float x, float y) => x > y ? x : y;
@@ -56,6 +77,12 @@ public static class Intersect
 		return distance >= 0;
 	}
 
+	public static bool RayCircle(in Ray2D ray, in Circle circle, out float distance)
+	{
+		distance = Vector2.Distance(ray.NearestPoint(circle.Origin), circle.Origin);
+		return distance <= circle.Radius;
+	}
+	
 	public static bool RaySphere(in Ray ray, in Sphere sphere, out float distance)
 	{
 		var towardsRay = ray.Origin - sphere.Center;
