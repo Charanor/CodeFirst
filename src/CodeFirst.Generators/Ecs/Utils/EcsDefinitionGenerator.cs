@@ -10,6 +10,7 @@ public class EcsDefinitionGenerator
 	private const string CORE_NAMESPACE = "CodeFirst.Ecs.Core";
 	private const string ATTRIBUTE_NAMESPACE = $"{CORE_NAMESPACE}.Attributes";
 	private const string ATTRIBUTE_GENERATION_NAMESPACE = $"{CORE_NAMESPACE}.Attributes.Generation";
+	private const string EXCEPTIONS_NAMESPACE = $"{CORE_NAMESPACE}.Exceptions";
 
 	private const string COMPONENT_TYPE = "IComponent";
 	private const string SINGLETON_COMPONENT_TYPE = "ISingletonComponent";
@@ -32,6 +33,7 @@ public class EcsDefinitionGenerator
 		UsingLine(CORE_NAMESPACE);
 		UsingLine(ATTRIBUTE_NAMESPACE);
 		UsingLine(ATTRIBUTE_GENERATION_NAMESPACE);
+		UsingLine(EXCEPTIONS_NAMESPACE);
 
 		if (program.Namespace != null)
 		{
@@ -251,11 +253,40 @@ public class EcsDefinitionGenerator
 				}
 			}
 
-			// Singleton component accessors
-			foreach (var (singletonComponent, _) in program.Components.Where(component => component.IsSingleton))
+			foreach (var (component, isSingleton) in program.Components)
 			{
-				builder.IndentedLn(
-					$"public ref {singletonComponent} {singletonComponent} => ref GetSingletonComponent<{singletonComponent}>();");
+				if (isSingleton)
+				{
+					// Singleton component accessors
+					builder.IndentedLn(
+						$"public ref {component} {component} => ref GetSingletonComponent<{component}>();");
+				}
+				else
+				{
+					// Component accessor
+					using(builder.Block($"public ref {component} Get{component}(Entity entity)"))
+					{
+						using (builder.Block("if (!entity.IsValid)"))
+						{
+							builder.IndentedLn("throw new InvalidEntityException();");
+						}
+						
+						using (builder.Block("if (!HasEntity(entity))"))
+						{
+							builder.IndentedLn("throw new EntityDoesNotExistException(entity);");
+						}
+						
+						builder.NewLine();
+						builder.IndentedLn($"var mapper = GetMapper<{component}>();");
+						using (builder.Block("if (!mapper.Has(entity))"))
+						{
+							builder.IndentedLn($"throw new NullReferenceException(\"Entity does not have {component}.\");");
+						}
+						
+						builder.NewLine();
+						builder.IndentedLn("return ref mapper.Get(entity);");
+					}
+				}
 			}
 		}
 	}
