@@ -4,6 +4,9 @@ using Antlr4.Runtime;
 
 namespace CodeFirst.Generators.Ecs.Utils;
 
+/// <summary>
+///     Used in the EcsLexer. Do not remove!
+/// </summary>
 public abstract class DenterHelper
 {
 	private readonly int dedentToken;

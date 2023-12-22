@@ -192,10 +192,10 @@ public class EcsDefinitionGenerator
 				builder.AssignmentOp("CurrentEntity", "Entity.Invalid");
 			}
 
-			builder.IndentedLn(
-				$"partial void ProcessEntity(float delta, {string.Join(",", paramComponents.Select(cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {cmp.Name} {ToCamelCase(cmp.Name)}"))});");
-			builder.IndentedLn(
-				$"partial void ProcessEntity({string.Join(",", paramComponents.Select(cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {cmp.Name} {ToCamelCase(cmp.Name)}"))});");
+			var processEntityParameterList = string.Join(",",
+				paramComponents.Select(cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {cmp.Name} {ToCamelCase(cmp.Name)}"));
+			builder.IndentedLn($"partial void ProcessEntity(float delta, {processEntityParameterList});");
+			builder.IndentedLn($"partial void ProcessEntity({processEntityParameterList});");
 		}
 	}
 
@@ -264,25 +264,26 @@ public class EcsDefinitionGenerator
 				else
 				{
 					// Component accessor
-					using(builder.Block($"public ref {component} Get{component}(Entity entity)"))
+					using (builder.Block($"public ref {component} Get{component}(Entity entity)"))
 					{
 						using (builder.Block("if (!entity.IsValid)"))
 						{
 							builder.IndentedLn("throw new InvalidEntityException();");
 						}
-						
+
 						using (builder.Block("if (!HasEntity(entity))"))
 						{
 							builder.IndentedLn("throw new EntityDoesNotExistException(entity);");
 						}
-						
+
 						builder.NewLine();
 						builder.IndentedLn($"var mapper = GetMapper<{component}>();");
 						using (builder.Block("if (!mapper.Has(entity))"))
 						{
-							builder.IndentedLn($"throw new NullReferenceException(\"Entity does not have {component}.\");");
+							builder.IndentedLn(
+								$"throw new NullReferenceException(\"Entity does not have {component}.\");");
 						}
-						
+
 						builder.NewLine();
 						builder.IndentedLn("return ref mapper.Get(entity);");
 					}
@@ -306,8 +307,6 @@ public class EcsDefinitionGenerator
 
 	private void AttributeLine(string name, string contents = "") =>
 		builder.IndentedLn($"[{name}({contents})]");
-
-	private static string Quote(string str) => $@"""{str}""";
 
 	private bool IsSingleton(EcsAspectComponent component) => singletonComponentNames.Contains(component.Name);
 }

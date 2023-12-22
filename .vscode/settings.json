@@ -1,19 +1,18 @@
 {
 	"conventionalCommits.scopes": [
-		"ecs",
-		"graphics",
-		"utils",
-		"windowing",
-		"input",
-		"gui",
+		"ai",
 		"assets",
 		"async",
 		"audio",
-		"files",
-		"ai",
-		"source-generator-utils",
-		"codefirst",
 		"cartography",
-		"physics"
+		"ecs",
+		"files",
+		"generators",
+		"graphics",
+		"gui",
+		"input",
+		"physics",
+		"utils",
+		"windowing"
 	]
 }

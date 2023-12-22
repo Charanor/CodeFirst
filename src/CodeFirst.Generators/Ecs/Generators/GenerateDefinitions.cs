@@ -18,11 +18,6 @@ public class GenerateDefinitions : IIncrementalGenerator
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		if (!Debugger.IsAttached)
-		{
-			// Debugger.Launch();
-		}
-		
 		var files = context.AdditionalTextsProvider
 			.Where(static file => Path.GetExtension(file.Path) == FILE_EXTENSION)
 			.Select(static (file, ct) =>
@@ -72,9 +67,7 @@ public class GenerateDefinitions : IIncrementalGenerator
 	}
 }
 
-public record FileInfo(string FileName, string Contents);
-
-public class DebugErrorListener : IAntlrErrorListener<IToken>
+file class DebugErrorListener : IAntlrErrorListener<IToken>
 {
 	private readonly SourceProductionContext context;
 	private readonly string fileName;
