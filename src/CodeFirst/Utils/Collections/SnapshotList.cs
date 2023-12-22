@@ -93,7 +93,7 @@ public class SnapshotList<T> : IList<T>, ISnapshotList<T>
 	public void Insert(int index, T item)
 	{
 		Modified();
-		var prevItem = backingList[index];
+		var prevItem = index < 0 || index >= backingList.Count ? default : backingList[index];
 		backingList.Insert(index, item);
 
 		if (prevItem is not null)
