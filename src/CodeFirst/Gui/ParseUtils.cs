@@ -22,7 +22,7 @@ public static class ParseUtils
 		val = 0;
 		return false;
 	}
-
+	
 	public static bool IntAttribute(this XElement @this, string attr, out int val)
 	{
 		var xAttr = @this.Attribute(attr);

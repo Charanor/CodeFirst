@@ -114,24 +114,64 @@ public class Text : Component<TextStyle>
 
 	public Vector2 TextSize => dirty ? new Vector2(float.NaN, float.NaN) : layout.CalculateTextSize(textRows);
 
+	private float CalculateMaxTextWidth()
+	{
+		var maxTextWidth = Node.LayoutWidth - Node.LayoutPaddingLeft - Node.LayoutPaddingRight;
+		if (maxTextWidth != 0)
+		{
+			return maxTextWidth;
+		}
+
+		maxTextWidth = TransformedBounds.Size.X;
+		if (maxTextWidth != 0)
+		{
+			return maxTextWidth;
+		}
+
+		maxTextWidth = Parent?.TransformedBounds.Size.X ?? 0;
+		if (maxTextWidth == 0)
+		{
+			maxTextWidth = float.PositiveInfinity;
+		}
+
+		return maxTextWidth;
+	}
+
+	public override void ApplyStyle()
+	{
+		base.ApplyStyle();
+
+		if (dirty)
+		{
+			var maxTextWidth = CalculateMaxTextWidth();
+			textRows.Clear();
+			var rows = TextContent
+				.Split('\n')
+				.SelectMany(hardRow =>
+					layout.LineBreak(hardRow, maxTextWidth * (font.Atlas.CharacterPixelSize / Style.FontSize),
+						Style.TextBreakStrategy));
+			textRows.AddRange(rows);
+			dirty = false;
+		}
+
+		var textSize = font.ScalePixelsToFontSize(TextSize, Style.FontSize);
+
+		if (Style.MinWidth.Unit is YogaUnit.Auto or YogaUnit.Undefined)
+		{
+			Node.MinWidth = textSize.X;
+		}
+
+		if (Style.MinHeight.Unit is YogaUnit.Auto or YogaUnit.Undefined)
+		{
+			Node.MinHeight = textSize.Y;
+		}
+	}
+
 	public override void Draw(IGraphicsProvider graphicsProvider)
 	{
 		base.Draw(graphicsProvider);
 
-		var maxTextWidth = Node.LayoutWidth - Node.LayoutPaddingLeft - Node.LayoutPaddingRight;
-		if (maxTextWidth == 0)
-		{
-			maxTextWidth = TransformedBounds.Size.X;
-			if (maxTextWidth == 0)
-			{
-				maxTextWidth = Parent?.TransformedBounds.Size.X ?? 0;
-				if (maxTextWidth == 0)
-				{
-					maxTextWidth = float.PositiveInfinity;
-				}
-			}
-		}
-
+		var maxTextWidth = CalculateMaxTextWidth();
 		if (dirty)
 		{
 			textRows.Clear();
@@ -143,7 +183,7 @@ public class Text : Component<TextStyle>
 			textRows.AddRange(rows);
 			dirty = false;
 		}
-
+		
 		var textSize = font.ScalePixelsToFontSize(TextSize, Style.FontSize);
 
 		var textAreaSize = TransformedBounds.Size;

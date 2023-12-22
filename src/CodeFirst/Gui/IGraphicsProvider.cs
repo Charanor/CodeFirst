@@ -7,7 +7,7 @@ namespace CodeFirst.Gui;
 
 public interface IGraphicsProvider
 {
-	void Begin();
+	void Begin(bool centerCamera = true);
 	void End();
 
 	void BeginOverflow();

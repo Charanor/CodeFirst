@@ -41,7 +41,7 @@ public record AnimatedValue(float TargetValue)
 #if DEBUG
 			throw new InvalidOperationException(error);
 #else
-				return;
+				return Value;
 #endif
 		}
 

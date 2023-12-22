@@ -26,8 +26,6 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		1u, 2u, 3u
 	};
 
-	private readonly Camera camera;
-
 	private readonly Buffer<Vertex> vertexBuffer;
 	private readonly Buffer<uint> indexBuffer;
 	private readonly VertexArray vertexArray;
@@ -37,15 +35,17 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 
 	private ShaderProgram? activeShader;
 
-	public GLGraphicsProvider(Camera camera)
+	public GLGraphicsProvider(Camera? camera = null)
 	{
-		this.camera = camera;
+		Camera = camera;
 		vertexBuffer = new Buffer<Vertex>(QuadVertices, VertexBufferObjectUsage.StaticRead);
 		indexBuffer = new Buffer<uint>(QuadIndices, VertexBufferObjectUsage.StaticRead);
 		vertexArray = VertexArray.CreateForVertexInfo(Vertex.VertexInfo, vertexBuffer, indexBuffer);
 		shader = new BasicGraphicsShader();
 		overflowLayer = 0;
 	}
+
+	public Camera? Camera { get; set; }
 
 	private ShaderProgram? ActiveShader
 	{
@@ -71,22 +71,31 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		vertexArray.Dispose();
 	}
 
-	public void Begin()
+	public void Begin(bool centerCamera = true)
 	{
-		GL.Enable(EnableCap.Blend);
-		GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+		if (Camera == null)
+		{
+			return;
+		}
+		
+		Enable(EnableCap.Blend);
+		BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-		GL.Clear(ClearBufferMask.StencilBufferBit);
-		GL.Enable(EnableCap.StencilTest);
-		GL.StencilFunc(StencilFunction.Always, reference: 1, mask: 0xff);
-		GL.StencilOp(StencilOp.Replace, StencilOp.Replace, StencilOp.Replace);
-		GL.StencilMask(0xff);
+		Clear(ClearBufferMask.StencilBufferBit);
+		Enable(EnableCap.StencilTest);
+		StencilFunc(StencilFunction.Always, reference: 1, mask: 0xff);
+		StencilOp(StencilOp.Replace, StencilOp.Replace, StencilOp.Replace);
+		StencilMask(0xff);
 
-		GL.Disable(EnableCap.DepthTest);
+		Disable(EnableCap.DepthTest);
 
-		camera.Position = new Vector3(camera.WorldSize.X / 2, camera.WorldSize.Y / 2, z: 1);
-		shader.ProjectionMatrix = camera.Projection;
-		shader.ViewMatrix = camera.View;
+		if (centerCamera)
+		{
+			Camera.Position = new Vector3(Camera.WorldSize.X / 2, Camera.WorldSize.Y / 2, z: 1);
+		}
+
+		shader.ProjectionMatrix = Camera.Projection;
+		shader.ViewMatrix = Camera.View;
 		ActiveShader = shader;
 
 		vertexArray.Bind();
@@ -98,53 +107,64 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		vertexArray.Unbind();
 		ActiveShader = null;
 
-		GL.Clear(ClearBufferMask.StencilBufferBit);
-		GL.Disable(EnableCap.Blend);
-		GL.Disable(EnableCap.StencilTest);
-		GL.Disable(EnableCap.DepthTest);
+		Clear(ClearBufferMask.StencilBufferBit);
+		Disable(EnableCap.Blend);
+		Disable(EnableCap.StencilTest);
+		Disable(EnableCap.DepthTest);
 	}
 
 	public void BeginOverflow()
 	{
 		overflowLayer += 1;
-		GL.StencilFunc(StencilFunction.Lequal, overflowLayer, mask: 0xff);
-		GL.StencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Incr);
+		StencilFunc(StencilFunction.Lequal, overflowLayer, mask: 0xff);
+		StencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Incr);
 	}
 
 	public void EndOverflow()
 	{
 		overflowLayer -= 1;
-		GL.StencilFunc(StencilFunction.Lequal, overflowLayer, mask: 0xff);
+		StencilFunc(StencilFunction.Lequal, overflowLayer, mask: 0xff);
 	}
 
 	public void DrawImage(Box2 bounds, Texture2D texture)
 	{
+		if (Camera == null)
+		{
+			return;
+		}
+		
 		var prevShader = ActiveShader;
 		ActiveShader = shader;
 		{
-			var convertedY = camera.WorldSize.Y - bounds.Size.Y - bounds.Y;
+			var convertedY = Camera.WorldSize.Y - bounds.Size.Y - bounds.Y;
 			shader.ModelMatrix = Matrix4.CreateScale(bounds.Size.X, bounds.Size.Y, z: 1) *
 			                     Matrix4.CreateTranslation(bounds.X, convertedY, z: 0);
 			shader.HasTexture = true;
 			shader.Texture0 = texture;
-			GL.DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
+			DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
 		}
 		ActiveShader = prevShader;
 	}
 
 	public void DrawText(Font font, TextRow row, int fontSize, Vector2 position, Color4<Rgba> color)
 	{
+		if (Camera == null)
+		{
+			return;
+		}
+		
 		var prevShader = ActiveShader;
 		var fontShader = font.Shader;
 		fontShader.FontAtlas = font.Atlas.Texture;
 		fontShader.BackgroundColor = Vector4.Zero;
 		fontShader.ForegroundColor = color.ToVector4();
 		fontShader.DistanceFieldRange = font.Atlas.DistanceRange;
-		fontShader.ProjectionMatrix = camera.Projection;
-		fontShader.ViewMatrix = camera.View;
+		fontShader.ProjectionMatrix = Camera.Projection;
+		fontShader.ViewMatrix = Camera.View;
 		ActiveShader = fontShader;
 		{
-			var virtualCursor = position;// - new Vector2(x: 0, font.ScaleEmToFontSize(font.Metrics.Descender, fontSize));
+			var virtualCursor =
+				position; // - new Vector2(x: 0, font.ScaleEmToFontSize(font.Metrics.Descender, fontSize));
 			// virtualCursor.Y = camera.WorldSize.Y - virtualCursor.Y;
 			// var yOffset = font.ScalePixelsToFontSize(camera.WorldSize.Y, fontSize) - ;
 			FontGlyph? previousGlyph = null;
@@ -164,10 +184,15 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		float borderBottomLeftRadius = default,
 		float borderBottomRightRadius = default)
 	{
+		if (Camera == null)
+		{
+			return;
+		}
+		
 		var prevShader = ActiveShader;
 		ActiveShader = shader;
 		{
-			var convertedY = camera.WorldSize.Y - bounds.Size.Y - bounds.Y;
+			var convertedY = Camera.WorldSize.Y - bounds.Size.Y - bounds.Y;
 			shader.ModelMatrix = Matrix4.CreateScale(bounds.Size.X, bounds.Size.Y, z: 1) *
 			                     Matrix4.CreateTranslation(bounds.X, convertedY, z: 0);
 			shader.BackgroundColor = color.ToVector4();
@@ -180,13 +205,19 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			shader.BorderBottomLeftRadius = borderBottomLeftRadius;
 			shader.BorderBottomRightRadius = borderBottomRightRadius;
 
-			GL.DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
+			DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
 		}
 		ActiveShader = prevShader;
 	}
 
-	private Vector2 DrawGlyph(Font font, int fontSize, FontGlyph glyph, FontGlyph? previousGlyph, Vector2 virtualCursor, float lineHeight)
+	private Vector2 DrawGlyph(Font font, int fontSize, FontGlyph glyph, FontGlyph? previousGlyph, Vector2 virtualCursor,
+		float lineHeight)
 	{
+		if (Camera == null)
+		{
+			return Vector2.Zero;
+		}
+		
 		var fontShader = font.Shader;
 		fontShader.UvBounds = RemapUV(font.Atlas.Texture, glyph.AtlasBounds);
 
@@ -198,9 +229,9 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		location.Y += lineHeight; // Move origin to top left corner instead of bottom left
 		var position = virtualCursor + location + new Vector2(kerning, y: 0);
 		fontShader.ModelMatrix = Matrix4.CreateScale(offset.Size.X, offset.Size.Y, z: 1) *
-		                         Matrix4.CreateTranslation(position.X, camera.WorldSize.Y - position.Y, z: 0);
+		                         Matrix4.CreateTranslation(position.X, Camera.WorldSize.Y - position.Y, z: 0);
 
-		GL.DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
+		DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
 
 		var advance = font.ScaleEmToFontSize(glyph.Advance, fontSize);
 		return virtualCursor + new Vector2(advance, y: 0);

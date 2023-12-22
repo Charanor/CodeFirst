@@ -107,8 +107,10 @@ public abstract class Component
 			}
 			graphicsProvider.EndOverflow();
 		}
-
-		DrawRectangles(graphicsProvider);
+		else
+		{
+			DrawRectangles(graphicsProvider);
+		}
 	}
 
 	private void DrawRectangles(IGraphicsProvider graphicsProvider)

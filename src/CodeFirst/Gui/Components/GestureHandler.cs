@@ -57,16 +57,15 @@ public class GestureHandler : View
 		var component = Scene!.Hit(mousePos);
 		var hitsThisOrChild = component is not null && (component == this || HasChild(component));
 
-		switch (hitsThisOrChild)
+		if (hitsThisOrChild && !cursorInside)
 		{
-			case true when !cursorInside:
-				cursorInside = true;
-				OnEnter?.Invoke(this, new GestureHandlerEnterEventArgs(component!));
-				break;
-			case false when cursorInside:
-				cursorInside = false;
-				OnExit?.Invoke(this, new GestureHandlerExitEventArgs(component));
-				break;
+			cursorInside = true;
+			OnEnter?.Invoke(this, new GestureHandlerEnterEventArgs(component!));
+		}
+		else if (!hitsThisOrChild && cursorInside)
+		{
+			cursorInside = false;
+			OnExit?.Invoke(this, new GestureHandlerExitEventArgs(component));
 		}
 	}
 }
