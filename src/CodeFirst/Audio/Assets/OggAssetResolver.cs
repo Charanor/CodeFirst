@@ -11,7 +11,7 @@ namespace CodeFirst.Audio.Assets;
 public class OggAssetResolver : IAssetResolver
 {
 	private const int MEGABYTES = 1_000_000;
-	private const int MAX_FILE_SIZE = 10 * MEGABYTES;
+	private const int MAX_FILE_SIZE = 25 * MEGABYTES;
 	private static readonly ILogger Logger = LoggingManager.Get<OggAssetResolver>();
 
 	public bool CanLoadAssetOfType(Type type) => type == typeof(Sound);
@@ -29,11 +29,10 @@ public class OggAssetResolver : IAssetResolver
 			using var stream = fileHandle.Read();
 			using var reader = new VorbisReader(stream, closeOnDispose: false);
 
-			var totalSize = reader.TotalSamples * sizeof(float);
-			if (totalSize > MAX_FILE_SIZE)
+			if (stream.Length > MAX_FILE_SIZE)
 			{
 				Logger.Warn(
-					$"Tried to load very large sound file {fileHandle}. Maximum file size is {MAX_FILE_SIZE} bytes, but got {totalSize}.");
+					$"Tried to load very large sound file {fileHandle}. Maximum file size is {MAX_FILE_SIZE} bytes, but got {stream.Length}.");
 				asset = default;
 				return false;
 			}
@@ -46,7 +45,9 @@ public class OggAssetResolver : IAssetResolver
 			var soundChannel = reader.Channels == 1 ? SoundChannel.Mono : SoundChannel.Stereo;
 			var sampleRate = reader.SampleRate;
 			var duration = (float)reader.TotalTime.TotalSeconds;
-			asset = MainThread.Post(() => new Sound(data, soundChannel, sampleRate, duration)).Result;
+			var assetTask = MainThread.Post(() => new Sound(data, soundChannel, sampleRate, duration));
+			assetTask.Wait();
+			asset = assetTask.Result;
 			return true;
 		}
 		catch (Exception e)
