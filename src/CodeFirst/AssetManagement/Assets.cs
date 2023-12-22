@@ -311,7 +311,7 @@ public static class Assets
 		if (assetTask.IsFaulted)
 		{
 			Logger.Warn($"{nameof(Get)}({asset}): Asset failed to load.");
-			throw new UnloadedAssetException(asset);
+			throw new UnloadedAssetException(asset, assetTask.Exception);
 		}
 
 		while (!assetTask.IsCompleted)
