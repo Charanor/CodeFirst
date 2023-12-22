@@ -123,6 +123,42 @@ public abstract class IteratingSystem : EntitySystem
 		AssertHasEntity(nameof(RemoveEntity));
 		base.Remove(CurrentEntity);
 	}
+	
+	/// <summary>
+	///     Called when an entity that will be processed by this EntitySystem is added to the parent <see cref="World" />.
+	/// </summary>
+	/// <remarks>
+	///     This <i>could</i> be called before <see cref="Initialize" /> is called (e.g. when first adding this EntitySystem to
+	///     the
+	///     World). However it is guaranteed that:
+	///     <list type="bullet">
+	///         <item>
+	///             <description><see cref="World" /> is non-null.</description>
+	///         </item>
+	///         <item>
+	///             <description><see cref="Entities" /> is non-null (but should not be modified).</description>
+	///         </item>
+	///         <item>
+	///             <description>Any dependencies are injected.</description>
+	///         </item>
+	///     </list>
+	/// </remarks>
+	/// <param name="entity">the entity that was added</param>
+	protected virtual void EntityAdded(Entity entity)
+	{
+	}
+
+	/// <summary>
+	///     Called when an entity that was processed by this EntitySystem is removed from the parent <see cref="World" />.
+	/// </summary>
+	/// <remarks>
+	///     Unlike <see cref="EntityAdded" />, this function will not be called until after <see cref="Initialize" />
+	///     has been called.
+	/// </remarks>
+	/// <param name="entity">the entity that was added</param>
+	protected virtual void EntityRemoved(Entity entity)
+	{
+	}
 
 	public bool IsCurrentEntity(Entity entity) => entity == CurrentEntity;
 

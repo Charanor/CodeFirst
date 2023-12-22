@@ -38,6 +38,8 @@ public class World : IDisposable
 		entitiesForAspects = new Dictionary<Aspect, SnapshotList<Entity>>();
 	}
 
+	protected IEnumerable<Entity> Entities => entities;
+
 	protected IList<EntitySystem> UpdateSystems { get; }
 	protected IList<EntitySystem> FixedUpdateSystems { get; }
 	protected IList<EntitySystem> DrawSystems { get; }
@@ -51,7 +53,7 @@ public class World : IDisposable
 	///     pass (if it is its time to run, that is).
 	/// </remarks>
 	public float FixedUpdateDelta { get; set; }
-
+	
 	public void Dispose()
 	{
 		GC.SuppressFinalize(this);

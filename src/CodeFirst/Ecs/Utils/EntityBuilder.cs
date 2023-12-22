@@ -21,7 +21,6 @@ public class EntityBuilder
 	{
 		World = world;
 		Entity = entity.IsValid ? entity : world.CreateEntity();
-		Console.WriteLine(Entity.Id);
 	}
 
 	/// <summary>
