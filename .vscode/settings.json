@@ -13,6 +13,7 @@
 		"ai",
 		"source-generator-utils",
 		"codefirst",
-		"cartography"
+		"cartography",
+		"physics"
 	]
 }

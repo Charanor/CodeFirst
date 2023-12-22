@@ -14,6 +14,7 @@ public class PhysicsWorld
 	private readonly QuadTree quadTree;
 	private readonly Dictionary<Guid, int> quadTreeIds;
 	private readonly Dictionary<Guid, int> quadTreeElements;
+	private readonly Dictionary<int, Guid> inverseQuadTreeElements;
 
 	private readonly Queue<int> reclaimedIds;
 	private int nextId;
@@ -26,6 +27,7 @@ public class PhysicsWorld
 		quadTree = new QuadTree(width, height, initialElementCount, initialMaxDepth);
 		quadTreeIds = new Dictionary<Guid, int>();
 		quadTreeElements = new Dictionary<Guid, int>();
+		inverseQuadTreeElements = new Dictionary<int, Guid>();
 
 		reclaimedIds = new Queue<int>();
 	}
@@ -43,9 +45,23 @@ public class PhysicsWorld
 
 		var id = GetNextQuadTreeId();
 		quadTreeIds.Add(newItem, id);
-		quadTreeElements.Add(newItem, quadTree.Insert(id, body.Left, body.Top, body.Right, body.Bottom));
+		var element = quadTree.Insert(id, body.Left, body.Top, body.Right, body.Bottom);
+		quadTreeElements.Add(newItem, element);
+		inverseQuadTreeElements.Add(element, newItem);
 
 		return newItem;
+	}
+
+	private void UpdateQuadtree(Guid guid, Box2 body)
+	{
+		var element = quadTreeElements[guid];
+		quadTree.Remove(element);
+		inverseQuadTreeElements.Remove(element);
+
+		var id = quadTreeIds[guid];
+		element = quadTree.Insert(id, body.Left, body.Top, body.Right, body.Bottom);
+		quadTreeElements[guid] = element;
+		inverseQuadTreeElements.Add(element, guid);
 	}
 
 	private int GetNextQuadTreeId()
@@ -79,6 +95,7 @@ public class PhysicsWorld
 		if (quadTreeElements.Remove(item, out var element))
 		{
 			quadTree.Remove(element);
+			inverseQuadTreeElements.Remove(element);
 		}
 	}
 
@@ -99,6 +116,7 @@ public class PhysicsWorld
 			return CollisionResult.Default;
 		}
 
+		var element = quadTreeElements[item];
 		filterFunction ??= DefaultCollisionFunction;
 
 		var body = bodies[item];
@@ -117,11 +135,17 @@ public class PhysicsWorld
 			var closestNormal = Vector2.Zero;
 			var closestResolution = CollisionResolution.None;
 			Guid closestGuid = default;
-			
-			foreach (var other in items)
+
+			var hits = quadTree.Query(broadphaseRectangle.Left, broadphaseRectangle.Top, broadphaseRectangle.Right,
+				broadphaseRectangle.Bottom, element);
+
+			for (var i = 0; i < hits.Size(); i++)
 			{
+				var otherElement = hits.Get(i, field: 0);
+				var other = inverseQuadTreeElements[otherElement];
 				if (other == item)
 				{
+					// This shouldn't happen, but sanity check anyways
 					continue;
 				}
 
@@ -159,10 +183,13 @@ public class PhysicsWorld
 				closestGuid = other;
 			}
 
-			// Move body all the way until it collides
-			// Also move body away from wall very slightly to prevent getting stuck on seams
-			const float seamMargin = 0.001f;
-			destination = body.Center + velocity * closestTheta + closestNormal * seamMargin;
+			void Separate()
+			{
+				// Move body all the way until it collides
+				// Also move body away from wall very slightly to prevent getting stuck on seams
+				const float seamMargin = 0.001f;
+				destination = body.Center + velocity * closestTheta + closestNormal * seamMargin;
+			}
 
 			if (!hasCollision)
 			{
@@ -186,11 +213,12 @@ public class PhysicsWorld
 				{
 					var slideDot = resolutionTheta * Vector2.Dot(velocity, closestNormal);
 					var slideDirection = resolutionTheta * velocity - slideDot / normalLengthSquared * closestNormal;
+					Separate();
 					destination += slideDirection;
 					break;
 				}
 				case CollisionResolution.Touch:
-					// Touch is already handled above, basically touch means only separate and nothing else
+					Separate();
 					break;
 				case CollisionResolution.Bounce:
 				{
@@ -206,12 +234,13 @@ public class PhysicsWorld
 						bounceNormal.X *= -1;
 					}
 
+					Separate();
 					destination += bounceNormal * resolutionTheta;
 					break;
 				}
 				case CollisionResolution.Cross:
 					// No separation, only record collision
-					break;
+					goto End; // goto, yikes!
 				case CollisionResolution.None: // Should never happen
 				default:
 					DevTools.Throw<PhysicsWorld>(new InvalidOperationException(
@@ -220,8 +249,10 @@ public class PhysicsWorld
 			}
 		}
 
+		End:
 		body.Center = destination;
 		bodies[item] = body;
+		UpdateQuadtree(item, body);
 		return new CollisionResult(body.Center, collisions);
 	}
 
@@ -252,8 +283,13 @@ public class PhysicsWorld
 		bodies[item] = body;
 
 		var collisions = new List<Collision>();
-		foreach (var otherItem in items)
+		var element = quadTreeElements[item];
+		var hits = quadTree.Query(body.Left, body.Top, body.Right, body.Bottom, element);
+
+		for (var i = 0; i < hits.Size(); i++)
 		{
+			var otherElement = hits.Get(i, field: 0);
+			var otherItem = inverseQuadTreeElements[otherElement];
 			if (otherItem == item)
 			{
 				continue;

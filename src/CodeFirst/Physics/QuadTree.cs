@@ -195,15 +195,15 @@ public class QuadTree
 
 	// Returns a list of elements found in the specified rectangle excluding the
 	// specified element to omit.
-	public IntList Query(float x1, float y1, float x2, float y2, int omitElement = -1)
+	public IntList Query(float xLeft, float yTop, float xRight, float yBottom, int omitElement = -1)
 	{
 		var result = new IntList(1);
 
 		// Find the leaves that intersect the specified query rectangle.
-		var queryLeft = Floor(x1);
-		var queryTop = Floor(y1);
-		var queryRight = Floor(x2);
-		var queryBottom = Floor(y2);
+		var queryLeft = Floor(xLeft);
+		var queryTop = Floor(yTop);
+		var queryRight = Floor(xRight);
+		var queryBottom = Floor(yBottom);
 		var leaves = FindLeaves(node: 0, depth: 0, rootX, rootY, rootWidth, rootHeight, queryLeft, queryTop, queryRight,
 			queryBottom);
 
