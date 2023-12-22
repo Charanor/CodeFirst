@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
@@ -22,11 +23,6 @@ public class GenerateShaderResources : IIncrementalGenerator
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		if (!Debugger.IsAttached)
-		{
-			// Debugger.Launch();
-		}
-
 		var files = context.AdditionalTextsProvider
 			.Where(static file => ValidShaderFileEndings.Contains(Path.GetExtension(file.Path)))
 			.Select(static (file, cancellationToken) =>
@@ -80,15 +76,23 @@ public class GenerateShaderResources : IIncrementalGenerator
 
 			var definitions = shaderFiles.SelectMany(shaderFile =>
 			{
-				var (_, shaderType, shaderSource) = shaderFile;
-				var inputStream = new AntlrInputStream(shaderSource);
-				var lexer = new GLSLLexer(inputStream);
-				var commonTokenStream = new CommonTokenStream(lexer);
-				var parser = new GLSLParser(commonTokenStream);
-				var visitor = new ShaderVisitor(shaderType);
-				return visitor.Visit(parser.translation_unit()).Append(new GLSLShaderSource(shaderType, shaderSource));
+				try
+				{
+					var (_, shaderType, shaderSource) = shaderFile;
+					var inputStream = new AntlrInputStream(shaderSource);
+					var lexer = new GLSLLexer(inputStream);
+					var commonTokenStream = new CommonTokenStream(lexer);
+					var parser = new GLSLParser(commonTokenStream);
+					var visitor = new ShaderVisitor(shaderType);
+					return visitor.Visit(parser.translation_unit()).Append(new GLSLShaderSource(shaderType, shaderSource));
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine(e);
+					throw;
+				}
 			});
-
+			
 			var classSource = new ShaderClassGenerator(className, definitions).GenerateClassSource();
 			context.AddSource($"{className}.g.cs", SourceText.From(classSource, Encoding.UTF8));
 		}
