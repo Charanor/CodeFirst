@@ -45,7 +45,7 @@ public abstract class Camera
 	// 		Yaw = yaw;
 	// 	}
 	// }
-	
+
 	public float Pitch
 	{
 		get => Rotation.X;
@@ -92,70 +92,72 @@ public abstract class Camera
 
 	public abstract Matrix4 Projection { get; }
 	public abstract Matrix4 View { get; }
-	
+
 	public abstract Frustum Frustum { get; }
+
+	public Box2 OrthographicBounds => new(Position.Xy - WindowSize / 2f, Position.Xy + WorldSize / 2f);
 
 	// public Frustum Frustum
 	// {
-		// get
-		// {
-		// 	// var View = this.View * Matrix4.CreateTranslation(Position);
-		// 	var clipMatrix = new float[16];
-		//
-		// 	clipMatrix[0] = View.M11 * Projection.M11 + View.M12 * Projection.M21 + View.M13 * Projection.M31 +
-		// 	                View.M14 * Projection.M41;
-		// 	clipMatrix[1] = View.M11 * Projection.M12 + View.M12 * Projection.M22 + View.M13 * Projection.M32 +
-		// 	                View.M14 * Projection.M42;
-		// 	clipMatrix[2] = View.M11 * Projection.M13 + View.M12 * Projection.M23 + View.M13 * Projection.M33 +
-		// 	                View.M14 * Projection.M43;
-		// 	clipMatrix[3] = View.M11 * Projection.M14 + View.M12 * Projection.M24 + View.M13 * Projection.M34 +
-		// 	                View.M14 * Projection.M44;
-		//
-		// 	clipMatrix[4] = View.M21 * Projection.M11 + View.M22 * Projection.M21 + View.M23 * Projection.M31 +
-		// 	                View.M24 * Projection.M41;
-		// 	clipMatrix[5] = View.M21 * Projection.M12 + View.M22 * Projection.M22 + View.M23 * Projection.M32 +
-		// 	                View.M24 * Projection.M42;
-		// 	clipMatrix[6] = View.M21 * Projection.M13 + View.M22 * Projection.M23 + View.M23 * Projection.M33 +
-		// 	                View.M24 * Projection.M43;
-		// 	clipMatrix[7] = View.M21 * Projection.M14 + View.M22 * Projection.M24 + View.M23 * Projection.M34 +
-		// 	                View.M24 * Projection.M44;
-		//
-		// 	clipMatrix[8] = View.M31 * Projection.M11 + View.M32 * Projection.M21 + View.M33 * Projection.M31 +
-		// 	                View.M34 * Projection.M41;
-		// 	clipMatrix[9] = View.M31 * Projection.M12 + View.M32 * Projection.M22 + View.M33 * Projection.M32 +
-		// 	                View.M34 * Projection.M42;
-		// 	clipMatrix[10] = View.M31 * Projection.M13 + View.M32 * Projection.M23 + View.M33 * Projection.M33 +
-		// 	                 View.M34 * Projection.M43;
-		// 	clipMatrix[11] = View.M31 * Projection.M14 + View.M32 * Projection.M24 + View.M33 * Projection.M34 +
-		// 	                 View.M34 * Projection.M44;
-		//
-		// 	clipMatrix[12] = View.M41 * Projection.M11 + View.M42 * Projection.M21 + View.M43 * Projection.M31 +
-		// 	                 View.M44 * Projection.M41;
-		// 	clipMatrix[13] = View.M41 * Projection.M12 + View.M42 * Projection.M22 + View.M43 * Projection.M32 +
-		// 	                 View.M44 * Projection.M42;
-		// 	clipMatrix[14] = View.M41 * Projection.M13 + View.M42 * Projection.M23 + View.M43 * Projection.M33 +
-		// 	                 View.M44 * Projection.M43;
-		// 	clipMatrix[15] = View.M41 * Projection.M14 + View.M42 * Projection.M24 + View.M43 * Projection.M34 +
-		// 	                 View.M44 * Projection.M44;
-		//
-		// 	var nearVector = new Vector4(clipMatrix[0], clipMatrix[1], clipMatrix[2], clipMatrix[3]).Normalized();
-		// 	var near = new Plane(nearVector.Xyz, nearVector.W);
-		// 	var farVector = new Vector4(clipMatrix[4], clipMatrix[5], clipMatrix[6], clipMatrix[7]).Normalized();
-		// 	var far = new Plane(farVector.Xyz, farVector.W);
-		// 	var leftVector = new Vector4(clipMatrix[8], clipMatrix[9], clipMatrix[10], clipMatrix[11]).Normalized();
-		// 	var left = new Plane(leftVector.Xyz, leftVector.W);
-		// 	var rightVector = new Vector4(clipMatrix[12], clipMatrix[13], clipMatrix[14], clipMatrix[15]).Normalized();
-		// 	var right = new Plane(rightVector.Xyz, rightVector.W);
-		//
-		// 	var topVector = new Vector4(clipMatrix[4] - clipMatrix[1], clipMatrix[5] - clipMatrix[9],
-		// 		clipMatrix[6] - clipMatrix[13], clipMatrix[7] - clipMatrix[15]).Normalized();
-		// 	var top = new Plane(topVector.Xyz, topVector.W);
-		// 	var bottomVector = new Vector4(clipMatrix[4] + clipMatrix[1], clipMatrix[5] + clipMatrix[9],
-		// 		clipMatrix[6] + clipMatrix[13], clipMatrix[7] + clipMatrix[15]).Normalized();
-		// 	var bottom = new Plane(bottomVector.Xyz, bottomVector.W);
-		//
-		// 	return new Frustum(near, far, left, right, top, bottom);
-		// }
+	// get
+	// {
+	// 	// var View = this.View * Matrix4.CreateTranslation(Position);
+	// 	var clipMatrix = new float[16];
+	//
+	// 	clipMatrix[0] = View.M11 * Projection.M11 + View.M12 * Projection.M21 + View.M13 * Projection.M31 +
+	// 	                View.M14 * Projection.M41;
+	// 	clipMatrix[1] = View.M11 * Projection.M12 + View.M12 * Projection.M22 + View.M13 * Projection.M32 +
+	// 	                View.M14 * Projection.M42;
+	// 	clipMatrix[2] = View.M11 * Projection.M13 + View.M12 * Projection.M23 + View.M13 * Projection.M33 +
+	// 	                View.M14 * Projection.M43;
+	// 	clipMatrix[3] = View.M11 * Projection.M14 + View.M12 * Projection.M24 + View.M13 * Projection.M34 +
+	// 	                View.M14 * Projection.M44;
+	//
+	// 	clipMatrix[4] = View.M21 * Projection.M11 + View.M22 * Projection.M21 + View.M23 * Projection.M31 +
+	// 	                View.M24 * Projection.M41;
+	// 	clipMatrix[5] = View.M21 * Projection.M12 + View.M22 * Projection.M22 + View.M23 * Projection.M32 +
+	// 	                View.M24 * Projection.M42;
+	// 	clipMatrix[6] = View.M21 * Projection.M13 + View.M22 * Projection.M23 + View.M23 * Projection.M33 +
+	// 	                View.M24 * Projection.M43;
+	// 	clipMatrix[7] = View.M21 * Projection.M14 + View.M22 * Projection.M24 + View.M23 * Projection.M34 +
+	// 	                View.M24 * Projection.M44;
+	//
+	// 	clipMatrix[8] = View.M31 * Projection.M11 + View.M32 * Projection.M21 + View.M33 * Projection.M31 +
+	// 	                View.M34 * Projection.M41;
+	// 	clipMatrix[9] = View.M31 * Projection.M12 + View.M32 * Projection.M22 + View.M33 * Projection.M32 +
+	// 	                View.M34 * Projection.M42;
+	// 	clipMatrix[10] = View.M31 * Projection.M13 + View.M32 * Projection.M23 + View.M33 * Projection.M33 +
+	// 	                 View.M34 * Projection.M43;
+	// 	clipMatrix[11] = View.M31 * Projection.M14 + View.M32 * Projection.M24 + View.M33 * Projection.M34 +
+	// 	                 View.M34 * Projection.M44;
+	//
+	// 	clipMatrix[12] = View.M41 * Projection.M11 + View.M42 * Projection.M21 + View.M43 * Projection.M31 +
+	// 	                 View.M44 * Projection.M41;
+	// 	clipMatrix[13] = View.M41 * Projection.M12 + View.M42 * Projection.M22 + View.M43 * Projection.M32 +
+	// 	                 View.M44 * Projection.M42;
+	// 	clipMatrix[14] = View.M41 * Projection.M13 + View.M42 * Projection.M23 + View.M43 * Projection.M33 +
+	// 	                 View.M44 * Projection.M43;
+	// 	clipMatrix[15] = View.M41 * Projection.M14 + View.M42 * Projection.M24 + View.M43 * Projection.M34 +
+	// 	                 View.M44 * Projection.M44;
+	//
+	// 	var nearVector = new Vector4(clipMatrix[0], clipMatrix[1], clipMatrix[2], clipMatrix[3]).Normalized();
+	// 	var near = new Plane(nearVector.Xyz, nearVector.W);
+	// 	var farVector = new Vector4(clipMatrix[4], clipMatrix[5], clipMatrix[6], clipMatrix[7]).Normalized();
+	// 	var far = new Plane(farVector.Xyz, farVector.W);
+	// 	var leftVector = new Vector4(clipMatrix[8], clipMatrix[9], clipMatrix[10], clipMatrix[11]).Normalized();
+	// 	var left = new Plane(leftVector.Xyz, leftVector.W);
+	// 	var rightVector = new Vector4(clipMatrix[12], clipMatrix[13], clipMatrix[14], clipMatrix[15]).Normalized();
+	// 	var right = new Plane(rightVector.Xyz, rightVector.W);
+	//
+	// 	var topVector = new Vector4(clipMatrix[4] - clipMatrix[1], clipMatrix[5] - clipMatrix[9],
+	// 		clipMatrix[6] - clipMatrix[13], clipMatrix[7] - clipMatrix[15]).Normalized();
+	// 	var top = new Plane(topVector.Xyz, topVector.W);
+	// 	var bottomVector = new Vector4(clipMatrix[4] + clipMatrix[1], clipMatrix[5] + clipMatrix[9],
+	// 		clipMatrix[6] + clipMatrix[13], clipMatrix[7] + clipMatrix[15]).Normalized();
+	// 	var bottom = new Plane(bottomVector.Xyz, bottomVector.W);
+	//
+	// 	return new Frustum(near, far, left, right, top, bottom);
+	// }
 	// }
 
 	protected abstract Viewport UpdateViewport(int windowWidth, int windowHeight);

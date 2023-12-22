@@ -23,14 +23,19 @@ public class Buffer<TData> : NativeResource where TData : unmanaged
 	public Buffer(nint reservedSpace, VertexBufferObjectUsage usage)
 	{
 		Handle = CreateBuffer();
-		NamedBufferData(Handle, reservedSpace, IntPtr.Zero, usage);
+		NamedBufferData(Handle, reservedSpace, nint.Zero, usage);
 	}
 
 	public BufferHandle Handle { get; }
 
 	public void SetData(ReadOnlySpan<TData> data)
 	{
-		NamedBufferSubData(this, IntPtr.Zero, data);
+		NamedBufferSubData(this, nint.Zero, data);
+	}
+
+	public void SetData(ReadOnlySpan<TData> data, int count)
+	{
+		NamedBufferSubData(this, nint.Zero, data[..count]);
 	}
 
 	protected override void DisposeNativeResources()

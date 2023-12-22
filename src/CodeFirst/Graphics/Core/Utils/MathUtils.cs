@@ -63,4 +63,17 @@ public static class MathUtils
 		var angle = Vector3.CalculateAngle(from, to);
 		return Quaternion.FromAxisAngle(axis, angle);
 	}
+
+	public static float Clamp(this float value, float min, float max) => MathHelper.Clamp(value, min, max);
+	public static int Clamp(this int value, int min, int max) => MathHelper.Clamp(value, min, max);
+
+	public static float LimitMagnitude(this float value, float magnitude)
+	{
+		if (MathF.Abs(value) > magnitude)
+		{
+			return magnitude * MathF.Sign(value);
+		}
+
+		return value;
+	}
 }
