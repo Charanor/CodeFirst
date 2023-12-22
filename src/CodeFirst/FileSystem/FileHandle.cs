@@ -159,6 +159,8 @@ public record FileHandle(string FilePath)
 		}
 	}
 
+	public Uri AsUri() => new(Path.GetFullPath(FilePath));
+
 	private static bool CreateFile(string path)
 	{
 		using var file = File.Create(path);
