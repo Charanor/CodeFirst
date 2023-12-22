@@ -28,6 +28,10 @@ public class Plane
 		inversePlanePointsDistance = 1.0f / MathF.Sqrt(A * A + B * B + C * C);
 	}
 
+	public Plane(float a, float b, float c, float d) : this(Vector3.Normalize(new Vector3(a, b, c)), d)
+	{
+	}
+
 	public Vector3 Normal { get; }
 
 	public float DistanceFromOrigin { get; }

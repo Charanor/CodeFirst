@@ -28,20 +28,20 @@ public class OrthographicCamera : Camera
 			var nearWidth = nearHeight * aspectRatio;
 			var farHeight = 2 * MathF.Tan(0) * FarClippingPlane;
 			var farWidth = farHeight * aspectRatio;
-
+	
 			var nearCenter = Position + Forward * NearClippingPlane;
 			var farCenter = Position + Forward * FarClippingPlane;
-
+	
 			var nearBottomLeft = nearCenter - Up * (nearHeight / 2.0f) - Right * (nearWidth / 2.0f);
 			var nearBottomRight = nearCenter - Up * (nearHeight / 2.0f) + Right * (nearWidth / 2.0f);
 			var nearTopLeft = nearCenter + Up * (nearHeight / 2.0f) - Right * (nearWidth / 2.0f);
 			var nearTopRight = nearCenter + Up * (nearHeight / 2.0f) + Right * (nearWidth / 2.0f);
-
+	
 			var farBottomLeft = farCenter - Up * (farHeight / 2.0f) - Right * (farWidth / 2.0f);
 			var farBottomRight = farCenter - Up * (farHeight / 2.0f) + Right * (farWidth / 2.0f);
 			var farTopLeft = farCenter + Up * (farHeight / 2.0f) - Right * (farWidth / 2.0f);
 			var farTopRight = farCenter + Up * (farHeight / 2.0f) + Right * (farWidth / 2.0f);
-
+	
 			return new Frustum(
 				new Plane(nearBottomLeft, nearBottomRight, nearTopLeft), // Near
 				new Plane(farTopLeft, farTopRight, farBottomLeft), // Far

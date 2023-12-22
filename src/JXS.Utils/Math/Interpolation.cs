@@ -80,6 +80,21 @@ public class Interpolation
 	///     Only works when all of the dynamic types are the same underlying type, and they all allow for the
 	///     addition (+), subtraction (-), and multiplication (*) operators between their own types AND <c>float</c>.
 	/// </remarks>
+	public static T Spring<T>(T from, T to, ref T vel, float smoothTime, float delta)
+	{
+		var dynamicVel = (dynamic)vel; // We can't ref of a different type, so we need this intermediate variable
+		return SpringDynamic(from, to, ref dynamicVel, smoothTime, delta);
+	}
+
+	/// <summary>
+	///     This is a bit of a hack. We use <c>dynamic</c> so we don't have to copy+paste this function
+	///     implementation over and over again for each type we want to implement. With .NET 6 preview features
+	///     we could do this using arithmetic interfaces, but for now this is a fine workaround.
+	/// </summary>
+	/// <remarks>
+	///     Only works when all of the dynamic types are the same underlying type, and they all allow for the
+	///     addition (+), subtraction (-), and multiplication (*) operators between their own types AND <c>float</c>.
+	/// </remarks>
 	private static dynamic SpringDynamic(dynamic from, dynamic to, ref dynamic vel, float smoothTime, float delta)
 	{
 		// Game Programming Gems 4: 1.10
