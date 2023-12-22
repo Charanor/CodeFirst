@@ -16,6 +16,7 @@ public class Sound
 	private const int MIN_VOLUME = 0;
 	private const int MAX_VOLUME = 1;
 
+	private readonly List<SoundInstance> currentInstances = new();
 	private readonly Queue<AudioSource> availableAudioSources = new();
 
 	private readonly AudioBuffer buffer;
@@ -51,6 +52,14 @@ public class Sound
 
 		return src;
 	}
+	
+	/// <summary>
+	///		The max. number of concurrent sound instances of this <see cref="Sound"/>. If &lt;= 0 there is no limit.
+	/// </summary>
+	/// <remarks>
+	///		When the instance limit has been met any call to `Play` will return <c>null</c>.
+	/// </remarks>
+	public int InstanceLimit { get; set; }
 
 	private void FreeSource(AudioSource source)
 	{
@@ -62,9 +71,14 @@ public class Sound
 	/// </summary>
 	/// <remarks>The <paramref name="freeOnStop" /> parameter <b>requires</b> <see cref="Coroutines"/> to be available and processed.</remarks>
 	/// <returns>the new playing instance</returns>
-	public SoundInstance Play([ValueRange(MIN_VOLUME, MAX_VOLUME)] float volume = 1f, bool looping = false,
+	public SoundInstance? Play([ValueRange(MIN_VOLUME, MAX_VOLUME)] float volume = 1f, bool looping = false,
 		bool freeOnStop = false)
 	{
+		if (InstanceLimit > 0 && currentInstances.Count >= InstanceLimit)
+		{
+			return null;
+		}
+		
 		var source = ObtainSource();
 		source.Volume = MathHelper.Clamp(volume, MIN_VOLUME, MAX_VOLUME);
 		source.Looping = looping;
@@ -86,11 +100,13 @@ public class Sound
 			soundInstance.Free();
 		}
 
+		currentInstances.Add(soundInstance);
 		return soundInstance;
 	}
 
 	internal void FreeInstance(SoundInstance instance)
 	{
+		currentInstances.Remove(instance);
 		FreeSource(instance.Source);
 	}
 }
