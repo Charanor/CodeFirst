@@ -5,6 +5,7 @@ using CodeFirst.AssetManagement;
 using CodeFirst.FileSystem;
 using CodeFirst.Graphics.Core;
 using CodeFirst.Graphics.Core.Assets;
+using CodeFirst.Utils;
 using OpenTK.Mathematics;
 
 namespace CodeFirst.Graphics.Text.Assets;
@@ -37,7 +38,9 @@ public class FontAssetResolver : IAssetResolver
 		var atlas2D = textureAtlas as Texture2D;
 		Debug.Assert(atlas2D != null);
 
-		asset = LoadJsonFont(fontName, fileContents, atlas2D);
+		var createFontTask = MainThread.Post(() => LoadJsonFont(fontName, fileContents, atlas2D));
+		createFontTask.Wait();
+		asset = createFontTask.Result;
 		return true;
 	}
 
