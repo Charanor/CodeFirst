@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeFirst", "src\CodeFirst\CodeFirst.csproj", "{8185DC56-4158-4D5D-A581-09C8B136DAA2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeFirst.Generators", "src\CodeFirst.Generators\CodeFirst.Generators.csproj", "{2A6E957A-8B67-4DE4-9727-13E499CA8ED6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8185DC56-4158-4D5D-A581-09C8B136DAA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8185DC56-4158-4D5D-A581-09C8B136DAA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8185DC56-4158-4D5D-A581-09C8B136DAA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8185DC56-4158-4D5D-A581-09C8B136DAA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A6E957A-8B67-4DE4-9727-13E499CA8ED6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A6E957A-8B67-4DE4-9727-13E499CA8ED6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A6E957A-8B67-4DE4-9727-13E499CA8ED6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A6E957A-8B67-4DE4-9727-13E499CA8ED6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

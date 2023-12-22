@@ -6,7 +6,7 @@
 ///     calls the entity processing method.
 /// </summary>
 /// <remarks>
-///     Only works when the <c>JXS.Ecs.Generators</c> package is installed. If that package is not installed, this
+///     Only works when the <c>CodeFirst.Generators</c> package is installed. If that package is not installed, this
 ///     attribute does nothing.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Method)]
