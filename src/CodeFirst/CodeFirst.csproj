@@ -9,6 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <AdditionalFiles Include="Graphics\G2D\Shaders\SpriteBatch.frag" />
+        <AdditionalFiles Include="Graphics\G2D\Shaders\SpriteBatch.vert" />
         <AdditionalFiles Include="Graphics\Text\Shaders\MtsdfFont.frag" />
         <AdditionalFiles Include="Graphics\Text\Shaders\MtsdfFont.vert" />
         <AdditionalFiles Include="Gui\Shaders\BasicGraphics.frag" />
