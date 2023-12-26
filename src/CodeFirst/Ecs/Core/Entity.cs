@@ -21,7 +21,7 @@ public readonly record struct Entity
 	///     This is the ONLY <b>invalid</b> entity that has well-defined behavior, and that behavior is valid
 	///     <b>when and ONLY when</b> interfacing with <see cref="SingletonComponentMapper{T}" /> instances!
 	/// </remarks>
-	public static readonly Entity SingletonEntity = default;
+	public static readonly Entity SingletonEntity = new(-2);
 
 	internal Entity(int id)
 	{
@@ -53,5 +53,5 @@ public readonly record struct Entity
 
 	public override string ToString() => this == SingletonEntity
 		? "SingletonEntity"
-		: $"{(IsValid ? string.Empty : "Invalid")}Entity({Id})";
+		: $"{(IsValid ? string.Empty : "Invalid")}Entity{(Id != 0 ? $"({Id})" : string.Empty)}";
 }
