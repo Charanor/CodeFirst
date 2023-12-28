@@ -9,13 +9,13 @@ public partial class Frame
 	public YogaDisplay Display { get; set; } = YogaDisplay.Flex;
 	public YogaOverflow Overflow { get; set; } = YogaOverflow.Visible;
 
-	public float Flex { get; set; } = float.NaN;
-	public float FlexShrink { get; set; } = float.NaN;
-	public float FlexGrow { get; set; } = float.NaN;
+	public float Flex { get; set; } = YogaConstants.Undefined;
+	public float FlexShrink { get; set; } = YogaConstants.Undefined;
+	public float FlexGrow { get; set; } = YogaConstants.Undefined;
 	public YogaValue FlexBasis { get; set; } = YogaValue.Auto();
 	public YogaFlexDirection FlexDirection { get; set; } = YogaFlexDirection.Row;
 
-	public float AspectRatio { get; set; } = float.NaN;
+	public float AspectRatio { get; set; } = YogaConstants.Undefined;
 
 	public YogaJustify JustifyContent { get; set; } = YogaJustify.FlexStart;
 	public YogaAlign AlignContent { get; set; } = YogaAlign.FlexStart;
@@ -51,16 +51,16 @@ public partial class Frame
 	public YogaValue MaxHeight { get; set; } = YogaValue.Undefined();
 
 	public float BorderWidth { get; set; } // Not NaN!
-	public float BorderBottomWidth { get; set; } = float.NaN;
-	public float BorderTopWidth { get; set; } = float.NaN;
-	public float BorderLeftWidth { get; set; } = float.NaN;
-	public float BorderRightWidth { get; set; } = float.NaN;
+	public float BorderBottomWidth { get; set; } = YogaConstants.Undefined;
+	public float BorderTopWidth { get; set; } = YogaConstants.Undefined;
+	public float BorderLeftWidth { get; set; } = YogaConstants.Undefined;
+	public float BorderRightWidth { get; set; } = YogaConstants.Undefined;
 
 	public float BorderRadius { get; set; } // Not NaN!
-	public float BorderTopLeftRadius { get; set; } = float.NaN;
-	public float BorderTopRightRadius { get; set; } = float.NaN;
-	public float BorderBottomLeftRadius { get; set; } = float.NaN;
-	public float BorderBottomRightRadius { get; set; } = float.NaN;
+	public float BorderTopLeftRadius { get; set; } = YogaConstants.Undefined;
+	public float BorderTopRightRadius { get; set; } = YogaConstants.Undefined;
+	public float BorderBottomLeftRadius { get; set; } = YogaConstants.Undefined;
+	public float BorderBottomRightRadius { get; set; } = YogaConstants.Undefined;
 
 	public Color4<Rgba> BorderColor { get; set; }
 	public Color4<Rgba> BackgroundColor { get; set; }

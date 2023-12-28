@@ -24,6 +24,9 @@ public partial class Frame
 
 	public Transform Transform { get; }
 
+	/// <summary>
+	///     A shorthand for getting and setting <see cref="Display" />.
+	/// </summary>
 	public bool Visible
 	{
 		get => Display != YogaDisplay.None;
@@ -31,8 +34,8 @@ public partial class Frame
 	}
 
 	/// <summary>
-	///		A shorthand for getting and setting <see cref="BorderLeftWidth"/>, <see cref="BorderRightWidth"/>,
-	///		<see cref="BorderTopWidth"/>, and <see cref="BorderBottomWidth"/>.
+	///     A shorthand for getting and setting <see cref="BorderLeftWidth" />, <see cref="BorderRightWidth" />,
+	///     <see cref="BorderTopWidth" />, and <see cref="BorderBottomWidth" />.
 	/// </summary>
 	public BorderSize BorderSize
 	{
@@ -47,8 +50,8 @@ public partial class Frame
 	}
 
 	/// <summary>
-	///		A shorthand for getting and setting <see cref="BorderTopLeftRadius"/>, <see cref="BorderTopRightRadius"/>,
-	///		<see cref="BorderBottomLeftRadius"/>, and <see cref="BorderBottomRightRadius"/>.
+	///     A shorthand for getting and setting <see cref="BorderTopLeftRadius" />, <see cref="BorderTopRightRadius" />,
+	///     <see cref="BorderBottomLeftRadius" />, and <see cref="BorderBottomRightRadius" />.
 	/// </summary>
 	public BorderRadii BorderRadii
 	{
