@@ -61,7 +61,7 @@ public class OrthographicCamera : Camera
 			MathF.Round(viewportSize.X),
 			MathF.Round(viewportSize.Y)
 		);
-
+		
 		return new Viewport(
 			(int)(screenWidth - viewportWidth) / 2,
 			(int)(screenHeight - viewportHeight) / 2,

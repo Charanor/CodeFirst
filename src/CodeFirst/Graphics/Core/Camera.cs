@@ -95,7 +95,7 @@ public abstract class Camera
 
 	public abstract Frustum Frustum { get; }
 
-	public Box2 OrthographicBounds => new(Position.Xy - WindowSize / 2f, Position.Xy + WorldSize / 2f);
+	public Box2 OrthographicBounds => new(Position.Xy - WorldSize / 2f, Position.Xy + WorldSize / 2f);
 
 	// public Frustum Frustum
 	// {
