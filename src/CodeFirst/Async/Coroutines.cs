@@ -23,7 +23,7 @@ public static class Coroutines
 			return;
 		}
 
-		using var handle = DurationCoroutines.BeginHandle(SnapshotList<Coroutine>.HandleAction.Commit);
+		using var handle = DurationCoroutines.BeginHandle(HandleAction.Commit);
 		var (items, count) = handle;
 		for (var i = 0; i < count; i++)
 		{
@@ -56,7 +56,7 @@ public static class Coroutines
 
 	private static void RaiseEventInternal(Event evt)
 	{
-		using var handle = EventCoroutines.BeginHandle(SnapshotList<Coroutine>.HandleAction.Commit);
+		using var handle = EventCoroutines.BeginHandle(HandleAction.Commit);
 		var (items, count) = handle;
 		for (var i = 0; i < count; i++)
 		{

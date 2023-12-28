@@ -43,7 +43,7 @@ public interface IReadOnlySnapshotList<T> : IEnumerable<T>
 	///     This will be called immediately when an item is added, even if currently iterating over this list, and will
 	///     not respect a call to <see cref="SnapshotList{T}.Discard" />
 	/// </remarks>
-	event EventHandler<SnapshotList<T>, EventArgs<T>>? OnItemAdded;
+	event EventHandler<IReadOnlySnapshotList<T>, EventArgs<T>>? OnItemAdded;
 
 	/// <summary>
 	///     Called when an item is removed from this list.
@@ -52,7 +52,7 @@ public interface IReadOnlySnapshotList<T> : IEnumerable<T>
 	///     This will be called immediately when an item is removed, even if currently iterating over this list, and will
 	///     not respect a call to <see cref="SnapshotList{T}.Discard" />
 	/// </remarks>
-	event EventHandler<SnapshotList<T>, EventArgs<T>>? OnItemRemoved;
+	event EventHandler<IReadOnlySnapshotList<T>, EventArgs<T>>? OnItemRemoved;
 
 	/// <summary>
 	///     Begins safe iteration over this list. The returned array is guaranteed to not change until a call to
@@ -84,8 +84,7 @@ public interface IReadOnlySnapshotList<T> : IEnumerable<T>
 	/// <param name="size">the size of the safely iterable array</param>
 	void Begin(out T[] outputIteratingArray, out int size);
 
-	SnapshotList<T>.SnapshotListIterationHandle BeginHandle(
-		SnapshotList<T>.HandleAction defaultAction = SnapshotList<T>.HandleAction.Discard);
+	SnapshotListIterationHandle<T> BeginHandle(HandleAction defaultAction = HandleAction.Discard);
 
 	/// <summary>
 	///     Commits the changes made inside of a Begin/Commit block and ends iteration.

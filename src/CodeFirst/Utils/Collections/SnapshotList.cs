@@ -20,12 +20,6 @@ namespace CodeFirst.Utils.Collections;
 /// <typeparam name="T">the item type</typeparam>
 public class SnapshotList<T> : IList<T>, ISnapshotList<T>
 {
-	public enum HandleAction
-	{
-		Discard,
-		Commit
-	}
-
 	private readonly IList<T> backingList;
 	private T[] iteratingArray;
 
@@ -207,7 +201,7 @@ public class SnapshotList<T> : IList<T>, ISnapshotList<T>
 	///     This will be called immediately when an item is added, even if currently iterating over this list, and will
 	///     not respect a call to <see cref="Discard" />
 	/// </remarks>
-	public event EventHandler<SnapshotList<T>, EventArgs<T>>? OnItemAdded;
+	public event EventHandler<IReadOnlySnapshotList<T>, EventArgs<T>>? OnItemAdded;
 
 	/// <summary>
 	///     Called when an item is removed from this list.
@@ -216,7 +210,7 @@ public class SnapshotList<T> : IList<T>, ISnapshotList<T>
 	///     This will be called immediately when an item is removed, even if currently iterating over this list, and will
 	///     not respect a call to <see cref="Discard" />
 	/// </remarks>
-	public event EventHandler<SnapshotList<T>, EventArgs<T>>? OnItemRemoved;
+	public event EventHandler<IReadOnlySnapshotList<T>, EventArgs<T>>? OnItemRemoved;
 
 	/// <summary>
 	///     Removes an item from this list. Will not be removed from the iterating array inside of a Begin/Commit block
@@ -288,7 +282,7 @@ public class SnapshotList<T> : IList<T>, ISnapshotList<T>
 		(outputIteratingArray, size) = Begin();
 	}
 
-	public SnapshotListIterationHandle BeginHandle(HandleAction defaultAction = HandleAction.Discard) =>
+	public SnapshotListIterationHandle<T> BeginHandle(HandleAction defaultAction = HandleAction.Discard) =>
 		new(this, defaultAction);
 
 	/// <summary>
@@ -336,77 +330,6 @@ public class SnapshotList<T> : IList<T>, ISnapshotList<T>
 		if (IsIterating)
 		{
 			modified = true;
-		}
-	}
-
-	public sealed class SnapshotListIterationHandle : IDisposable, IEnumerable<T>
-	{
-		private readonly SnapshotList<T> list;
-		private readonly HandleAction defaultAction;
-		private readonly T[] items;
-		private readonly int count;
-
-		private bool hasEnded;
-
-		public SnapshotListIterationHandle(SnapshotList<T> list, HandleAction defaultAction = HandleAction.Discard)
-		{
-			this.list = list;
-			this.defaultAction = defaultAction;
-			list.Begin(out items, out count);
-			hasEnded = false;
-		}
-
-		public void Dispose()
-		{
-			switch (defaultAction)
-			{
-				case HandleAction.Discard:
-					Discard();
-					break;
-				case HandleAction.Commit:
-					Commit();
-					break;
-				default:
-					throw new ArgumentOutOfRangeException();
-			}
-		}
-
-		public IEnumerator<T> GetEnumerator()
-		{
-			for (var i = 0; i < count; i++)
-			{
-				yield return items[i];
-			}
-		}
-
-		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-		public void Discard()
-		{
-			if (hasEnded)
-			{
-				return;
-			}
-
-			hasEnded = true;
-			list.Discard();
-		}
-
-		public void Commit()
-		{
-			if (hasEnded)
-			{
-				return;
-			}
-
-			hasEnded = true;
-			list.Commit();
-		}
-
-		public void Deconstruct(out T[] outItems, out int outCount)
-		{
-			outItems = items;
-			outCount = count;
 		}
 	}
 }
