@@ -1,4 +1,5 @@
-﻿using CodeFirst.Utils.Events;
+﻿using CodeFirst.Gui.Events;
+using CodeFirst.Utils.Events;
 using OpenTK.Mathematics;
 
 namespace CodeFirst.Gui;
@@ -6,18 +7,18 @@ namespace CodeFirst.Gui;
 public partial class Frame
 {
 	/// <summary>
-	///		If input events can hit this frame. Defaults to <c>false</c>.
+	///     If input events can hit this frame. Defaults to <c>false</c>.
 	/// </summary>
 	/// <remarks>
-	///		If <c>false</c> input events will still propagate to this frame's children unless
-	///		<see cref="PropagateInputsToChildren"/> is also <c>false</c>.
+	///     If <c>false</c> input events will still propagate to this frame's children unless
+	///     <see cref="PropagateInputsToChildren" /> is also <c>false</c>.
 	/// </remarks>
 	public bool EnableInput { get; set; } = false;
 
 	/// <summary>
-	///		If input events that hit this frame should propagate to its children. If <c>true</c> input events will
-	///		propagate to this frame's children even if <see cref="EnableInput"/> if <c>false</c>. Defaults to
-	///		<c>true</c>.
+	///     If input events that hit this frame should propagate to its children. If <c>true</c> input events will
+	///     propagate to this frame's children even if <see cref="EnableInput" /> if <c>false</c>. Defaults to
+	///     <c>true</c>.
 	/// </summary>
 	public bool PropagateInputsToChildren { get; set; } = true;
 
@@ -26,12 +27,12 @@ public partial class Frame
 	/// </summary>
 	public bool IsHovered { get; private set; }
 
-	public event EventHandler<Frame, UiEvent>? OnPressIn;
-	public event EventHandler<Frame, UiEvent>? OnPressOut;
-	public event EventHandler<Frame, UiEvent>? OnFullPress;
+	public event EventHandler<Frame, UiActionEvent>? OnPressIn;
+	public event EventHandler<Frame, UiActionEvent>? OnPressOut;
+	public event EventHandler<Frame, UiActionEvent>? OnFullPress;
 
-	public event Utils.Events.EventHandler<Frame>? OnCursorEnter;
-	public event Utils.Events.EventHandler<Frame>? OnCursorExit;
+	public event EventHandler<Frame, CursorEvent>? OnCursorEnter;
+	public event EventHandler<Frame, CursorEvent>? OnCursorExit;
 
 	/// <returns>
 	///     <c>true</c> if this frame is currently being pressed <b>down</b> on.
@@ -51,45 +52,97 @@ public partial class Frame
 	}
 
 	private void ClearPressed() => pressedActions.Clear();
-	
+
 	internal void CursorEnter()
 	{
-		HandleCursorEnter();
-		OnCursorEnter?.Invoke(this);
+		var evt = new CursorEvent();
+		if (OnCursorEnter != null)
+		{
+			foreach (var handler in OnCursorEnter.GetInvocationList().OfType<EventHandler<Frame, CursorEvent>>())
+			{
+				handler(this, evt);
+				if (evt.Cancelled)
+				{
+					break;
+				}
+			}
+		}
+
+		if (!evt.DefaultPrevented)
+		{
+			HandleCursorEnter();
+		}
+
+		// This should not be default-prevented
 		IsHovered = true;
 	}
 
 	internal void CursorExit()
 	{
-		HandleCursorExit();
-		OnCursorExit?.Invoke(this);
-		IsHovered = false;
+		var evt = new CursorEvent();
+		if (OnCursorExit != null)
+		{
+			foreach (var handler in OnCursorExit.GetInvocationList().OfType<EventHandler<Frame, CursorEvent>>())
+			{
+				handler(this, evt);
+				if (evt.Cancelled)
+				{
+					break;
+				}
+			}
+		}
 
-		// If we exit the frame we should not fire "FullPress" events.
-		ClearPressed();
+		if (!evt.DefaultPrevented)
+		{
+			HandleCursorExit();
+		}
+
+		// The following calls should not be default-prevented
+		IsHovered = false;
+		ClearPressed(); // If we exit the frame we should not fire "FullPress" events.
 	}
 
 	internal bool PressIn(UiAction action)
 	{
 		SetPressed(action, pressed: true);
 
-		var evt = new UiEvent(action);
-		OnPressIn?.Invoke(this, evt);
-
-		var handled = evt.Handled;
-		if (!evt.DefaultPrevented)
+		var evt = new UiActionEvent(action);
+		if (OnPressIn != null)
 		{
-			var nativelyHandled = HandlePressIn(action);
-			handled = handled || nativelyHandled;
+			foreach (var handler in OnPressIn.GetInvocationList().OfType<EventHandler<Frame, UiActionEvent>>())
+			{
+				handler(this, evt);
+				if (evt.Cancelled)
+				{
+					break;
+				}
+			}
 		}
 
-		return handled;
+		if (evt.DefaultPrevented)
+		{
+			return evt.Handled;
+		}
+
+		// Do not inline! We want to call this even if "evt.Handled" is true
+		var nativelyHandled = HandlePressIn(action);
+		return evt.Handled || nativelyHandled;
 	}
 
 	internal bool PressOut(UiAction action)
 	{
-		var evt = new UiEvent(action);
-		OnPressOut?.Invoke(this, evt);
+		var evt = new UiActionEvent(action);
+		if (OnPressOut != null)
+		{
+			foreach (var handler in OnPressOut.GetInvocationList().OfType<EventHandler<Frame, UiActionEvent>>())
+			{
+				handler(this, evt);
+				if (evt.Cancelled)
+				{
+					break;
+				}
+			}
+		}
 
 		if (evt.DefaultPrevented)
 		{
@@ -103,23 +156,33 @@ public partial class Frame
 		}
 
 		SetPressed(action, pressed: false);
-		handled = handled || FullPress(action);
-		return handled;
+		var fullPress = FullPress(action); // Do not inline! We want to call this even if "handled" is true
+		return handled || fullPress;
 	}
 
 	private bool FullPress(UiAction action)
 	{
-		var evt = new UiEvent(action);
-		OnFullPress?.Invoke(this, evt);
-
-		var handled = evt.Handled;
-		if (!evt.DefaultPrevented)
+		var evt = new UiActionEvent(action);
+		if (OnFullPress != null)
 		{
-			var nativelyHandled = HandleFullPress(action);
-			handled = handled || nativelyHandled;
+			foreach (var handler in OnFullPress.GetInvocationList().OfType<EventHandler<Frame, UiActionEvent>>())
+			{
+				handler(this, evt);
+				if (evt.Cancelled)
+				{
+					break;
+				}
+			}
 		}
 
-		return handled;
+		if (evt.DefaultPrevented)
+		{
+			return evt.Handled;
+		}
+
+		// Do not inline! We want to call this even if "evt.Handled" is true
+		var nativelyHandled = HandleFullPress(action);
+		return evt.Handled || nativelyHandled;
 	}
 
 	protected virtual bool HandlePressIn(UiAction action) => false;
@@ -148,7 +211,7 @@ public partial class Frame
 
 		return PositionIsInsideThisFrame(position);
 	}
-	
+
 	public virtual Frame? Hit(Vector2 position)
 	{
 		if (!Visible)

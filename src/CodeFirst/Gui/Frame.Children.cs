@@ -4,7 +4,7 @@ namespace CodeFirst.Gui;
 
 public partial class Frame : IEnumerable<Frame>
 {	
-	public void AddChild(Frame frame)
+	public virtual void AddChild(Frame frame)
 	{
 		Node.AddChild(frame.Node);
 		frame.Parent = this;
@@ -12,7 +12,7 @@ public partial class Frame : IEnumerable<Frame>
 		children.Add(frame);
 	}
 
-	public bool RemoveChild(Frame frame)
+	public virtual bool RemoveChild(Frame frame)
 	{
 		var removed = children.Remove(frame);
 		if (removed)
@@ -25,7 +25,7 @@ public partial class Frame : IEnumerable<Frame>
 		return removed;
 	}
 
-	public void RemoveAllChildren()
+	public virtual void RemoveAllChildren()
 	{
 		foreach (var child in children)
 		{
@@ -39,7 +39,7 @@ public partial class Frame : IEnumerable<Frame>
 
 	public T? GetChild<T>(string id) where T : Frame
 	{
-		foreach (var child in children)
+		foreach (var child in GetChildren())
 		{
 			if (child.Id == id)
 			{
@@ -70,7 +70,7 @@ public partial class Frame : IEnumerable<Frame>
 	/// <seealso cref="HasDirectChild"/>
 	public bool HasChild(Frame frame)
 	{
-		foreach (var child in children)
+		foreach (var child in GetChildren())
 		{
 			if (child == frame)
 			{
@@ -92,11 +92,11 @@ public partial class Frame : IEnumerable<Frame>
 	/// <param name="frame"></param>
 	/// <returns></returns>
 	/// <seealso cref="HasChild"/>
-	public bool HasDirectChild(Frame frame) => children.Contains(frame);
+	public bool HasDirectChild(Frame frame) => GetChildren().Contains(frame);
 
-	public IEnumerator<Frame> GetEnumerator() => children.GetEnumerator();
+	public IEnumerator<Frame> GetEnumerator() => GetChildren().GetEnumerator();
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-	public IEnumerable<Frame> GetChildren() => children;
-	public IEnumerable<T> GetChildren<T>() => children.OfType<T>();
+	public virtual IEnumerable<Frame> GetChildren() => children;
+	public IEnumerable<T> GetChildren<T>() => GetChildren().OfType<T>();
 }

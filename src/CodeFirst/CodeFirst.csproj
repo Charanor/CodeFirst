@@ -46,6 +46,9 @@
       <Compile Update="Gui\Frame.Children.cs">
         <DependentUpon>Frame.cs</DependentUpon>
       </Compile>
+      <Compile Update="Gui\Frame.Scroll.cs">
+        <DependentUpon>Frame.cs</DependentUpon>
+      </Compile>
     </ItemGroup>
 
 </Project>

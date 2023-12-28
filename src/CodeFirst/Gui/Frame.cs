@@ -101,8 +101,8 @@ public partial class Frame
 	{
 		get
 		{
-			var x = Parent is null ? Node.LayoutX : Node.LayoutX + Parent.CalculatedBounds.X;
-			var y = Parent is null ? Node.LayoutY : Node.LayoutY + Parent.CalculatedBounds.Y;
+			var x = Parent is null ? Node.LayoutX : Node.LayoutX + Parent.CalculatedBounds.X - Parent.ScrollOffset.X;
+			var y = Parent is null ? Node.LayoutY : Node.LayoutY + Parent.CalculatedBounds.Y + Parent.ScrollOffset.Y;
 			return Box2.FromSize(new Vector2(x, y), new Vector2(Node.LayoutWidth, Node.LayoutHeight));
 		}
 	}
@@ -140,7 +140,9 @@ public partial class Frame
 	/// <param name="graphicsProvider"></param>
 	public virtual void Draw(IGraphicsProvider graphicsProvider)
 	{
-		if (Overflow == YogaOverflow.Hidden)
+		UpdateScrollOffset();
+
+		if (Overflow != YogaOverflow.Visible)
 		{
 			graphicsProvider.BeginOverflow();
 			{
@@ -169,8 +171,20 @@ public partial class Frame
 				TransformedBounds.Location + new Vector2(left, bottom),
 				TransformedBounds.Size - new Vector2(left + right, top + bottom)
 			);
-			graphicsProvider.DrawRect(innerRectangleBounds, BackgroundColor,
-				topLeft, topRight, bottomLeft, bottomRight);
+
+			if (Overflow == YogaOverflow.Visible)
+			{
+				graphicsProvider.DrawRect(innerRectangleBounds, BackgroundColor,
+					topLeft, topRight, bottomLeft, bottomRight);
+			}
+			else
+			{
+				// We don't want this inner rectangle to affect the stencil buffer
+				// StencilMask(0x00);
+				graphicsProvider.DrawRect(innerRectangleBounds, BackgroundColor,
+					topLeft, topRight, bottomLeft, bottomRight);
+				// StencilMask(0xff);
+			}
 		}
 
 		void DrawChildren()

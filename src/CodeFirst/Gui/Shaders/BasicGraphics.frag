@@ -30,6 +30,6 @@ float signedDistance(vec2 inPosition, vec2 inSize) {
 void main() {
     vec2 position = size * texCoords;
     vec4 color = hasTexture ? texture(texture0, texCoords) : backgroundColor;
-    float dist = signedDistance(size * texCoords - size / 2.0, size);
+    float dist = signedDistance(position - size / 2.0, size);
     fragColor = (dist < 0.0) ? color : vec4(0.0);
 }

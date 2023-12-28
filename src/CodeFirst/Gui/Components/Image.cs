@@ -20,7 +20,7 @@ public class Image : Frame
 			return;
 		}
 
-		if (Overflow == YogaOverflow.Hidden)
+		if (Overflow != YogaOverflow.Visible)
 		{
 			graphicsProvider.BeginOverflow();
 			{

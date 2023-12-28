@@ -10,7 +10,7 @@ public record TextRow(Font Font, IEnumerable<FontGlyph> Glyphs)
 	{
 		var glyphList = glyphs.ToList();
 		var width = glyphList.Sum(glyph => font.ScaleEmToPixelSize(glyph.Advance));
-		
+
 		// NOTE: The following logic is, technically, correct. However actually doing this results in weird rendering,
 		// so maybe "Advance" actually takes this into account? Idk really, I'm not that great with font rendering.
 		//
@@ -18,7 +18,7 @@ public record TextRow(Font Font, IEnumerable<FontGlyph> Glyphs)
 		// since we DO want this space on the other glyphs to separate them properly.
 		// var lastGlyph = glyphList[^1];
 		// width -= font.ScaleEmToPixelSize(lastGlyph.Advance - font.ScalePixelsToEm(lastGlyph.Size.X));
-		var height = glyphList.Max(glyph => glyph.Size.Y);
+		var height = glyphList.Count == 0 ? 0 : glyphList.Max(glyph => glyph.Size.Y);
 		return new Vector2(width, height);
 	}
 }

@@ -162,7 +162,7 @@ public class Text : Frame
 			_ => 0 // Top align is default, no need to check for it
 		};
 
-		if (Overflow == YogaOverflow.Hidden)
+		if (Overflow != YogaOverflow.Visible)
 		{
 			graphicsProvider.BeginOverflow();
 			DrawText();
