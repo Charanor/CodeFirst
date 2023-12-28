@@ -3,7 +3,7 @@ using Facebook.Yoga;
 
 namespace CodeFirst.Gui.Components;
 
-public class Image : Component<Style>
+public class Image : Frame
 {
 	public Image(Texture2D? texture = default)
 	{
@@ -20,7 +20,7 @@ public class Image : Component<Style>
 			return;
 		}
 
-		if (Style.Overflow == YogaOverflow.Hidden)
+		if (Overflow == YogaOverflow.Hidden)
 		{
 			graphicsProvider.BeginOverflow();
 			{

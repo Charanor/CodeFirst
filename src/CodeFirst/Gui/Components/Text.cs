@@ -1,5 +1,4 @@
-﻿using System.Xml.Linq;
-using CodeFirst.Graphics.Text;
+﻿using CodeFirst.Graphics.Text;
 using CodeFirst.Graphics.Text.Layout;
 using Facebook.Yoga;
 using OpenTK.Mathematics;
@@ -26,60 +25,22 @@ public enum TextAlign
 	RightCenter = Right | VerticalCenter
 }
 
-public record TextStyle : Style
-{
-	private static readonly TextStyle Default = new();
-
-	public TextStyle()
-	{
-	}
-
-	public TextStyle(XElement element, IReadOnlyDictionary<string, string> values) : base(element, values)
-	{
-		FontSize = ParseUtils.ParseInt(GetValue(element, nameof(FontSize), values), FontSize);
-		FontColor = ParseUtils.ParseColor(GetValue(element, nameof(FontColor), values), FontColor);
-		TextAlign = ParseEnum(GetValue(element, nameof(TextAlign), values), TextAlign);
-		TextBreakStrategy = ParseEnum(GetValue(element, nameof(TextBreakStrategy), values), TextBreakStrategy);
-	}
-
-	public int FontSize { get; init; } = 18;
-	public Color4<Rgba> FontColor { get; init; } = Color4.Black;
-	public TextAlign TextAlign { get; init; } = TextAlign.TopLeft;
-	public TextBreakStrategy TextBreakStrategy { get; init; } = TextBreakStrategy.Whitespace;
-
-	public new static TTarget Merge<TTarget, TSource>(TTarget target, TSource source)
-		where TTarget : TextStyle where TSource : TTarget =>
-		Style.Merge(target, source) with
-		{
-			FontSize = Select(target.FontSize, source.FontSize, Default.FontSize),
-			FontColor = Select(target.FontColor, source.FontColor, Default.FontColor),
-			TextAlign = Select(target.TextAlign, source.TextAlign, Default.TextAlign),
-			TextBreakStrategy = Select(target.TextBreakStrategy, source.TextBreakStrategy, Default.TextBreakStrategy)
-		};
-}
-
-public class Text : Component<TextStyle>
+public class Text : Frame
 {
 	private readonly List<TextRow> textRows;
 
 	private Font font;
-
 	private TextLayout layout;
-	// private TextStyle style = new();
-
 	private bool dirty = true;
-
 	private string textContent;
 
-	public Text(Font font, string value)
+	public Text(Font font, string value = "")
 	{
 		textRows = new List<TextRow>();
 		Font = this.font = font;
 		TextContent = textContent = value;
 		layout ??= new TextLayout(font);
 	}
-
-	public override TextStyle Style { get; set; } = new();
 
 	public Font Font
 	{
@@ -96,6 +57,11 @@ public class Text : Component<TextStyle>
 			dirty = true;
 		}
 	}
+
+	public int FontSize { get; init; } = 18;
+	public Color4<Rgba> FontColor { get; init; } = Color4.Black;
+	public TextAlign TextAlign { get; init; } = TextAlign.TopLeft;
+	public TextBreakStrategy TextBreakStrategy { get; init; } = TextBreakStrategy.Whitespace;
 
 	public string TextContent
 	{
@@ -148,20 +114,20 @@ public class Text : Component<TextStyle>
 			var rows = TextContent
 				.Split('\n')
 				.SelectMany(hardRow =>
-					layout.LineBreak(hardRow, maxTextWidth * (font.Atlas.CharacterPixelSize / Style.FontSize),
-						Style.TextBreakStrategy));
+					layout.LineBreak(hardRow, maxTextWidth * (font.Atlas.CharacterPixelSize / FontSize),
+						TextBreakStrategy));
 			textRows.AddRange(rows);
 			dirty = false;
 		}
 
-		var textSize = font.ScalePixelsToFontSize(TextSize, Style.FontSize);
+		var textSize = font.ScalePixelsToFontSize(TextSize, FontSize);
 
-		if (Style.MinWidth.Unit is YogaUnit.Auto or YogaUnit.Undefined)
+		if (MinWidth.Unit is YogaUnit.Auto or YogaUnit.Undefined)
 		{
 			Node.MinWidth = textSize.X;
 		}
 
-		if (Style.MinHeight.Unit is YogaUnit.Auto or YogaUnit.Undefined)
+		if (MinHeight.Unit is YogaUnit.Auto or YogaUnit.Undefined)
 		{
 			Node.MinHeight = textSize.Y;
 		}
@@ -178,26 +144,25 @@ public class Text : Component<TextStyle>
 			var rows = TextContent
 				.Split('\n')
 				.SelectMany(hardRow =>
-					layout.LineBreak(hardRow, maxTextWidth * (font.Atlas.CharacterPixelSize / Style.FontSize),
-						Style.TextBreakStrategy));
+					layout.LineBreak(hardRow, maxTextWidth * (font.Atlas.CharacterPixelSize / FontSize), TextBreakStrategy));
 			textRows.AddRange(rows);
 			dirty = false;
 		}
-		
-		var textSize = font.ScalePixelsToFontSize(TextSize, Style.FontSize);
+
+		var textSize = font.ScalePixelsToFontSize(TextSize, FontSize);
 
 		var textAreaSize = TransformedBounds.Size;
 		textAreaSize.X = textAreaSize.X <= 0 ? maxTextWidth : MathF.Min(textAreaSize.X, maxTextWidth);
 		var position = TransformedBounds.Location;
 		var emptyVerticalSpace = textAreaSize.Y - textSize.Y;
-		position.Y += Style.TextAlign switch
+		position.Y += TextAlign switch
 		{
 			var align when align.HasFlag(TextAlign.Bottom) => emptyVerticalSpace,
 			var align when align.HasFlag(TextAlign.VerticalCenter) => emptyVerticalSpace / 2f,
 			_ => 0 // Top align is default, no need to check for it
 		};
 
-		if (Style.Overflow == YogaOverflow.Hidden)
+		if (Overflow == YogaOverflow.Hidden)
 		{
 			graphicsProvider.BeginOverflow();
 			DrawText();
@@ -213,8 +178,8 @@ public class Text : Component<TextStyle>
 			var offsetY = 0f;
 			foreach (var row in textRows)
 			{
-				var emptyHorizontalSpace = textAreaSize.X - font.ScalePixelsToFontSize(row.Size.X, Style.FontSize);
-				var offsetX = Style.TextAlign switch
+				var emptyHorizontalSpace = textAreaSize.X - font.ScalePixelsToFontSize(row.Size.X, FontSize);
+				var offsetX = TextAlign switch
 				{
 					var align when align.HasFlag(TextAlign.Right) => emptyHorizontalSpace,
 					var align when align.HasFlag(TextAlign.HorizontalCenter) => emptyHorizontalSpace / 2f,
@@ -222,8 +187,8 @@ public class Text : Component<TextStyle>
 				};
 
 				var positionOffset = new Vector2(offsetX, offsetY);
-				graphicsProvider.DrawText(Font, row, Style.FontSize, position + positionOffset, Style.FontColor);
-				offsetY += font.ScaleEmToFontSize(font.Metrics.LineHeight, Style.FontSize);
+				graphicsProvider.DrawText(Font, row, FontSize, position + positionOffset, FontColor);
+				offsetY += font.ScaleEmToFontSize(font.Metrics.LineHeight, FontSize);
 			}
 		}
 	}

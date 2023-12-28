@@ -37,6 +37,15 @@
       <Compile Update="Cartography\TiledMapTileSet.Loader.cs">
         <DependentUpon>TiledMapTileSet.cs</DependentUpon>
       </Compile>
+      <Compile Update="Gui\Frame.Style.cs">
+        <DependentUpon>Frame.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Gui\Frame.Input.cs">
+        <DependentUpon>Frame.cs</DependentUpon>
+      </Compile>
+      <Compile Update="Gui\Frame.Children.cs">
+        <DependentUpon>Frame.cs</DependentUpon>
+      </Compile>
     </ItemGroup>
 
 </Project>

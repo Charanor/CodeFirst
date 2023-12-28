@@ -6,30 +6,19 @@ using CodeFirst.AssetManagement;
 using CodeFirst.Graphics.Core;
 using CodeFirst.Graphics.Text;
 using CodeFirst.Graphics.Text.Assets;
-using CodeFirst.Gui.Components;
 using CodeFirst.Utils.Logging;
 
 namespace CodeFirst.Gui;
 
 public class UILoader
 {
-	private const string STYLES_ELEMENT = "Styles";
 	private const string DRAW_ELEMENT = "Draw";
-	private const string VALUE_ELEMENT = "Value";
-	private const string STYLE_ATTRIBUTE = "Style";
-	private const string ID_ATTRIBUTE = "Id";
 	private const string VALUE_PROPERTY = "value"; // All properties are treated as lower case
 	private static readonly ILogger Logger = LoggingManager.Get<UILoader>();
 
 	private static readonly IDictionary<string, Type> BuiltinComponents;
 
 	private readonly IGraphicsProvider graphicsProvider;
-	private readonly IGuiInputProvider guiInputProvider;
-
-	private Dictionary<string, Style> styles;
-	private Dictionary<string, string> values;
-
-	private XElement? xStyles;
 
 	static UILoader()
 	{
@@ -37,7 +26,7 @@ public class UILoader
 		// Find all loaded subclasses of "Component" and map them.
 		var subclasses = AppDomain.CurrentDomain.GetAssemblies()
 			.SelectMany(assembly => assembly.GetTypes())
-			.Where(type => type.IsSubclassOf(typeof(Component)));
+			.Where(type => type.IsSubclassOf(typeof(Frame)));
 		foreach (var subclass in subclasses)
 		{
 			BuiltinComponents.Add(subclass.Name, subclass);
@@ -46,49 +35,20 @@ public class UILoader
 		Assets.AddAssetResolver(new FontAssetResolver());
 	}
 
-	public UILoader(IGraphicsProvider graphicsProvider, IGuiInputProvider guiInputProvider)
+	public UILoader(IGraphicsProvider graphicsProvider)
 	{
 		this.graphicsProvider = graphicsProvider;
-		this.guiInputProvider = guiInputProvider;
-
-		styles = new Dictionary<string, Style>();
-		values = new Dictionary<string, string>();
 	}
 
 	public Scene LoadSceneFromXml(XDocument document)
 	{
-		var scene = new Scene(graphicsProvider, guiInputProvider);
+		var scene = new Scene(graphicsProvider);
 
 		var xRoot = document.Root;
 		if (xRoot is null)
 		{
 			Logger.Error($"Invalid Xml document {document}");
 			return scene;
-		}
-
-		xStyles = xRoot.Element(STYLES_ELEMENT);
-		styles = new Dictionary<string, Style>();
-		values = new Dictionary<string, string>();
-
-		if (xStyles != null)
-		{
-			Logger.Trace("Processing values");
-			foreach (var xValue in xStyles.Elements(VALUE_ELEMENT))
-			{
-				if (!xValue.StringAttribute(ID_ATTRIBUTE, out var id))
-				{
-					Logger.Error($@"Value does not have an ""{ID_ATTRIBUTE}""!");
-					continue;
-				}
-
-				if (!xValue.StringAttribute(VALUE_PROPERTY, out var value))
-				{
-					Logger.Error($@"Value {id} does not have a ""{VALUE_PROPERTY}""!");
-					continue;
-				}
-
-				values.Add(id, value);
-			}
 		}
 
 		var xDraw = xRoot.Element(DRAW_ELEMENT);
@@ -105,7 +65,7 @@ public class UILoader
 
 		return scene;
 
-		void ProcessComponent(XElement xElement, View? parent = null)
+		void ProcessComponent(XElement xElement, Frame? parent = null)
 		{
 			Logger.Trace($@"Processing component {xElement.Name.LocalName}");
 			if (!BuiltinComponents.TryGetValue(xElement.Name.LocalName, out var componentType))
@@ -186,7 +146,7 @@ public class UILoader
 				Logger.Trace($"Properties ({string.Join(", ", unusedProperties)}) not used in constructor.");
 			}
 
-			var component = (Component)Activator.CreateInstance(componentType,
+			var component = (Frame)Activator.CreateInstance(componentType,
 				BindingFlags.Default | BindingFlags.OptionalParamBinding, binder: null, convertedParams,
 				CultureInfo.CurrentCulture)!;
 
@@ -216,7 +176,7 @@ public class UILoader
 
 			if (parent is null)
 			{
-				scene.AddComponent(component);
+				scene.AddFrame(component);
 			}
 			else
 			{
@@ -225,7 +185,7 @@ public class UILoader
 
 			foreach (var xChild in xElement.Elements())
 			{
-				ProcessComponent(xChild, (View)component);
+				ProcessComponent(xChild, component);
 			}
 		}
 	}
@@ -242,44 +202,7 @@ public class UILoader
 			return Assets.Get<Font>(property);
 		}
 
-		if (type.IsSubclassOf(typeof(Style)) || type == typeof(Style))
-		{
-			return GetStyle(property, type) ?? (Style)Activator.CreateInstance(type)!;
-		}
-
 		return Convert.ChangeType(property, type);
-	}
-
-	private Style? GetStyle(string styleId, Type styleType)
-	{
-		if (styles.TryGetValue(styleId, out var style))
-		{
-			// Important! Create a shallow copy of the style.
-			return style with { };
-		}
-
-		if (xStyles is null)
-		{
-			Logger.Error(
-				$@"Can not find style ""{styleId}"": Scene does not contain a ""{STYLES_ELEMENT}"" element.");
-			return null;
-		}
-
-		try
-		{
-			var xStyle = xStyles.Elements().First(elem =>
-				elem.StringAttribute(ID_ATTRIBUTE, out var id) && id == styleId);
-			style = (Style)Activator.CreateInstance(styleType, xStyle, values)!;
-			styles.Add(styleId, style);
-			Logger.Trace($@"Created style ""{styleId}""");
-		}
-		catch (InvalidOperationException)
-		{
-			Logger.Error($"Style {styleId} is not defined in {STYLES_ELEMENT} element.");
-			return null;
-		}
-
-		return style;
 	}
 
 	public static bool IsNullable(ParameterInfo parameter) =>

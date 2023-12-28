@@ -1,74 +1,82 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
-using CodeFirst.Gui.Components;
 using OpenTK.Mathematics;
 
 namespace CodeFirst.Gui;
 
-public class Scene : IEnumerable<Component>
+public class Scene : IEnumerable<Frame>
 {
-	private readonly List<Component> components;
+	private readonly List<Frame> frames;
+	private Vector2 mousePosition;
 
-	public Scene(IGraphicsProvider graphicsProvider, IGuiInputProvider guiInputProvider)
+	private Frame? previousHoverFrame;
+
+	public Scene(IGraphicsProvider graphicsProvider)
 	{
 		GraphicsProvider = graphicsProvider;
-		GuiInputProvider = guiInputProvider;
-		components = new List<Component>();
+		frames = new List<Frame>();
 	}
 
-	public IGuiInputProvider GuiInputProvider { get; init; }
 	public IGraphicsProvider GraphicsProvider { get; init; }
 
 	public Vector2 Size { get; set; } = new(float.NaN, float.NaN);
 
-	public IEnumerator<Component> GetEnumerator() => components.GetEnumerator();
+	public Vector2 MousePosition
+	{
+		get => mousePosition;
+		set
+		{
+			mousePosition = value;
+			var hit = Hit(value);
+			if (hit == previousHoverFrame)
+			{
+				return;
+			}
+			
+			previousHoverFrame?.CursorExit();
+			previousHoverFrame = hit;
+			hit?.CursorEnter();
+		}
+	}
+
+	public IEnumerator<Frame> GetEnumerator() => frames.GetEnumerator();
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-	public IReadOnlyList<Component> GetComponents() => components;
+	public IReadOnlyList<Frame> GetFrames() => frames;
 
 	public void Update(float delta)
 	{
-		if (GuiInputProvider.JustPressed(GuiInputAction.Primary))
+		foreach (var frame in frames.Where(c => c.Visible))
 		{
-			var mousePos = GuiInputProvider.MousePosition;
-			var component = Hit(mousePos);
-			if (component is null)
-			{
-				GuiInputProvider.KeyboardFocus = null;
-			}
-		}
-
-		foreach (var component in components.Where(c => c.Visible))
-		{
-			component.Update(delta);
+			frame.Update(delta);
 		}
 	}
 
 	public void Draw()
 	{
 		GraphicsProvider.Begin();
-		foreach (var component in components.Where(c => c.Visible))
+		foreach (var frame in frames.Where(c => c.Visible))
 		{
-			component.ApplyStyle();
-			component.CalculateLayout(Size.X, Size.Y);
-			component.Draw(GraphicsProvider);
+			frame.ApplyStyle();
+			frame.CalculateLayout(Size.X, Size.Y);
+			frame.Draw(GraphicsProvider);
 		}
 
 		GraphicsProvider.End();
 	}
 
-	public void AddComponent<TComponent>(TComponent component) where TComponent : Component
+	public void AddFrame<TFrame>(TFrame frame) where TFrame : Frame
 	{
-		component.Scene = this;
-		components.Add(component);
+		frame.Scene = this;
+		frames.Add(frame);
 	}
 
-	public bool RemoveComponent<TComponent>(TComponent component) where TComponent : Component
+	public bool RemoveFrame<TFrame>(TFrame frame) where TFrame : Frame
 	{
-		var removed = components.Remove(component);
+		var removed = frames.Remove(frame);
 		if (removed)
 		{
-			component.Scene = null;
+			frame.Scene = null;
 		}
 
 		return removed;
@@ -78,31 +86,26 @@ public class Scene : IEnumerable<Component>
 	///     Gets a component in this scene with the given "id".
 	/// </summary>
 	/// <param name="id">the id of the component</param>
-	/// <typeparam name="TComponent">the type of the component</typeparam>
+	/// <typeparam name="TFrame">the type of the component</typeparam>
 	/// <returns>the found component with given id of type T</returns>
 	/// <exception cref="NullReferenceException">if no component with given id exists</exception>
 	/// <exception cref="InvalidOperationException">if a component with given id exists, but is not of type T</exception>
-	public TComponent GetComponent<TComponent>(string id) where TComponent : Component
+	public TFrame GetFrame<TFrame>(string id) where TFrame : Frame
 	{
-		foreach (var component in components)
+		foreach (var frame in frames)
 		{
-			if (component.Id == id)
+			if (frame.Id == id)
 			{
-				if (component is TComponent cmp)
+				if (frame is TFrame cmp)
 				{
 					return cmp;
 				}
 
 				throw new InvalidOperationException(
-					$"A component with id {id} exists, but is of type {component.GetType().Name}, expected {typeof(TComponent).Name}.");
+					$"A component with id {id} exists, but is of type {frame.GetType().Name}, expected {typeof(TFrame).Name}.");
 			}
 
-			if (component is not View view)
-			{
-				continue;
-			}
-
-			var child = view.GetChild<TComponent>(id);
+			var child = frame.GetChild<TFrame>(id);
 			if (child != null)
 			{
 				return child;
@@ -112,48 +115,42 @@ public class Scene : IEnumerable<Component>
 		throw new NullReferenceException($"No component with id {id} exists.");
 	}
 
-	public bool TryGetComponent<TComponent>(string id, [NotNullWhen(true)] out TComponent? outComponent)
-		where TComponent : Component
+	public bool TryGetFrame<TFrame>(string id, [NotNullWhen(true)] out TFrame? outFrame) where TFrame : Frame
 	{
-		foreach (var component in components)
+		foreach (var frame in frames)
 		{
-			if (component.Id == id)
+			if (frame.Id == id)
 			{
-				if (component is TComponent cmp)
+				if (frame is TFrame cmp)
 				{
-					outComponent = cmp;
+					outFrame = cmp;
 					return true;
 				}
 
-				outComponent = null;
+				outFrame = null;
 				return false;
 			}
 
-			if (component is not View view)
-			{
-				continue;
-			}
-
-			var child = view.GetChild<TComponent>(id);
+			var child = frame.GetChild<TFrame>(id);
 			if (child == null)
 			{
 				continue;
 			}
 
-			outComponent = child;
+			outFrame = child;
 			return true;
 		}
 
-		outComponent = null;
+		outFrame = null;
 		return false;
 	}
 
-	public Component? Hit(Vector2 position)
+	public Frame? Hit(Vector2 position)
 	{
 		// Reverse iteration
-		for (var i = components.Count - 1; i >= 0; i--)
+		for (var i = frames.Count - 1; i >= 0; i--)
 		{
-			var component = components[i].Hit(position);
+			var component = frames[i].Hit(position);
 			if (component != null)
 			{
 				return component;
@@ -161,5 +158,27 @@ public class Scene : IEnumerable<Component>
 		}
 
 		return null;
+	}
+
+	public bool PressIn(UiAction action)
+	{
+		var hit = Hit(MousePosition);
+		if (hit == null)
+		{
+			return false;
+		}
+
+		return hit.PressIn(action);
+	}
+
+	public bool PressOut(UiAction action)
+	{
+		var hit = Hit(MousePosition);
+		if (hit == null)
+		{
+			return false;
+		}
+
+		return hit.PressOut(action);
 	}
 }
