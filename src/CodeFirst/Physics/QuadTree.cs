@@ -193,11 +193,14 @@ public class QuadTree
 		}
 	}
 
+	private readonly IntList tmpResult = new(1);
+
 	// Returns a list of elements found in the specified rectangle excluding the
 	// specified element to omit.
 	public IntList Query(float xLeft, float yTop, float xRight, float yBottom, int omitElement = -1)
 	{
-		var result = new IntList(1);
+		var result = tmpResult;
+		result.Clear();
 
 		// Find the leaves that intersect the specified query rectangle.
 		var queryLeft = Floor(xLeft);
@@ -303,12 +306,17 @@ public class QuadTree
 		nodes.Set(backIndex, NODE_DATA_INDEX_DEPTH, nodeDataDepth);
 	}
 
+	private readonly IntList tmpLeaves = new(NODE_DATA_INDEX_NUM);
+	private readonly IntList tmpToProcess = new(NODE_DATA_INDEX_NUM);
+
 	private IntList FindLeaves(int node, int depth,
 		int mx, int my, int sx, int sy,
 		int lft, int top, int rgt, int btm)
 	{
-		var leaves = new IntList(NODE_DATA_INDEX_NUM);
-		var toProcess = new IntList(NODE_DATA_INDEX_NUM);
+		var leaves = tmpLeaves;
+		leaves.Clear();
+		var toProcess = tmpToProcess;
+		toProcess.Clear();
 		PushNode(toProcess, node, depth, mx, my, sx, sy);
 
 		while (toProcess.Size() > 0)

@@ -183,14 +183,6 @@ public class PhysicsWorld
 				closestGuid = other;
 			}
 
-			void Separate()
-			{
-				// Move body all the way until it collides
-				// Also move body away from wall very slightly to prevent getting stuck on seams
-				const float seamMargin = 0.001f;
-				destination = body.Center + velocity * closestTheta + closestNormal * seamMargin;
-			}
-
 			if (!hasCollision)
 			{
 				// No collision, our work here is done
@@ -246,6 +238,14 @@ public class PhysicsWorld
 					DevTools.Throw<PhysicsWorld>(new InvalidOperationException(
 						$"Unexpected resolution '{nameof(CollisionResolution.None)}' during resolution! This should be handled in a special case before."));
 					break;
+			}
+
+			void Separate()
+			{
+				// Move body all the way until it collides
+				// Also move body away from wall very slightly to prevent getting stuck on seams
+				const float seamMargin = 0.001f;
+				destination = body.Center + velocity * closestTheta + closestNormal * seamMargin;
 			}
 		}
 
