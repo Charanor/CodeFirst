@@ -126,7 +126,11 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		StencilFunc(StencilFunction.Lequal, overflowLayer, mask: 0xff);
 	}
 
-	public void DrawImage(Box2 bounds, Texture2D texture)
+	public void DrawImage(Box2 bounds, Texture2D texture,
+		float borderTopLeftRadius = default,
+		float borderTopRightRadius = default,
+		float borderBottomLeftRadius = default,
+		float borderBottomRightRadius = default)
 	{
 		if (Camera == null)
 		{
@@ -141,6 +145,11 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			                     Matrix4.CreateTranslation(bounds.X, convertedY, z: 0);
 			shader.HasTexture = true;
 			shader.Texture0 = texture;
+
+			shader.BorderTopLeftRadius = borderTopLeftRadius;
+			shader.BorderTopRightRadius = borderTopRightRadius;
+			shader.BorderBottomLeftRadius = borderBottomLeftRadius;
+			shader.BorderBottomRightRadius = borderBottomRightRadius;
 			DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
 		}
 		ActiveShader = prevShader;
@@ -176,6 +185,13 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			}
 		}
 		ActiveShader = prevShader;
+	}
+
+	public void DrawText(Font font, string text, int fontSize, Vector2 position, Color4<Rgba> color)
+	{
+		var layout = new TextLayout(font);
+		var textRow = new TextRow(font, layout.TextToGlyphs(text));
+		DrawText(font, textRow, fontSize, position, color);
 	}
 
 	public void DrawRect(Box2 bounds, Color4<Rgba> color,

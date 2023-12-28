@@ -19,7 +19,12 @@ public interface IGraphicsProvider
 		float borderBottomLeftRadius = default,
 		float borderBottomRightRadius = default);
 
-	void DrawImage(Box2 bounds, Texture2D texture);
+	void DrawImage(Box2 bounds, Texture2D texture,
+		float borderTopLeftRadius = default,
+		float borderTopRightRadius = default,
+		float borderBottomLeftRadius = default,
+		float borderBottomRightRadius = default);
 
 	void DrawText(Font font, TextRow row, int fontSize, Vector2 position, Color4<Rgba> color);
+	void DrawText(Font font, string text, int fontSize, Vector2 position, Color4<Rgba> color);
 }
