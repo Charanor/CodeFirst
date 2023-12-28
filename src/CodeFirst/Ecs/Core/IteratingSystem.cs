@@ -28,14 +28,14 @@ public abstract class IteratingSystem : EntitySystem
 	{
 		Aspect = AspectBuilder.GetAspectFromAttributes(GetType());
 		// This looks weird, but we need to set "entities" first so we don't get a null reference exception
-		Entities = internalEntities = new SnapshotList<Entity>();
+		Entities = internalEntities = new EntitySnapshotList();
 	}
 
 	protected IteratingSystem(Aspect aspect, Pass pass) : base(pass)
 	{
 		Aspect = aspect;
 		// This looks weird, but we need to set "entities" first so we don't get a null reference exception
-		Entities = internalEntities = new SnapshotList<Entity>();
+		Entities = internalEntities = new EntitySnapshotList();
 	}
 
 	/// <summary>
@@ -57,14 +57,20 @@ public abstract class IteratingSystem : EntitySystem
 			var removedEntities = prevEntities.Where(val => !value.Contains(val));
 			foreach (var removedEntity in removedEntities)
 			{
-				EntityRemoved(removedEntity);
+				if (removedEntity.IsValid)
+				{
+					EntityRemoved(removedEntity);
+				}
 			}
 
 			internalEntities = value;
 			var addedEntities = value.Where(val => !prevEntities.Contains(val));
 			foreach (var addedEntity in addedEntities)
 			{
-				EntityAdded(addedEntity);
+				if (addedEntity.IsValid)
+				{
+					EntityAdded(addedEntity);
+				}
 			}
 
 			if (prevEntities != internalEntities)
@@ -162,6 +168,6 @@ public abstract class IteratingSystem : EntitySystem
 
 	public bool IsCurrentEntity(Entity entity) => entity == CurrentEntity;
 
-	private void OnItemRemoved(SnapshotList<Entity> _, EventArgs<Entity> e) => EntityRemoved(e.Value);
-	private void OnItemAdded(SnapshotList<Entity> _, EventArgs<Entity> e) => EntityAdded(e.Value);
+	private void OnItemRemoved(IReadOnlySnapshotList<Entity> _, EventArgs<Entity> e) => EntityRemoved(e.Value);
+	private void OnItemAdded(IReadOnlySnapshotList<Entity> _, EventArgs<Entity> e) => EntityAdded(e.Value);
 }

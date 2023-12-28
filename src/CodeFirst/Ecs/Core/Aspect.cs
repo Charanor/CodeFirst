@@ -10,9 +10,10 @@ public record Aspect(ComponentFlags All, ComponentFlags Some, ComponentFlags Non
 {
 	public bool IsEmpty => All.IsEmpty && Some.IsEmpty && None.IsEmpty;
 
-	public bool Matches(World world, Entity entity)
+	public bool Matches(World world, Entity entity) => Matches(world.GetFlagsForEntityInternal(entity));
+
+	public bool Matches(ComponentFlags flags)
 	{
-		var flags = world.GetFlagsForEntity(entity);
 		var containsAll = All.IsEmpty || flags.ContainsAll(All);
 		var containsSome = Some.IsEmpty || flags.ContainsSome(Some);
 		var containsNone = None.IsEmpty || flags.ContainsNone(None);

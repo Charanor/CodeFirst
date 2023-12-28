@@ -11,31 +11,31 @@ namespace CodeFirst.Ecs.Core;
 /// </summary>
 public class World : IDisposable
 {
-	private readonly ISet<Entity> entities;
-	private readonly ISet<Entity> removedEntities;
-	private readonly ISet<Entity> dirtyEntities;
+	private readonly EntityArray entities;
+	private readonly EntityArray removedEntities;
+	private readonly EntityArray dirtyEntities;
 
 	private readonly IDictionary<Type, IComponentMapper> mappers;
-	private readonly IDictionary<Entity, ComponentFlags> entityFlags;
+	private readonly EntityDictionary<ComponentFlags> entityFlags;
 
-	private readonly IDictionary<Aspect, SnapshotList<Entity>> entitiesForAspects;
+	private readonly IDictionary<Aspect, EntitySnapshotList> entitiesForAspects;
 
 	private float fixedUpdateAccumulator;
 
 	public World()
 	{
-		entities = new HashSet<Entity>();
-		removedEntities = new HashSet<Entity>();
+		entities = new EntityArray();
+		removedEntities = new EntityArray();
+		dirtyEntities = new EntityArray();
 
 		UpdateSystems = new List<EntitySystem>();
 		FixedUpdateSystems = new List<EntitySystem>();
 		DrawSystems = new List<EntitySystem>();
-		dirtyEntities = new HashSet<Entity>();
 
 		mappers = new Dictionary<Type, IComponentMapper>();
-		entityFlags = new Dictionary<Entity, ComponentFlags>();
+		entityFlags = new EntityDictionary<ComponentFlags>();
 
-		entitiesForAspects = new Dictionary<Aspect, SnapshotList<Entity>>();
+		entitiesForAspects = new Dictionary<Aspect, EntitySnapshotList>();
 	}
 
 	protected IEnumerable<Entity> Entities => entities;
@@ -184,7 +184,7 @@ public class World : IDisposable
 		removedEntities.Clear();
 	}
 
-	public bool HasEntity(Entity entity) => entity.IsValid && entities.Contains(entity);
+	public bool HasEntity(Entity entity) => entity.IsValid && entities.Has(entity);
 
 	/// <summary>
 	///     Creates a new entity and adds it to the world.
@@ -207,7 +207,7 @@ public class World : IDisposable
 			// Search for 1st valid ID
 			for (var i = 0; i < int.MaxValue; i++)
 			{
-				if (entities.Contains(new Entity(i)))
+				if (entities.Has(i))
 				{
 					continue;
 				}
@@ -224,7 +224,7 @@ public class World : IDisposable
 		}
 
 		var entity = new Entity(id);
-		if (entities.Contains(entity))
+		if (entities.Has(id))
 		{
 			DevTools.Throw<World>(new EntityAlreadyExistsException(entity));
 			return Entity.Invalid;
@@ -535,12 +535,17 @@ public class World : IDisposable
 			return ComponentFlags.Empty;
 		}
 
+		return GetFlagsForEntityInternal(entity);
+	}
+
+	internal ComponentFlags GetFlagsForEntityInternal(Entity entity)
+	{
 		if (EntityIsDirty(entity))
 		{
 			HydrateEntity(entity);
 		}
 
-		return entityFlags[entity];
+		return entityFlags.Get(entity);
 	}
 
 	/// <summary>
@@ -559,7 +564,7 @@ public class World : IDisposable
 			return list;
 		}
 
-		list = new SnapshotList<Entity>();
+		list = new EntitySnapshotList();
 		entitiesForAspects.Add(aspect, list);
 
 		foreach (var entity in entities)
@@ -594,7 +599,7 @@ public class World : IDisposable
 		if (!HasEntity(entity))
 		{
 			// If we are removing this entity we don't need to throw; it is expected to not exist
-			if (!removedEntities.Contains(entity))
+			if (!removedEntities.Has(entity))
 			{
 				DevTools.Throw<World>(new EntityDoesNotExistException(entity));
 			}
@@ -623,38 +628,19 @@ public class World : IDisposable
 	/// <param name="entity">the entity</param>
 	/// <exception cref="InvalidEntityException">(Dev only) if <see cref="Entity.IsValid" /> is <c>false</c></exception>
 	/// <exception cref="EntityDoesNotExistException">(Dev only) if entity does not exist in this world</exception>
-	public void HydrateEntity(Entity entity)
+	private void HydrateEntity(Entity entity)
 	{
-		if (!entity.IsValid)
-		{
-			DevTools.Throw<World>(new InvalidEntityException());
-			return;
-		}
-
-		if (!HasEntity(entity))
-		{
-			DevTools.Throw<World>(new EntityDoesNotExistException(entity));
-			return;
-		}
-
 		// Need to remove this up here so we don't get an infinite cycle.
 		dirtyEntities.Remove(entity);
 
 		// Cache flags
 		var flags = ConstructFlagsForEntity(entity);
-		if (!entityFlags.ContainsKey(entity))
-		{
-			entityFlags.Add(entity, flags);
-		}
-		else
-		{
-			entityFlags[entity] = flags;
-		}
+		entityFlags.Add(entity, flags);
 
 		// Update aspects
 		foreach (var (aspect, aspectEntities) in entitiesForAspects)
 		{
-			var matches = aspect.Matches(this, entity);
+			var matches = aspect.Matches(flags);
 			var contains = aspectEntities.Contains(entity);
 			if (matches == contains)
 			{
@@ -680,7 +666,7 @@ public class World : IDisposable
 	/// <returns>
 	///     <c>true</c> if the entity is dirty, <c>false</c> otherwise
 	/// </returns>
-	public bool EntityIsDirty(Entity entity) => entity.IsValid && dirtyEntities.Contains(entity);
+	private bool EntityIsDirty(Entity entity) => entity.IsValid && dirtyEntities.Has(entity);
 
 	private static Exception CreateEntityDoesNotExistException(Entity entity) =>
 		new ArgumentException($"Entity {entity} does not exist in world!", nameof(entity));

@@ -101,6 +101,8 @@ public class EcsDefinitionGenerator
 					IsSingleton(cmp),
 					isIteratingSystem: false));
 
+			builder.IndentedLn($"public new {WorldName} World {{ get; internal set; }}");
+
 			foreach (var component in components)
 			{
 				var mapperContext = mapperContexts[component.Name];
@@ -143,9 +145,8 @@ public class EcsDefinitionGenerator
 			// This is a nice utility, but I'm afraid this will lead to developers doing something like:
 			//		World.MySingleton.SomeProperty = "some value";
 			// This could be an issue because it circumvents the safety measures that are in place for async processing.
-			// So for now, this will remain commented out with this comment explaining why.
-			//
-			// builder.IndentedLn($"public new {WorldName} World {{ get; internal set; }}");
+			// For now, let's trust developers.
+			builder.IndentedLn($"public new {WorldName} World {{ get; internal set; }}");
 
 			foreach (var component in components.Where(component =>
 				         component.IsOptional ||
@@ -234,7 +235,7 @@ public class EcsDefinitionGenerator
 
 				foreach (var system in preWildcardSystemNames)
 				{
-					builder.IndentedLn($"AddSystem(new {system}());");
+					AddSystem(system);
 				}
 
 				var wildcardSystemNames = program.Systems
@@ -244,12 +245,18 @@ public class EcsDefinitionGenerator
 					.Select(system => system.Name);
 				foreach (var system in wildcardSystemNames)
 				{
-					builder.IndentedLn($"AddSystem(new {system}());");
+					AddSystem(system);
 				}
 
 				foreach (var system in postWildcardSystemNames)
 				{
-					builder.IndentedLn($"AddSystem(new {system}());");
+					AddSystem(system);
+				}
+
+				void AddSystem(string system)
+				{
+					builder.IndentedLn($"var {system}Instance = new {system} {{ World = this }};");
+					builder.IndentedLn($"AddSystem({system}Instance);");
 				}
 			}
 
