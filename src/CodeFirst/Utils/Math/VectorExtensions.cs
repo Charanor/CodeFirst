@@ -33,13 +33,24 @@ public static class VectorExtensions
 		}
 
 		var dot = Vector2.Dot(vector, other);
+		if (float.IsNaN(dot))
+		{
+			return 0;
+		}
+
 		var scaledDot = MathHelper.Clamp(dot / denominator, min: -1f, max: 1f);
 		return MathF.Acos(scaledDot);
 	}
 
 	public static float SignedAngleTowards(this Vector2 vector, Vector2 other)
 	{
-		var sign = MathF.Sign(Vector2.PerpDot(vector, other));
+		var dot = Vector2.PerpDot(vector, other);
+		if (float.IsNaN(dot))
+		{
+			return 0;
+		}
+
+		var sign = MathF.Sign(dot);
 		return vector.AngleTowards(other) * sign;
 	}
 

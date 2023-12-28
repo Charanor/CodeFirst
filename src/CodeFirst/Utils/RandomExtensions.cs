@@ -4,6 +4,14 @@ namespace CodeFirst.Utils;
 
 public static class RandomExtensions
 {
+	public static T PickRandom<T>(this Random random, IList<T> items)
+	{
+		var idx = random.Next(minValue: 0, items.Count);
+		return items[idx];
+	}
+
+	public static T PickRandom<T>(this Random random, List<T> items) => random.PickRandom((IList<T>)items);
+
 	public static T PickRandom<T>(this Random random, params T[] items)
 	{
 		var idx = random.Next(minValue: 0, items.Length);
