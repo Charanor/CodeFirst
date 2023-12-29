@@ -102,7 +102,7 @@ public partial class Frame
 		get
 		{
 			var x = Parent is null ? Node.LayoutX : Node.LayoutX + Parent.CalculatedBounds.X - Parent.ScrollOffset.X;
-			var y = Parent is null ? Node.LayoutY : Node.LayoutY + Parent.CalculatedBounds.Y + Parent.ScrollOffset.Y;
+			var y = Parent is null ? Node.LayoutY : Node.LayoutY + Parent.CalculatedBounds.Y - Parent.ScrollOffset.Y;
 			return Box2.FromSize(new Vector2(x, y), new Vector2(Node.LayoutWidth, Node.LayoutHeight));
 		}
 	}

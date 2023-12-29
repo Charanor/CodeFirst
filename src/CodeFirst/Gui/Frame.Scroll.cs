@@ -32,7 +32,8 @@ public partial class Frame
 		private set
 		{
 			var maxScrollOffset = CalculateMaxScrollOffset();
-			ScrollOffset = Vector2.ComponentMin(value, Vector2.One) * maxScrollOffset;
+			ScrollOffset = Vector2.ComponentMax(Vector2.ComponentMin(value, Vector2.One), Vector2.Zero) *
+			               maxScrollOffset;
 		}
 	}
 
@@ -49,6 +50,10 @@ public partial class Frame
 
 	public void ScrollTo(float x, float y)
 	{
+		// "0" means "no scroll", so having a negative scroll value makes no sense.
+		x = Math.Max(x, val2: 0);
+		y = Math.Max(y, val2: 0);
+
 		var maxScrollOffset = CalculateMaxScrollOffset();
 		var newScrollOffset = Vector2.ComponentMin((x, y), maxScrollOffset);
 		var delta = newScrollOffset - ScrollOffset;
@@ -109,9 +114,11 @@ public partial class Frame
 		}
 
 		// TODO: Check if maybe we should use TranslatedBounds here
-		var parentBounds = Parent.CalculatedBounds;
-		var selfBounds = CalculatedBounds;
-		var contentBounds = parentBounds.Intersected(selfBounds);
-		return selfBounds.Size - contentBounds.Size;
+		var bounds = CalculatedBounds;
+		var childBounds = GetChildren()
+			.Select(child => child.CalculatedBounds)
+			.Aggregate(Box2.Empty, Box2.Union);
+		var contentBounds = bounds.Intersected(childBounds);
+		return childBounds.Size - contentBounds.Size;
 	}
 }

@@ -33,7 +33,7 @@ public class Scene : IEnumerable<Frame>
 			{
 				return;
 			}
-			
+
 			previousHoverFrame?.CursorExit();
 			previousHoverFrame = hit;
 			hit?.CursorEnter();
@@ -181,5 +181,32 @@ public class Scene : IEnumerable<Frame>
 		}
 
 		return hit.PressOut(action);
+	}
+
+	public bool ScrollBy(Vector2 scroll) => ScrollBy(scroll.X, scroll.Y);
+	public bool ScrollBy(float vertical) => ScrollBy(horizontal: 0, vertical);
+	public bool ScrollBy(float horizontal, float vertical)
+	{
+		if (horizontal == 0 && vertical == 0)
+		{
+			return false;
+		}
+		
+		var hit = Hit(MousePosition);
+		var hasHitSomething = hit != null;
+		while (hit != null && hit.Overflow != YogaOverflow.Scroll)
+		{
+			hit = hit.Parent;
+		}
+
+		if (hit == null)
+		{
+			// This is because we still want to prevent the scroll event from propagating outside of the scene even if
+			// we didn't actually scroll any element.
+			return hasHitSomething;
+		}
+
+		hit.ScrollBy(horizontal, vertical);
+		return true;
 	}
 }

@@ -185,9 +185,9 @@ public partial class Frame
 		return evt.Handled || nativelyHandled;
 	}
 
-	protected virtual bool HandlePressIn(UiAction action) => false;
-	protected virtual bool HandlePressOut(UiAction action) => false;
-	protected virtual bool HandleFullPress(UiAction action) => false;
+	protected virtual bool HandlePressIn(UiAction action) => true;
+	protected virtual bool HandlePressOut(UiAction action) => true;
+	protected virtual bool HandleFullPress(UiAction action) => true;
 
 	protected virtual void HandleCursorEnter()
 	{

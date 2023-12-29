@@ -4,7 +4,7 @@ namespace CodeFirst.Gui;
 
 public partial class Frame : IEnumerable<Frame>
 {	
-	public virtual void AddChild(Frame frame)
+	public  void AddChild(Frame frame)
 	{
 		Node.AddChild(frame.Node);
 		frame.Parent = this;
@@ -12,7 +12,7 @@ public partial class Frame : IEnumerable<Frame>
 		children.Add(frame);
 	}
 
-	public virtual bool RemoveChild(Frame frame)
+	public  bool RemoveChild(Frame frame)
 	{
 		var removed = children.Remove(frame);
 		if (removed)
@@ -25,7 +25,7 @@ public partial class Frame : IEnumerable<Frame>
 		return removed;
 	}
 
-	public virtual void RemoveAllChildren()
+	public void RemoveAllChildren()
 	{
 		foreach (var child in children)
 		{
@@ -97,6 +97,6 @@ public partial class Frame : IEnumerable<Frame>
 	public IEnumerator<Frame> GetEnumerator() => GetChildren().GetEnumerator();
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-	public virtual IEnumerable<Frame> GetChildren() => children;
+	public IEnumerable<Frame> GetChildren() => children;
 	public IEnumerable<T> GetChildren<T>() => GetChildren().OfType<T>();
 }
