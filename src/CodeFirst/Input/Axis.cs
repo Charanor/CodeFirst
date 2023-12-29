@@ -8,6 +8,8 @@ public abstract class Axis
 
 	public abstract float Value { get; }
 
+	public bool Consumed { get; internal set; }
+
 	public bool Pressed => Value != 0;
 	public bool JustPressed { get; private set; }
 	public bool JustReleased { get; private set; }
@@ -36,4 +38,6 @@ public abstract class Axis
 
 	public static Axis Copy(string axisName, InputSystem inputSystem)
 		=> new CopyNamedAxis(axisName, inputSystem);
+
+	public abstract bool HasSameBindings(Axis other);
 }

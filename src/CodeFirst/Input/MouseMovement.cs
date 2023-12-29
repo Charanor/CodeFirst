@@ -31,6 +31,8 @@ public class MouseMovement : Axis
 		value = difference;
 	}
 
+	public override bool HasSameBindings(Axis other) => other is MouseMovement axis && axis.Axis == Axis;
+
 	private Vector2 GetMousePosition(IInputProvider inputProvider) =>
 		new(inputProvider.MouseState.X, inputProvider.MouseState.Y);
 

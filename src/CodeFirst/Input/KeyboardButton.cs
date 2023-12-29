@@ -23,4 +23,7 @@ public class KeyboardButton : Axis
 		var keyboardState = inputProvider.KeyboardState;
 		value = keyboardState.IsKeyDown(key) && modifier.IsDown(keyboardState) ? 1 : 0;
 	}
+
+	public override bool HasSameBindings(Axis other) =>
+		other is KeyboardButton axis && axis.key == key && axis.modifier == modifier;
 }

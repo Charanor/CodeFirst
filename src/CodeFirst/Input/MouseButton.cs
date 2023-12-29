@@ -31,6 +31,9 @@ public class MouseButton : Axis
 		value = button && Modifier.IsDown(inputProvider.KeyboardState) ? 1 : 0;
 	}
 
+	public override bool HasSameBindings(Axis other) =>
+		other is MouseButton axis && axis.Button == Button && axis.Modifier == Modifier;
+
 	public void Deconstruct(out Buttons button, out ModifierKey modifier)
 	{
 		button = Button;

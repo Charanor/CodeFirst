@@ -1,4 +1,6 @@
-﻿namespace CodeFirst.Input;
+﻿using Assimp.Unmanaged;
+
+namespace CodeFirst.Input;
 
 public class InvertedAxis : Axis
 {
@@ -15,6 +17,8 @@ public class InvertedAxis : Axis
 		base.Update(inputProvider, gameTime);
 		Axis.Update(inputProvider, gameTime);
 	}
+
+	public override bool HasSameBindings(Axis other) => other is InvertedAxis axis && axis.Axis == Axis;
 
 	public void Deconstruct(out Axis axis)
 	{

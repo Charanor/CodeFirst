@@ -20,6 +20,29 @@ public class MultiAxis : Axis
 		}
 	}
 
+	public override bool HasSameBindings(Axis other)
+	{
+		if (other is not MultiAxis axis)
+		{
+			return false;
+		}
+
+		if (axis.axes.Count != axes.Count)
+		{
+			return false;
+		}
+
+		for (var i = 0; i < axes.Count; i++)
+		{
+			if (!axes[i].HasSameBindings(axis.axes[i]))
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	public static MultiAxis operator +(MultiAxis multiAxis, Axis axis)
 	{
 		multiAxis.axes.Add(axis);

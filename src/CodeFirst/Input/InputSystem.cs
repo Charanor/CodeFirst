@@ -40,13 +40,27 @@ public class InputSystem
 	{
 		foreach (var axis in axes.Values)
 		{
+			axis.Consumed = false;
 			axis.Update(InputProvider, delta);
 		}
 
 		MousePosition = InputProvider.MouseState.Position;
 	}
 
-	public Axis? GetAxisObject(string name) => Enabled && axes.TryGetValue(name, out var axis) ? axis : null;
+	public Axis? GetAxisObject(string name)
+	{
+		if (!Enabled)
+		{
+			return null;
+		}
+
+		if (!axes.TryGetValue(name, out var axis))
+		{
+			return null;
+		}
+
+		return axis.Consumed ? null : axis;
+	}
 
 	public float Axis(string name) => GetAxisObject(name)?.Value ?? 0;
 
@@ -57,6 +71,7 @@ public class InputSystem
 		{
 			direction.Normalize();
 		}
+
 		return direction;
 	}
 
@@ -82,4 +97,43 @@ public class InputSystem
 	public void Define(string name, MouseDirection direction) => this[name] += new MouseMovement(direction);
 
 	public void Define(string name, Keys positive, Keys negative) => this[name] += new KeyboardAxis(positive, negative);
+
+	/// <summary>
+	///     Consumes the given input, causing it to return <c>0</c> or <c>false</c> etc. when queried. Lasts until the
+	///     next call to <see cref="Update" />.
+	/// </summary>
+	/// <param name="name">the name of the input</param>
+	/// <seealso cref="ConsumeInputsWithSharedBindings" />
+	public void ConsumeInput(string name)
+	{
+		if (!axes.TryGetValue(name, out var axis))
+		{
+			return;
+		}
+
+		axis.Consumed = true;
+	}
+
+	/// <summary>
+	///     Consumes all inputs that have the exact same keyboard binding as the given input. Lasts until the next call
+	///		to <see cref="Update"/>.
+	/// </summary>
+	/// <param name="name"></param>
+	/// <seealso cref="ConsumeInput" />
+	public void ConsumeInputsWithSharedBindings(string name)
+	{
+		var referenceAxis = GetAxisObject(name);
+		if (referenceAxis == null)
+		{
+			return;
+		}
+		
+		foreach (var (_, axis) in axes)
+		{
+			if (axis.HasSameBindings(referenceAxis))
+			{
+				axis.Consumed = true;
+			}
+		}
+	}
 }

@@ -37,4 +37,9 @@ public class Modifier : Axis
 		var modifierKeyDown = ModifierKey?.IsDown(inputProvider.KeyboardState) ?? true;
 		value = modifierAxisPressed && modifierKeyDown ? Axis.Value : 0;
 	}
+
+	public override bool HasSameBindings(Axis other) => other is Modifier axis && 
+	                                                    axis.Axis == Axis &&
+	                                                    axis.ModifierAxis == ModifierAxis &&
+	                                                    axis.ModifierKey == ModifierKey;
 }

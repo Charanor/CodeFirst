@@ -3,7 +3,7 @@
 public class ScrollWheelDelta : Axis
 {
 	private float value;
-	
+
 	public ScrollWheelDelta(ScrollDirection direction = ScrollDirection.Vertical)
 	{
 		Direction = direction;
@@ -17,6 +17,8 @@ public class ScrollWheelDelta : Axis
 		base.Update(inputProvider, delta);
 		value = GetCurrentValue(inputProvider);
 	}
+
+	public override bool HasSameBindings(Axis other) => other is ScrollWheelDelta axis && axis.Direction == Direction;
 
 	private float GetCurrentValue(IInputProvider inputProvider) => Direction switch
 	{

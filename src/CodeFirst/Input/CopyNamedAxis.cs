@@ -20,6 +20,8 @@ public class CopyNamedAxis : Axis
 		value = InputSystem.Axis(AxisName);
 	}
 
+	public override bool HasSameBindings(Axis other) => other is CopyNamedAxis axis && axis.AxisName == AxisName;
+
 	public void Deconstruct(out string axisName, out InputSystem inputSystem)
 	{
 		axisName = AxisName;

@@ -44,4 +44,7 @@ public class ButtonAxis : Axis
 		value += posPressed ? 1 : 0;
 		value += negPressed ? -1 : 0;
 	}
+
+	public override bool HasSameBindings(Axis other) =>
+		other is ButtonAxis axis && axis.negative == negative && axis.positive == positive;
 }

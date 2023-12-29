@@ -18,6 +18,8 @@ public class ModifierAxis : Axis
 		value = Key.IsDown(inputProvider.KeyboardState) ? 0 : 1;
 	}
 
+	public override bool HasSameBindings(Axis other) => other is ModifierAxis axis && axis.Key == Key;
+
 	public void Deconstruct(out ModifierKey key)
 	{
 		key = Key;

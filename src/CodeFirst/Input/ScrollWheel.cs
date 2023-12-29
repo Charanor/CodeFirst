@@ -22,6 +22,8 @@ public class ScrollWheel : Axis
 		value = difference;
 	}
 
+	public override bool HasSameBindings(Axis other) => other is ScrollWheel axis && axis.Direction == Direction;
+
 	private float GetCurrentValue(IInputProvider inputProvider) => Direction switch
 	{
 		ScrollDirection.Vertical => inputProvider.MouseState.Scroll.Y,
