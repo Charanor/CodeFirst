@@ -1,5 +1,7 @@
-﻿using OpenTK.Mathematics;
+﻿using CodeFirst.Input.Actions;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using InputAction = CodeFirst.Input.Actions.InputAction;
 
 namespace CodeFirst.Input;
 
@@ -11,21 +13,54 @@ public class NamedInputHandler
 	{
 		actions = new Dictionary<string, InputAction>();
 	}
-	
+
+	public Vector2 MousePosition { get; private set; }
+
+	public MultiInputAction this[string name]
+	{
+		get
+		{
+			var action = GetActionObject(name);
+			if (action == null)
+			{
+				var multiInputAction = new MultiInputAction();
+				actions.Add(name, multiInputAction);
+				return multiInputAction;
+			}
+
+			if (action is MultiInputAction multi)
+			{
+				return multi;
+			}
+
+			multi = new MultiInputAction(action);
+			actions[name] = multi;
+			return multi;
+		}
+		set
+		{
+			if (!actions.ContainsKey(name))
+			{
+				actions.Add(name, value);
+				return;
+			}
+
+			actions[name] = value;
+		}
+	}
+
 	public void HandleInput(InputManager sender, InputEvent e)
 	{
 		if (e is MouseMoveInputEvent mouseMove)
 		{
 			MousePosition = mouseMove.Position;
 		}
-		
+
 		foreach (var (_, action) in actions)
 		{
 			action.OnInput(sender, e);
 		}
 	}
-	
-	public Vector2 MousePosition { get; private set; }
 
 	public void Update()
 	{
@@ -40,10 +75,16 @@ public class NamedInputHandler
 	public bool IsPressed(string name) => actions.TryGetValue(name, out var action) && action.IsPressed;
 	public float Axis(string name) => actions.TryGetValue(name, out var action) ? action.Value : 0;
 
-	public Vector2 Axis2D(string horizontal, string vertical) => new(
-		Axis(horizontal),
-		Axis(vertical)
-	);
+	public Vector2 Axis2D(string horizontal, string vertical, bool normalize = true)
+	{
+		var direction = new Vector2(Axis(horizontal), Axis(vertical));
+		if (direction.LengthSquared == 0)
+		{
+			return Vector2.Zero;
+		}
+		
+		return normalize ? direction.Normalized() : direction;
+	}
 
 	public InputAction? GetActionObject(string name) => actions.TryGetValue(name, out var action) ? action : null;
 
@@ -72,234 +113,26 @@ public class NamedInputHandler
 		return actions.TryAdd(name, action) ? action : null;
 	}
 
+	public InputAction? Define(string name, int id, GamepadButton button)
+	{
+		var action = new GamepadButtonInputAction(id, button);
+		return actions.TryAdd(name, action) ? action : null;
+	}
+
+	public InputAction? Define(string name, int id, GamepadButton negative, GamepadButton positive)
+	{
+		var action = new GamepadButtonAxisInputAction(id, negative, positive);
+		return actions.TryAdd(name, action) ? action : null;
+	}
+
+	public InputAction? Define(string name, int id, GamepadAxis axis)
+	{
+		var action = new GamepadAxisInputAction(id, axis);
+		return actions.TryAdd(name, action) ? action : null;
+	}
+
 	public void Remove(string name)
 	{
 		actions.Remove(name);
-	}
-}
-
-public abstract class InputAction
-{
-	private bool wasPressed;
-
-	public bool IsPressed => Value != 0;
-	public bool JustPressed => IsPressed && !wasPressed;
-	public bool JustReleased => !IsPressed && wasPressed;
-
-	public abstract float Value { get; }
-
-	internal void Update()
-	{
-		wasPressed = IsPressed;
-	}
-
-	internal abstract void OnInput(InputManager manager, InputEvent e);
-}
-
-file class KeyInputAction : InputAction
-{
-	private float value;
-
-	public KeyInputAction(Keys key, KeyModifiers modifiers)
-	{
-		Key = key;
-		Modifiers = modifiers;
-	}
-
-	public Keys Key { get; }
-	public KeyModifiers Modifiers { get; }
-
-	public override float Value => value;
-
-	internal override void OnInput(InputManager manager, InputEvent e)
-	{
-		if (e is not KeyboardInputEvent ke)
-		{
-			return;
-		}
-
-		if (ke.Key != Key || (ke.Modifiers & Modifiers) != Modifiers)
-		{
-			return;
-		}
-
-		value = ke.Action switch
-		{
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Press => 1,
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Repeat => 1,
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Release => 0,
-			_ => 0 // Fallback
-		};
-	}
-}
-
-file class KeyAxisInputAction : InputAction
-{
-	private float positiveValue;
-	private float negativeValue;
-
-	public KeyAxisInputAction(Keys positive, Keys negative, KeyModifiers modifiers = default)
-	{
-		Positive = positive;
-		Negative = negative;
-		Modifiers = modifiers;
-	}
-
-	public Keys Positive { get; }
-	public Keys Negative { get; }
-	public KeyModifiers Modifiers { get; }
-
-	public override float Value => positiveValue - negativeValue;
-
-	internal override void OnInput(InputManager manager, InputEvent e)
-	{
-		HandlePositiveInput(e);
-		HandleNegativeInput(e);
-	}
-
-	private void HandlePositiveInput(InputEvent e)
-	{
-		if (e is not KeyboardInputEvent ke)
-		{
-			return;
-		}
-
-		if (ke.Key != Positive || (ke.Modifiers & Modifiers) != Modifiers)
-		{
-			return;
-		}
-
-		positiveValue = ke.Action switch
-		{
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Press => 1,
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Repeat => 1,
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Release => 0,
-			_ => 0 // Fallback
-		};
-	}
-
-	private void HandleNegativeInput(InputEvent e)
-	{
-		if (e is not KeyboardInputEvent ke)
-		{
-			return;
-		}
-
-		if (ke.Key != Negative || (ke.Modifiers & Modifiers) != Modifiers)
-		{
-			return;
-		}
-
-		negativeValue = ke.Action switch
-		{
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Press => 1,
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Repeat => 1,
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Release => 0,
-			_ => 0 // Fallback
-		};
-	}
-}
-
-file class MouseButtonInputAction : InputAction
-{
-	private float value;
-
-	public MouseButtonInputAction(MouseButton button, KeyModifiers modifiers)
-	{
-		Button = button;
-		Modifiers = modifiers;
-	}
-
-	public MouseButton Button { get; }
-	public KeyModifiers Modifiers { get; }
-
-	public override float Value => value;
-
-	internal override void OnInput(InputManager manager, InputEvent e)
-	{
-		if (e is not MouseButtonInputEvent btn)
-		{
-			return;
-		}
-
-		if (btn.Button != Button || (btn.Modifiers & Modifiers) != Modifiers)
-		{
-			return;
-		}
-
-		value = btn.Action switch
-		{
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Press => 1,
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Repeat => 1,
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Release => 0,
-			_ => 0 // Fallback
-		};
-	}
-}
-
-file class MouseAxisInputAction : InputAction
-{
-	private float positiveValue;
-	private float negativeValue;
-
-	public MouseAxisInputAction(MouseButton positive, MouseButton negative, KeyModifiers modifiers = default)
-	{
-		Positive = positive;
-		Negative = negative;
-		Modifiers = modifiers;
-	}
-
-	public MouseButton Positive { get; }
-	public MouseButton Negative { get; }
-	public KeyModifiers Modifiers { get; }
-
-	public override float Value => positiveValue - negativeValue;
-
-	internal override void OnInput(InputManager manager, InputEvent e)
-	{
-		HandlePositiveInput(e);
-		HandleNegativeInput(e);
-	}
-
-	private void HandlePositiveInput(InputEvent e)
-	{
-		if (e is not MouseButtonInputEvent btn)
-		{
-			return;
-		}
-
-		if (btn.Button != Positive || (btn.Modifiers & Modifiers) != Modifiers)
-		{
-			return;
-		}
-
-		positiveValue = btn.Action switch
-		{
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Press => 1,
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Repeat => 1,
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Release => 0,
-			_ => 0 // Fallback
-		};
-	}
-
-	private void HandleNegativeInput(InputEvent e)
-	{
-		if (e is not MouseButtonInputEvent btn)
-		{
-			return;
-		}
-
-		if (btn.Button != Negative || (btn.Modifiers & Modifiers) != Modifiers)
-		{
-			return;
-		}
-
-		negativeValue = btn.Action switch
-		{
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Press => 1,
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Repeat => 1,
-			OpenTK.Windowing.GraphicsLibraryFramework.InputAction.Release => 0,
-			_ => 0 // Fallback
-		};
 	}
 }

@@ -71,28 +71,55 @@ public class Interpolation
 		return result;
 	}
 
-	public static Vector3 Spring(Vector3 from, Vector3 to, ref Vector3 vel, float smoothTime, float delta, float maxSpeed)
+	public static Vector3 Spring(Vector3 from, Vector3 to, ref Vector3 vel, float smoothTime, float delta,
+		float maxSpeed)
 	{
-		var dynamicVel = (dynamic)vel; // We can't ref of a different type, so we need this intermediate variable
-		var result = SpringDynamic(from, to, ref dynamicVel, smoothTime, delta, maxSpeed);
-		vel = dynamicVel;
-		return result;
+		// Game Programming Gems 4: 1.10
+		var omega = 2f / MathF.Max(smoothTime, y: 0.0000001f); // So we don't divide by 0
+		var x = omega * delta;
+		var exp = 1f / (1f + x + 0.48f * MathF.Pow(x, y: 2) + 0.235f * MathF.Pow(x, y: 3));
+		var change = from - to;
+		var maxChange = maxSpeed * smoothTime;
+		change = new Vector3(
+			MathF.Min(MathF.Max(-maxChange, change.X), maxChange),
+			MathF.Min(MathF.Max(-maxChange, change.Y), maxChange),
+			MathF.Min(MathF.Max(-maxChange, change.Z), maxChange)
+		);
+		var temp = (vel + change * omega) * delta;
+		vel = (vel - omega * temp) * exp;
+		return to + (change + temp) * exp;
 	}
 
-	public static Vector2 Spring(Vector2 from, Vector2 to, ref Vector2 vel, float smoothTime, float delta, float maxSpeed)
+	public static Vector2 Spring(Vector2 from, Vector2 to, ref Vector2 vel, float smoothTime, float delta,
+		float maxSpeed)
 	{
-		var dynamicVel = (dynamic)vel; // We can't ref of a different type, so we need this intermediate variable
-		var result = SpringDynamic(from, to, ref dynamicVel, smoothTime, delta, maxSpeed);
-		vel = dynamicVel;
-		return result;
+		// Game Programming Gems 4: 1.10
+		var omega = 2f / MathF.Max(smoothTime, y: 0.0000001f); // So we don't divide by 0
+		var x = omega * delta;
+		var exp = 1f / (1f + x + 0.48f * MathF.Pow(x, y: 2) + 0.235f * MathF.Pow(x, y: 3));
+		var change = from - to;
+		var maxChange = maxSpeed * smoothTime;
+		change = new Vector2(
+			MathF.Min(MathF.Max(-maxChange, change.X), maxChange),
+			MathF.Min(MathF.Max(-maxChange, change.Y), maxChange)
+		);
+		var temp = (vel + change * omega) * delta;
+		vel = (vel - omega * temp) * exp;
+		return to + (change + temp) * exp;
 	}
 
 	public static float Spring(float from, float to, ref float vel, float smoothTime, float delta, float maxSpeed)
 	{
-		var dynamicVel = (dynamic)vel; // We can't ref of a different type, so we need this intermediate variable
-		var result = SpringDynamic(from, to, ref dynamicVel, smoothTime, delta, maxSpeed);
-		vel = dynamicVel;
-		return result;
+		// Game Programming Gems 4: 1.10
+		var omega = 2f / MathF.Max(smoothTime, y: 0.0000001f); // So we don't divide by 0
+		var x = omega * delta;
+		var exp = 1f / (1f + x + 0.48f * MathF.Pow(x, y: 2) + 0.235f * MathF.Pow(x, y: 3));
+		var change = from - to;
+		var maxChange = maxSpeed * smoothTime;
+		change = MathF.Min(MathF.Max(-maxChange, change), maxChange);
+		var temp = (vel + change * omega) * delta;
+		vel = (vel - omega * temp) * exp;
+		return to + (change + temp) * exp;
 	}
 
 	/// <summary>
@@ -126,20 +153,6 @@ public class Interpolation
 		var x = omega * delta;
 		var exp = 1f / (1f + x + 0.48f * MathF.Pow(x, y: 2) + 0.235f * MathF.Pow(x, y: 3));
 		var change = from - to;
-		var temp = (vel + change * omega) * delta;
-		vel = (vel - omega * temp) * exp;
-		return to + (change + temp) * exp;
-	}
-	
-	private static dynamic SpringDynamic(dynamic from, dynamic to, ref dynamic vel, float smoothTime, float delta, float maxSpeed)
-	{
-		// Game Programming Gems 4: 1.10
-		var omega = 2f / MathF.Max(smoothTime, y: 0.0000001f); // So we don't divide by 0
-		var x = omega * delta;
-		var exp = 1f / (1f + x + 0.48f * MathF.Pow(x, y: 2) + 0.235f * MathF.Pow(x, y: 3));
-		var change = from - to;
-		var maxChange = maxSpeed * smoothTime;
-		change = MathF.Min(MathF.Max(-maxChange, change), maxChange);
 		var temp = (vel + change * omega) * delta;
 		vel = (vel - omega * temp) * exp;
 		return to + (change + temp) * exp;
