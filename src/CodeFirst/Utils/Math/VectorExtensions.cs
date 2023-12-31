@@ -50,10 +50,12 @@ public static class VectorExtensions
 			return 0;
 		}
 
-		var sign = MathF.Sign(dot);
-		return vector.AngleTowards(other) * sign;
+		var angle = vector.AngleTowards(other);
+		return dot >= 0 ? angle : -angle;
 	}
 
 	public static float Angle(this Vector2 vector) => AngleTowards(Vector2.UnitX, vector);
 	public static float SignedAngle(this Vector2 vector) => SignedAngleTowards(Vector2.UnitX, vector);
+
+	public static Vector2 UseAsAngleForVector2(this float angleRad) => MathF.SinCos(angleRad);
 }

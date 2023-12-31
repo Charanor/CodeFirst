@@ -195,8 +195,9 @@ public class InputManager
 
 	private void GameOnMouseMove(MouseMoveEventArgs e)
 	{
-		// NOTE: Do not set "LatestInputWasGamepad" here, because on some operative systems gamepad input might
-		// move the hardware mouse, causing this event to trigger.
+		// NOTE: Maybe we should not set "LatestInputWasGamepad" here, because on some operative systems gamepad input
+		// might move the hardware mouse, causing this event to trigger. For now let's keep it.
+		LatestInputWasGamepad = false;
 		var evt = new MouseMoveInputEvent
 		{
 			Delta = e.Delta,
