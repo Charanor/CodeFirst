@@ -1,7 +1,10 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using CodeFirst.Input;
 using Facebook.Yoga;
 using OpenTK.Mathematics;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using InputAction = OpenTK.Windowing.GraphicsLibraryFramework.InputAction;
 
 namespace CodeFirst.Gui;
 
@@ -42,6 +45,60 @@ public class Scene : IEnumerable<Frame>
 
 	public IEnumerator<Frame> GetEnumerator() => frames.GetEnumerator();
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+	public void HandleInput(InputManager manager, InputEvent e)
+	{
+		switch (e)
+		{
+			case MouseButtonInputEvent mouseButtonEvent:
+			{
+				switch (mouseButtonEvent.Button)
+				{
+					case MouseButton.Left:
+						if (mouseButtonEvent.Action == InputAction.Press)
+						{
+							if (PressIn(UiAction.Primary))
+							{
+								e.Handle();
+							}
+						}
+						else if (mouseButtonEvent.Action == InputAction.Release)
+						{
+							// NOTE: Do not "handle" this event, it needs to be propagated.
+							PressOut(UiAction.Primary);
+						}
+
+						break;
+					case MouseButton.Right:
+						if (mouseButtonEvent.Action == InputAction.Press)
+						{
+							if (PressIn(UiAction.Secondary))
+							{
+								e.Handle();
+							}
+						}
+						else if (mouseButtonEvent.Action == InputAction.Release)
+						{
+							// NOTE: Do not "handle" this event, it needs to be propagated.
+							PressOut(UiAction.Secondary);
+						}
+						break;
+				}
+
+				break;
+			}
+			case MouseWheelInputEvent mouseWheelEvent:
+				if (ScrollBy(mouseWheelEvent.Offset * 100))
+				{
+					e.Handle();
+				}
+				break;
+			case MouseMoveInputEvent mouseMoveEvent:
+				// NOTE Do not mark this event as handled
+				mousePosition = mouseMoveEvent.Position;
+				break;
+		}
+	}
 
 	public IReadOnlyList<Frame> GetFrames() => frames;
 
@@ -185,13 +242,14 @@ public class Scene : IEnumerable<Frame>
 
 	public bool ScrollBy(Vector2 scroll) => ScrollBy(scroll.X, scroll.Y);
 	public bool ScrollBy(float vertical) => ScrollBy(horizontal: 0, vertical);
+
 	public bool ScrollBy(float horizontal, float vertical)
 	{
 		if (horizontal == 0 && vertical == 0)
 		{
 			return false;
 		}
-		
+
 		var hit = Hit(MousePosition);
 		var hasHitSomething = hit != null;
 		while (hit != null && hit.Overflow != YogaOverflow.Scroll)
