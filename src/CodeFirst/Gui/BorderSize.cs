@@ -1,4 +1,6 @@
-﻿namespace CodeFirst.Gui;
+﻿using OpenTK.Mathematics;
+
+namespace CodeFirst.Gui;
 
 public record BorderSize
 {
@@ -28,4 +30,30 @@ public record BorderSize
 		bottom = Bottom;
 		left = Left;
 	}
+
+	public static BorderSize operator +(BorderSize left, BorderSize right) => new(
+		left.Top + right.Top,
+		left.Right + right.Right,
+		left.Bottom + right.Bottom,
+		left.Left + right.Left
+	);
+
+	public static implicit operator BorderSize(Box2 box) => new(
+		box.Top,
+		box.Right,
+		box.Bottom,
+		box.Left
+	);
+
+	public static implicit operator BorderSize(Box2i box) => new(
+		box.Top,
+		box.Right,
+		box.Bottom,
+		box.Left
+	);
+}
+
+public static class NinePatchExtensions
+{
+	public static BorderSize ToBorderSize(this NinePatch ninePatch) => ninePatch.ContentPadding;
 }

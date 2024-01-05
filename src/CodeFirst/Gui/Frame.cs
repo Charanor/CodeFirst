@@ -1,3 +1,4 @@
+using CodeFirst.Gui.Components;
 using Facebook.Yoga;
 using OpenTK.Mathematics;
 
@@ -146,21 +147,31 @@ public partial class Frame
 		{
 			graphicsProvider.BeginOverflow();
 			{
-				DrawRectangles();
-				DrawTextures();
+				DrawBackground();
 				DrawChildren();
 			}
 			graphicsProvider.EndOverflow();
 		}
 		else
 		{
-			DrawRectangles();
-			DrawTextures();
+			DrawBackground();
 			DrawChildren();
 		}
 
-		void DrawRectangles()
+		void DrawBackground()
 		{
+			if (!BeforeDrawBackground(graphicsProvider))
+			{
+				return;
+			}
+			
+			if (BackgroundTexture != null)
+			{
+				// If we have a background texture, only draw the texture, skip drawing colored background
+				graphicsProvider.DrawNinePatch(BackgroundTexture, TransformedBounds);
+				return;
+			}
+
 			var (left, right, top, bottom) = BorderSize;
 			var (topLeft, topRight, bottomLeft, bottomRight) = BorderRadii;
 
@@ -170,37 +181,47 @@ public partial class Frame
 
 			// Inner (background color) rectangle
 			var innerRectangleBounds = Box2.FromSize(
-				TransformedBounds.Location + new Vector2(left, bottom),
+				TransformedBounds.Location + new Vector2(left, top),
 				TransformedBounds.Size - new Vector2(left + right, top + bottom)
 			);
 
-			if (Overflow == YogaOverflow.Visible)
-			{
-				graphicsProvider.DrawRect(innerRectangleBounds, BackgroundColor,
-					topLeft, topRight, bottomLeft, bottomRight);
-			}
-			else
-			{
-				// We don't want this inner rectangle to affect the stencil buffer
-				// StencilMask(0x00);
-				graphicsProvider.DrawRect(innerRectangleBounds, BackgroundColor,
-					topLeft, topRight, bottomLeft, bottomRight);
-				// StencilMask(0xff);
-			}
-		}
-
-		void DrawTextures()
-		{
-			FrameSkin.Draw(this, graphicsProvider);
+			graphicsProvider.DrawRect(innerRectangleBounds, BackgroundColor,
+				topLeft, topRight, bottomLeft, bottomRight);
+			AfterDrawBackground(graphicsProvider);
 		}
 
 		void DrawChildren()
 		{
+			if (!BeforeDrawChildren(graphicsProvider))
+			{
+				return;
+			}
+
 			foreach (var child in children.Where(c => c.Visible))
 			{
 				child.Draw(graphicsProvider);
 			}
+
+			AfterDrawChildren(graphicsProvider);
 		}
+	}
+
+	protected virtual bool BeforeDrawBackground(IGraphicsProvider graphicsProvider)
+	{
+		return true;
+	}
+
+	protected virtual void AfterDrawBackground(IGraphicsProvider graphicsProvider)
+	{
+	}
+
+	protected virtual bool BeforeDrawChildren(IGraphicsProvider graphicsProvider)
+	{
+		return true;
+	}
+
+	protected virtual void AfterDrawChildren(IGraphicsProvider graphicsProvider)
+	{
 	}
 
 	/// <summary>

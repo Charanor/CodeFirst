@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using CodeFirst.Graphics.Core;
 using CodeFirst.Graphics.Core.Utils;
+using CodeFirst.Graphics.G2D;
 using CodeFirst.Graphics.Generated;
 using CodeFirst.Graphics.Text;
 using CodeFirst.Graphics.Text.Layout;
@@ -31,12 +32,15 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 	private readonly VertexArray vertexArray;
 	private readonly BasicGraphicsShader shader;
 
+	private readonly SpriteBatch spriteBatch;
+
 	private int overflowLayer;
 
 	private ShaderProgram? activeShader;
 
-	public GLGraphicsProvider(Camera? camera = null)
+	public GLGraphicsProvider(SpriteBatch spriteBatch, Camera? camera = null)
 	{
+		this.spriteBatch = spriteBatch;
 		Camera = camera;
 		vertexBuffer = new Buffer<Vertex>(QuadVertices, VertexBufferObjectUsage.StaticRead);
 		indexBuffer = new Buffer<uint>(QuadIndices, VertexBufferObjectUsage.StaticRead);
@@ -126,120 +130,6 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		StencilFunc(StencilFunction.Lequal, overflowLayer, mask: 0xff);
 	}
 
-	public void DrawWindow(Box2 bounds,
-		float borderSize, Texture2D? corners, Texture2D? edges, Texture2D? fill, bool tileFill = false,
-		bool flipEdges = false, bool flipCorners = false)
-	{
-		DrawWindow(bounds, borderSize, corners, corners, corners, corners, edges, fill, tileFill, flipEdges,
-			flipCorners);
-	}
-
-	public void DrawWindow(Box2 bounds,
-		float borderSize, Texture2D? topLeft, Texture2D? topRight, Texture2D? bottomLeft,
-		Texture2D? bottomRight,
-		Texture2D? edges, Texture2D? fill, bool tileFill = false,
-		bool flipEdges = false, bool flipCorners = false)
-	{
-		DrawWindow(bounds, borderSize, topLeft, edges, topRight, bottomLeft, edges, bottomRight, edges, edges, fill,
-			tileFill, flipEdges, flipCorners);
-	}
-
-	public void DrawWindow(Box2 bounds,
-		float borderSize, Texture2D? topLeft, Texture2D? topEdge, Texture2D? topRight,
-		Texture2D? bottomLeft,
-		Texture2D? bottomEdge, Texture2D? bottomRight, Texture2D? leftEdge, Texture2D? rightEdge, Texture2D? fill,
-		bool tileFill = false, bool flipEdges = false, bool flipCorners = false)
-	{
-		const float padding = 0;
-
-		// Draw corners
-		var offset = Vector2.Zero;
-		var cornerSize = new Vector2(borderSize);
-		if (topLeft != null)
-		{
-			DrawImage(Box2.FromSize(bounds.Location + offset, cornerSize), topLeft);
-		}
-
-		offset = new Vector2(x: 0, bounds.Height - borderSize);
-		if (bottomLeft != null)
-		{
-			DrawImage(
-				Box2.FromSize(bounds.Location + offset, cornerSize),
-				bottomLeft,
-				flipY: flipCorners);
-		}
-
-		offset = new Vector2(bounds.Width - borderSize, y: 0);
-		if (topRight != null)
-		{
-			DrawImage(
-				Box2.FromSize(bounds.Location + offset, cornerSize),
-				topRight,
-				flipX: flipCorners);
-		}
-
-		offset = new Vector2(bounds.Width - borderSize, bounds.Height - borderSize);
-		if (bottomRight != null)
-		{
-			DrawImage(
-				Box2.FromSize(bounds.Location + offset, cornerSize),
-				bottomRight,
-				flipX: flipCorners,
-				flipY: flipCorners);
-		}
-
-		// Draw edges
-		offset = new Vector2(borderSize - padding, y: 0);
-		if (topEdge != null)
-		{
-			DrawImage(
-				Box2.FromSize(bounds.Location + offset,
-					new Vector2(bounds.Width - (borderSize - padding) * 2, borderSize)),
-				topEdge);
-		}
-
-		offset = new Vector2(borderSize - padding, bounds.Height - borderSize);
-		if (bottomEdge != null)
-		{
-			DrawImage(
-				Box2.FromSize(bounds.Location + offset,
-					new Vector2(bounds.Width - (borderSize - padding) * 2, borderSize)),
-				bottomEdge,
-				flipY: flipEdges);
-		}
-
-		offset = new Vector2(x: 0, borderSize - padding);
-		if (leftEdge != null)
-		{
-			DrawImage(
-				Box2.FromSize(bounds.Location + offset,
-					new Vector2(borderSize, bounds.Height - (borderSize - padding) * 2)),
-				leftEdge,
-				flipX: flipEdges,
-				flipAxis: flipEdges);
-		}
-
-		offset = new Vector2(bounds.Width - borderSize, borderSize - padding);
-		if (rightEdge != null)
-		{
-			DrawImage(
-				Box2.FromSize(bounds.Location + offset,
-					new Vector2(borderSize, bounds.Height - (borderSize - padding) * 2)),
-				rightEdge,
-				flipY: flipEdges,
-				flipAxis: flipEdges);
-		}
-
-		// Draw fill
-		offset = new Vector2(borderSize - padding, borderSize - padding);
-		if (fill != null)
-		{
-			DrawImage(
-				Box2.FromSize(bounds.Location + offset, bounds.Size - offset * 2),
-				fill);
-		}
-	}
-
 	public void DrawImage(Box2 bounds, Texture2D texture,
 		float borderTopLeftRadius = default,
 		float borderTopRightRadius = default,
@@ -273,6 +163,32 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
 		}
 		ActiveShader = prevShader;
+	}
+
+	public void DrawNinePatch(NinePatch ninePatch, Box2 bounds)
+	{
+		if (Camera == null)
+		{
+			return;
+		}
+
+		End();
+		var oldZ = Camera.Position.Z;
+		Camera.Position = Camera.Position with
+		{
+			Z = 0,
+		};
+		spriteBatch.Begin(Camera);
+		{
+			var vertices = ninePatch.GetVertices(bounds);
+			spriteBatch.Draw((Texture2D)ninePatch.Texture, vertices, offset: 0, vertices.Length);
+		}
+		spriteBatch.End();
+		Camera.Position = Camera.Position with
+		{
+			Z = oldZ,
+		};
+		Begin();
 	}
 
 	public void DrawText(Font font, TextRow row, int fontSize, Vector2 position, Color4<Rgba> color)

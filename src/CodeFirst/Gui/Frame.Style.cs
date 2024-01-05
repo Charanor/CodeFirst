@@ -62,10 +62,10 @@ public partial class Frame
 	public float BorderBottomLeftRadius { get; set; } = YogaConstants.Undefined;
 	public float BorderBottomRightRadius { get; set; } = YogaConstants.Undefined;
 
-	public FrameSkin FrameSkin { get; set; }
-
 	public Color4<Rgba> BorderColor { get; set; }
 	public Color4<Rgba> BackgroundColor { get; set; }
+
+	public NinePatch? BackgroundTexture { get; set; }
 
 	public virtual void ApplyStyle()
 	{
@@ -107,10 +107,25 @@ public partial class Frame
 		Node.MaxWidth = MaxWidth;
 		Node.MaxHeight = MaxHeight;
 		Node.BorderWidth = BorderWidth;
-		Node.BorderBottomWidth = BorderBottomWidth;
-		Node.BorderTopWidth = BorderTopWidth;
-		Node.BorderLeftWidth = BorderLeftWidth;
-		Node.BorderRightWidth = BorderRightWidth;
+
+		if (BackgroundTexture != null)
+		{
+			// If we have a background texture we ensure a minimum border around the content
+			var (top, right, bottom, left) = (BorderSize)BackgroundTexture.ContentPadding;
+			// Top and bottom are switched because coordinate system is inverted
+			Node.BorderBottomWidth = top + BorderTopWidth; 
+			Node.BorderTopWidth = bottom + BorderBottomWidth;
+			Node.BorderLeftWidth = left + BorderLeftWidth;
+			Node.BorderRightWidth = right + BorderRightWidth;
+		}
+		else
+		{
+			// Top and bottom are switched because coordinate system is inverted
+			Node.BorderBottomWidth = BorderTopWidth; 
+			Node.BorderTopWidth = BorderBottomWidth;
+			Node.BorderLeftWidth = BorderLeftWidth;
+			Node.BorderRightWidth = BorderRightWidth;
+		}
 
 		foreach (var child in children)
 		{

@@ -49,9 +49,6 @@
       <Compile Update="Gui\Frame.Scroll.cs">
         <DependentUpon>Frame.cs</DependentUpon>
       </Compile>
-      <Compile Update="Gui\FrameSkin.cs">
-        <DependentUpon>Frame.cs</DependentUpon>
-      </Compile>
     </ItemGroup>
 
 </Project>
