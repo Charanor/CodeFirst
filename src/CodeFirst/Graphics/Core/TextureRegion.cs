@@ -41,6 +41,9 @@ public record TextureRegion(Texture Texture, Box3i Bounds)
 	public Vector2 UVBounds1D =>
 		new(Bounds1D.X / (float)Texture.Dimensions.X, Bounds1D.X / (float)Texture.Dimensions.X);
 
+	public Vector3i Size => Bounds.Size;
+	public Vector2i Size2D => Bounds2D.Size;
+
 	public int Width => Bounds.Width;
 	public int Height => Bounds.Height;
 	public int Depth => Bounds.Depth;

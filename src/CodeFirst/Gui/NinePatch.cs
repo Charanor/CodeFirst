@@ -32,39 +32,42 @@ public class NinePatch
 
 	private int idx;
 
-	public NinePatch(TextureRegion region, Box2i stretchableArea, Box2i contentArea)
+	public NinePatch(TextureRegion region, Box2i stretchableArea, Box2i contentPadding)
 	{
 		Texture = region.Texture;
 		StretchableArea = stretchableArea;
-		ContentArea = contentArea;
+		ContentPadding = contentPadding;
 		vertices = new SpriteBatch.Vertex[PATCH_COUNT * VERTICES_PER_PATCH];
 
 		var left = stretchableArea.Left;
 		var right = region.Width - stretchableArea.Right;
-		var top = stretchableArea.Top;
-		var bottom = region.Height - stretchableArea.Bottom;
+		var top = region.Height - stretchableArea.Top;
+		var bottom = stretchableArea.Bottom;
 		var centerWidth = region.Width - left - right;
 		var centerHeight = region.Height - top - bottom;
 
-		var topLeft = Box2i.FromSize(Vector2i.Zero, (left, top));
-		TopLeft = new TextureRegion(region, topLeft);
-		var topEdge = Box2i.FromSize((left, 0), (centerWidth, top));
-		TopEdge = new TextureRegion(region, topEdge);
-		var topRight = Box2i.FromSize((left + centerWidth, 0), (right, top));
-		TopRight = new TextureRegion(region, topRight);
+		var bottomLeft = Box2i.FromSize(Vector2i.Zero, (left, top));
+		var bottomEdge = Box2i.FromSize((left, 0), (centerWidth, top));
+		var bottomRight = Box2i.FromSize((left + centerWidth, 0), (right, top));
 
 		var leftEdge = Box2i.FromSize((0, top), (left, centerHeight));
-		LeftEdge = new TextureRegion(region, leftEdge);
 		var center = Box2i.FromSize((left, top), (centerWidth, centerHeight));
-		Center = new TextureRegion(region, center);
 		var rightEdge = Box2i.FromSize((left + centerWidth, top), (right, centerHeight));
-		RightEdge = new TextureRegion(region, rightEdge);
 
-		var bottomLeft = Box2i.FromSize((0, top + centerHeight), (left, bottom));
+		var topLeft = Box2i.FromSize((0, top + centerHeight), (left, bottom));
+		var topEdge = Box2i.FromSize((left, top + centerHeight), (centerWidth, bottom));
+		var topRight = Box2i.FromSize((left + centerWidth, top + centerHeight), (right, bottom));
+		
+		TopLeft = new TextureRegion(region, topLeft);
+		TopEdge = new TextureRegion(region, topEdge);
+		TopRight = new TextureRegion(region, topRight);
+		
+		LeftEdge = new TextureRegion(region, leftEdge);
+		Center = new TextureRegion(region, center);
+		RightEdge = new TextureRegion(region, rightEdge);
+		
 		BottomLeft = new TextureRegion(region, bottomLeft);
-		var bottomEdge = Box2i.FromSize((left, top + centerHeight), (centerWidth, bottom));
 		BottomEdge = new TextureRegion(region, bottomEdge);
-		var bottomRight = Box2i.FromSize((left + centerWidth, top + centerHeight), (right, bottom));
 		BottomRight = new TextureRegion(region, bottomRight);
 
 		if (left == 0 && centerWidth == 0)
@@ -224,13 +227,13 @@ public class NinePatch
 	public TextureRegion? Center { get; }
 
 	public Box2i StretchableArea { get; }
-	public Box2i ContentArea { get; }
+	public Box2i ContentPadding { get; }
 
-	public Box2i ContentPadding => new(
-		ContentArea.Left,
-		ContentArea.Top,
-		Texture.Width - ContentArea.Width - ContentArea.Left,
-		Texture.Height - ContentArea.Height - ContentArea.Top
+	public Box2i ContentArea => new(
+		ContentPadding.Left,
+		ContentPadding.Top,
+		Texture.Width - ContentPadding.Right,
+		Texture.Height - ContentPadding.Bottom
 	);
 
 	private int Add(Box2i region, bool isStretchW, bool isStretchH)
