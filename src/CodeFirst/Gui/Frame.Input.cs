@@ -6,6 +6,8 @@ namespace CodeFirst.Gui;
 
 public partial class Frame
 {
+	private ExplicitInputState explicitEnableInput = ExplicitInputState.NotSet;
+
 	/// <summary>
 	///     If input events can hit this frame. Defaults to <c>false</c>.
 	/// </summary>
@@ -13,7 +15,17 @@ public partial class Frame
 	///     If <c>false</c> input events will still propagate to this frame's children unless
 	///     <see cref="PropagateInputsToChildren" /> is also <c>false</c>.
 	/// </remarks>
-	public bool EnableInput { get; set; } = false;
+	public bool EnableInput
+	{
+		get => explicitEnableInput switch
+		{
+			ExplicitInputState.Enabled => true,
+			ExplicitInputState.Disabled => false,
+			_ => OnPressIn != null || OnPressOut != null || OnFullPress != null || OnCursorEnter != null ||
+			     OnCursorExit != null
+		};
+		set => explicitEnableInput = value ? ExplicitInputState.Enabled : ExplicitInputState.Disabled;
+	}
 
 	/// <summary>
 	///     If input events that hit this frame should propagate to its children. If <c>true</c> input events will
@@ -300,5 +312,12 @@ public partial class Frame
 		}
 
 		return true; // The point is inside the rounded rectangle
+	}
+
+	private enum ExplicitInputState
+	{
+		NotSet,
+		Enabled,
+		Disabled
 	}
 }
