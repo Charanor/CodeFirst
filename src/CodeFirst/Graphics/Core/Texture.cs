@@ -31,6 +31,9 @@ public abstract class Texture : NativeResource
 		Width = width;
 		Height = height;
 		Depth = depth;
+		InternalFormat = internalFormat;
+		PixelFormat = format;
+		PixelType = type;
 		Dimensions = new Vector3i(width, height, depth);
 
 		MinFilter = TextureMinFilter.Linear;
@@ -96,6 +99,11 @@ public abstract class Texture : NativeResource
 	public int Width { get; }
 	public int Height { get; }
 	public int Depth { get; }
+
+	public SizedInternalFormat InternalFormat { get; }
+	public PixelFormat PixelFormat { get; }
+	public PixelType PixelType { get; }
+
 	public Vector3i Dimensions { get; }
 
 	public TextureMinFilter MinFilter
@@ -199,6 +207,35 @@ public abstract class Texture : NativeResource
 			{
 				GenerateTextureMipmap(this);
 			}
+		}
+	}
+
+	public Color4<Rgba> GetRgbaPixel(int x, int y)
+	{
+		switch (PixelFormat)
+		{
+			case PixelFormat.Rgb:
+			{
+				var offset = (x + y * Width) * 3;
+				return new Color4<Rgba>(
+					Data[offset + 0] / 255f,
+					Data[offset + 1] / 255f,
+					Data[offset + 2] / 255f,
+					w: 1
+				);
+			}
+			case PixelFormat.Rgba:
+			{
+				var offset = (x + y * Width) * 4;
+				return new Color4<Rgba>(
+					Data[offset + 0] / 255f,
+					Data[offset + 1] / 255f,
+					Data[offset + 2] / 255f,
+					Data[offset + 3] / 255f
+				);
+			}
+			default:
+				return default;
 		}
 	}
 

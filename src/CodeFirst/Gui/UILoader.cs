@@ -32,7 +32,7 @@ public class UILoader
 			BuiltinComponents.Add(subclass.Name, subclass);
 		}
 
-		Assets.AddAssetResolver(new FontAssetResolver());
+		AssetManagement.Assets.AddAssetResolver(new FontAssetResolver());
 	}
 
 	public UILoader(IGraphicsProvider graphicsProvider)
@@ -194,12 +194,13 @@ public class UILoader
 	{
 		if (type == typeof(Texture2D))
 		{
-			return Assets.Get<Texture2D>(property);
+			
+			return AssetManagement.Assets.Get<Texture2D>(property);
 		}
 
 		if (type == typeof(Font))
 		{
-			return Assets.Get<Font>(property);
+			return AssetManagement.Assets.Get<Font>(property);
 		}
 
 		return Convert.ChangeType(property, type);
