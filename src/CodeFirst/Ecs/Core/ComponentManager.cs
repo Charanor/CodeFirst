@@ -8,7 +8,7 @@ public static class ComponentManager
 	private static Type[] componentTypes = new Type[DEFAULT_COMPONENT_COUNT];
 
 	// SIC! The number of registered types is just the next id :)
-	internal static int NumTypes => nextId;
+	public static int NumTypes => nextId;
 
 	internal static int GetId(Type type)
 	{
@@ -36,7 +36,7 @@ public static class ComponentManager
 		}
 	}
 
-	internal static int GetId<T>() where T : IComponent => GetId(typeof(T));
+	public static int GetId<T>() where T : IComponent => GetId(typeof(T));
 
 	public static Type GetType(int id)
 	{
