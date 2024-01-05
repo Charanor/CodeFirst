@@ -10,6 +10,7 @@ namespace CodeFirst.Graphics.G2D;
 
 public sealed class SpriteBatch : IDisposable
 {
+	private const int MAX_SPRITES = 50;
 	private const int MAX_VERTEX_ELEMENT_COUNT = short.MaxValue;
 
 	private static readonly Vector3[] QuadPositions =
@@ -95,7 +96,8 @@ public sealed class SpriteBatch : IDisposable
 		DepthMask(false);
 	}
 
-	public void Draw(Texture2D texture, Vector2 position, Vector2 origin, Vector2 size, float rotation, Box2i textureRegion, bool flipX, bool flipY)
+	public void Draw(Texture2D texture, Vector2 position, Vector2 origin, Vector2 size, float rotation,
+		Box2i textureRegion, bool flipX, bool flipY)
 	{
 		if (lastTexture != texture)
 		{
@@ -104,14 +106,14 @@ public sealed class SpriteBatch : IDisposable
 			lastTexture = texture;
 		}
 
-		if (currentSpriteCount >= 50)
+		if (currentSpriteCount > MAX_SPRITES)
 		{
 			Flush();
 		}
 
 		textureRegion.Width = textureRegion.Width <= 0 ? texture.Width : textureRegion.Width;
 		textureRegion.Height = textureRegion.Height <= 0 ? texture.Height : textureRegion.Height;
-		
+
 		var textureSize = (Vector2)texture.Dimensions.Xy;
 		var uvBounds = new Box2(textureRegion.Min / textureSize, textureRegion.Max / textureSize).ToVector4();
 
@@ -134,6 +136,37 @@ public sealed class SpriteBatch : IDisposable
 		}
 
 		currentSpriteCount += 1;
+	}
+
+	public void Draw(TextureRegion region, Vector2 position, Vector2 origin, Vector2 size, float rotation, bool flipX,
+		bool flipY)
+	{
+		Draw((Texture2D)region.Texture, position, origin, size, rotation, region.Bounds2D, flipX, flipY);
+	}
+
+	public void Draw(Texture2D texture, Vertex[] vertices, int offset, int count)
+	{
+		if (vertices.Length % SpriteVertexCount != 0)
+		{
+			DevTools.Throw<SpriteBatch>(
+				new ArgumentOutOfRangeException($"Vertex array must be a multiple of {SpriteVertexCount}"));
+			return;
+		}
+
+		var spriteCount = vertices.Length / (int)SpriteVertexCount;
+		if (spriteCount > MAX_SPRITES)
+		{
+			// Too many!
+			DevTools.Throw<SpriteBatch>(new ArgumentOutOfRangeException(
+				$"Cannot draw more than {MAX_SPRITES} at a time, tried to draw {vertices.Length / SpriteVertexCount}"));
+			return;
+		}
+
+		Flush();
+		lastTexture = texture;
+		currentSpriteCount = spriteCount;
+		Array.Copy(vertices, offset, this.vertices, destinationIndex: 0, count);
+		Flush();
 	}
 
 	private void Flush()
@@ -159,7 +192,7 @@ public sealed class SpriteBatch : IDisposable
 	}
 
 	[UsedImplicitly]
-	private readonly record struct Vertex(Vector3 Position, Vector2 UVCoordinates)
+	public readonly record struct Vertex(Vector3 Position, Vector2 UVCoordinates)
 	{
 		public static readonly VertexInfo VertexInfo = new(
 			typeof(Vertex),

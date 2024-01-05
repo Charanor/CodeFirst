@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using CodeFirst.Graphics.Core;
 using CodeFirst.Graphics.Core.Utils;
+using CodeFirst.Graphics.G2D;
 using CodeFirst.Graphics.Generated;
 using CodeFirst.Graphics.Text;
 using CodeFirst.Graphics.Text.Layout;
@@ -31,12 +32,15 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 	private readonly VertexArray vertexArray;
 	private readonly BasicGraphicsShader shader;
 
+	private readonly SpriteBatch spriteBatch;
+
 	private int overflowLayer;
 
 	private ShaderProgram? activeShader;
 
-	public GLGraphicsProvider(Camera? camera = null)
+	public GLGraphicsProvider(SpriteBatch spriteBatch, Camera? camera = null)
 	{
+		this.spriteBatch = spriteBatch;
 		Camera = camera;
 		vertexBuffer = new Buffer<Vertex>(QuadVertices, VertexBufferObjectUsage.StaticRead);
 		indexBuffer = new Buffer<uint>(QuadIndices, VertexBufferObjectUsage.StaticRead);
@@ -273,6 +277,30 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
 		}
 		ActiveShader = prevShader;
+	}
+
+	public void DrawNinePatch(NinePatch ninePatch, Box2 bounds)
+	{
+		if (Camera == null)
+		{
+			return;
+		}
+
+		var oldZ = Camera.Position.Z;
+		Camera.Position = Camera.Position with
+		{
+			Z = 0,
+		};
+		spriteBatch.Begin(Camera);
+		{
+			var vertices = ninePatch.GetVertices(bounds);
+			spriteBatch.Draw((Texture2D)ninePatch.Texture, vertices, offset: 0, vertices.Length);
+		}
+		spriteBatch.End();
+		Camera.Position = Camera.Position with
+		{
+			Z = oldZ,
+		};
 	}
 
 	public void DrawText(Font font, TextRow row, int fontSize, Vector2 position, Color4<Rgba> color)
