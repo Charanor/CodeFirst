@@ -26,26 +26,12 @@ public class Logger : ILogger
 		Log("Trace", msg, Name, CreateIndentString(), sourceFilePath, memberName, sourceLineNumber);
 	}
 
-	public void TraceExpression<T>(string msg, T expression, string expressionRepresentation = ILogger.DefaultExpression,
-		string sourceFilePath = ILogger.DefaultSourceFilePath, int sourceLineNumber = ILogger.DefaultSourceLineNumber,
-		string memberName = ILogger.DefaultSourceMemberName)
-	{
-		Log("Trace", msg, Name, CreateIndentString(), sourceFilePath, memberName, sourceLineNumber);
-	}
-
 	public void Debug(string msg,
 		[CallerFilePath] string sourceFilePath = ILogger.DefaultSourceFilePath,
 		[CallerLineNumber] int sourceLineNumber = ILogger.DefaultSourceLineNumber,
 		[CallerMemberName] string memberName = ILogger.DefaultSourceMemberName)
 	{
 		Log("Debug", msg, Name, CreateIndentString(), sourceFilePath, memberName, sourceLineNumber);
-	}
-
-	public void DebugExpression<T>(string msg, T expression, string expressionRepresentation = ILogger.DefaultExpression,
-		string sourceFilePath = ILogger.DefaultSourceFilePath, int sourceLineNumber = ILogger.DefaultSourceLineNumber,
-		string memberName = ILogger.DefaultSourceMemberName)
-	{
-		throw new NotImplementedException();
 	}
 
 	public void Info(string msg,
@@ -56,13 +42,6 @@ public class Logger : ILogger
 		Log("Info", msg, Name, CreateIndentString(), sourceFilePath, memberName, sourceLineNumber);
 	}
 
-	public void InfoExpression<T>(string msg, T expression, string expressionRepresentation = ILogger.DefaultExpression,
-		string sourceFilePath = ILogger.DefaultSourceFilePath, int sourceLineNumber = ILogger.DefaultSourceLineNumber,
-		string memberName = ILogger.DefaultSourceMemberName)
-	{
-		throw new NotImplementedException();
-	}
-
 	public void Warn(string msg,
 		[CallerFilePath] string sourceFilePath = ILogger.DefaultSourceFilePath,
 		[CallerLineNumber] int sourceLineNumber = ILogger.DefaultSourceLineNumber,
@@ -71,26 +50,12 @@ public class Logger : ILogger
 		Log("Warn", msg, Name, CreateIndentString(), sourceFilePath, memberName, sourceLineNumber);
 	}
 
-	public void WarnExpression<T>(string msg, T expression, string expressionRepresentation = ILogger.DefaultExpression,
-		string sourceFilePath = ILogger.DefaultSourceFilePath, int sourceLineNumber = ILogger.DefaultSourceLineNumber,
-		string memberName = ILogger.DefaultSourceMemberName)
-	{
-		throw new NotImplementedException();
-	}
-
 	public void Error(string msg,
 		[CallerFilePath] string sourceFilePath = ILogger.DefaultSourceFilePath,
 		[CallerLineNumber] int sourceLineNumber = ILogger.DefaultSourceLineNumber,
 		[CallerMemberName] string memberName = ILogger.DefaultSourceMemberName)
 	{
 		Log("Error", msg, Name, CreateIndentString(), sourceFilePath, memberName, sourceLineNumber, isError: true);
-	}
-
-	public void ErrorExpression<T>(string msg, T expression, string expressionRepresentation = ILogger.DefaultExpression,
-		string sourceFilePath = ILogger.DefaultSourceFilePath, int sourceLineNumber = ILogger.DefaultSourceLineNumber,
-		string memberName = ILogger.DefaultSourceMemberName)
-	{
-		throw new NotImplementedException();
 	}
 
 	public void Indent()
