@@ -286,6 +286,7 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			return;
 		}
 
+		End();
 		var oldZ = Camera.Position.Z;
 		Camera.Position = Camera.Position with
 		{
@@ -301,6 +302,7 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		{
 			Z = oldZ,
 		};
+		Begin();
 	}
 
 	public void DrawText(Font font, TextRow row, int fontSize, Vector2 position, Color4<Rgba> color)

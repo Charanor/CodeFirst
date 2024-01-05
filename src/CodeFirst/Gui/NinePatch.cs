@@ -9,17 +9,17 @@ public class NinePatch
 	private const int PATCH_COUNT = 9;
 	private const int VERTICES_PER_PATCH = 4;
 
-	private readonly int topLeftIdx;
-	private readonly int topCenterIdx;
-	private readonly int topRightIdx;
+	private readonly int topLeftIdx = -1;
+	private readonly int topCenterIdx = -1;
+	private readonly int topRightIdx = -1;
 
-	private readonly int middleLeftIdx;
-	private readonly int middleCenterIdx;
-	private readonly int middleRightIdx;
+	private readonly int middleLeftIdx = -1;
+	private readonly int middleCenterIdx = -1;
+	private readonly int middleRightIdx = -1;
 
-	private readonly int bottomLeftIdx;
-	private readonly int bottomCenterIdx;
-	private readonly int bottomRightIdx;
+	private readonly int bottomLeftIdx = -1;
+	private readonly int bottomCenterIdx = -1;
+	private readonly int bottomRightIdx = -1;
 
 	private readonly float leftWidth;
 	private readonly float rightWidth;
@@ -31,6 +31,19 @@ public class NinePatch
 	private readonly SpriteBatch.Vertex[] vertices;
 
 	private int idx;
+
+	public NinePatch(TextureRegion region)
+	{
+		Texture = region.Texture;
+		Center = region;
+		StretchableArea = new Box2i(minX: 0, minY: 0, Texture.Width, Texture.Height);
+		ContentPadding = Box2i.Empty;
+		(middleWidth, middleHeight) = StretchableArea.Size;
+		vertices = new SpriteBatch.Vertex[1 * VERTICES_PER_PATCH];
+		// Note that technically it IS stretched horizontally and vertically, but in this case our UV:s will
+		// range from (0, 0) - (1, 1) so there won't be any artefacts anyways.
+		middleCenterIdx = Add(StretchableArea, isStretchedHorizontally: false, isStretchedVertically: false);
+	}
 
 	public NinePatch(TextureRegion region, Box2i stretchableArea, Box2i contentPadding)
 	{
@@ -57,15 +70,15 @@ public class NinePatch
 		var topLeft = Box2i.FromSize((0, top + centerHeight), (left, bottom));
 		var topEdge = Box2i.FromSize((left, top + centerHeight), (centerWidth, bottom));
 		var topRight = Box2i.FromSize((left + centerWidth, top + centerHeight), (right, bottom));
-		
+
 		TopLeft = new TextureRegion(region, topLeft);
 		TopEdge = new TextureRegion(region, topEdge);
 		TopRight = new TextureRegion(region, topRight);
-		
+
 		LeftEdge = new TextureRegion(region, leftEdge);
 		Center = new TextureRegion(region, center);
 		RightEdge = new TextureRegion(region, rightEdge);
-		
+
 		BottomLeft = new TextureRegion(region, bottomLeft);
 		BottomEdge = new TextureRegion(region, bottomEdge);
 		BottomRight = new TextureRegion(region, bottomRight);
@@ -106,46 +119,30 @@ public class NinePatch
 
 		if (!bottomLeft.IsZero)
 		{
-			bottomLeftIdx = Add(bottomLeft, isStretchW: false, isStretchH: false);
+			bottomLeftIdx = Add(bottomLeft, isStretchedHorizontally: false, isStretchedVertically: false);
 			leftWidth = bottomLeft.Width;
 			bottomHeight = bottomLeft.Height;
-		}
-		else
-		{
-			bottomLeftIdx = -1;
 		}
 
 		if (!bottomEdge.IsZero)
 		{
-			bottomCenterIdx = Add(bottomEdge, !bottomLeft.IsZero || !bottomRight.IsZero, isStretchH: false);
+			bottomCenterIdx = Add(bottomEdge, !bottomLeft.IsZero || !bottomRight.IsZero, isStretchedVertically: false);
 			middleWidth = Math.Max(middleWidth, bottomEdge.Width);
 			bottomHeight = Math.Max(bottomHeight, bottomEdge.Height);
-		}
-		else
-		{
-			bottomCenterIdx = -1;
 		}
 
 		if (!bottomRight.IsZero)
 		{
-			bottomRightIdx = Add(bottomRight, isStretchW: false, isStretchH: false);
+			bottomRightIdx = Add(bottomRight, isStretchedHorizontally: false, isStretchedVertically: false);
 			rightWidth = Math.Max(rightWidth, bottomRight.Width);
 			bottomHeight = Math.Max(bottomHeight, bottomRight.Height);
-		}
-		else
-		{
-			bottomRightIdx = -1;
 		}
 
 		if (!leftEdge.IsZero)
 		{
-			middleLeftIdx = Add(leftEdge, isStretchW: false, !topLeft.IsZero || !bottomLeft.IsZero);
+			middleLeftIdx = Add(leftEdge, isStretchedHorizontally: false, !topLeft.IsZero || !bottomLeft.IsZero);
 			leftWidth = Math.Max(leftWidth, leftEdge.Width);
 			middleHeight = Math.Max(middleHeight, leftEdge.Height);
-		}
-		else
-		{
-			middleLeftIdx = -1;
 		}
 
 		if (!center.IsZero)
@@ -154,53 +151,33 @@ public class NinePatch
 			middleWidth = Math.Max(middleWidth, center.Width);
 			middleHeight = Math.Max(middleHeight, center.Height);
 		}
-		else
-		{
-			middleCenterIdx = -1;
-		}
 
 		if (!rightEdge.IsZero)
 		{
-			middleRightIdx = Add(rightEdge, isStretchW: false, !topRight.IsZero || !bottomRight.IsZero);
+			middleRightIdx = Add(rightEdge, isStretchedHorizontally: false, !topRight.IsZero || !bottomRight.IsZero);
 			rightWidth = Math.Max(rightWidth, rightEdge.Width);
 			middleHeight = Math.Max(middleHeight, rightEdge.Height);
-		}
-		else
-		{
-			middleRightIdx = -1;
 		}
 
 		if (!topLeft.IsZero)
 		{
-			topLeftIdx = Add(topLeft, isStretchW: false, isStretchH: false);
+			topLeftIdx = Add(topLeft, isStretchedHorizontally: false, isStretchedVertically: false);
 			leftWidth = Math.Max(leftWidth, topLeft.Width);
 			topHeight = Math.Max(topHeight, topLeft.Height);
-		}
-		else
-		{
-			topLeftIdx = -1;
 		}
 
 		if (!topEdge.IsZero)
 		{
-			topCenterIdx = Add(topEdge, !topLeft.IsZero || !topRight.IsZero, isStretchH: false);
+			topCenterIdx = Add(topEdge, !topLeft.IsZero || !topRight.IsZero, isStretchedVertically: false);
 			middleWidth = Math.Max(middleWidth, topEdge.Width);
 			topHeight = Math.Max(topHeight, topEdge.Height);
-		}
-		else
-		{
-			topCenterIdx = -1;
 		}
 
 		if (!topRight.IsZero)
 		{
-			topRightIdx = Add(topRight, isStretchW: false, isStretchH: false);
+			topRightIdx = Add(topRight, isStretchedHorizontally: false, isStretchedVertically: false);
 			rightWidth = Math.Max(rightWidth, topRight.Width);
 			topHeight = Math.Max(topHeight, topRight.Height);
-		}
-		else
-		{
-			topRightIdx = -1;
 		}
 
 		if (idx < vertices.Length)
@@ -236,7 +213,7 @@ public class NinePatch
 		Texture.Height - ContentPadding.Bottom
 	);
 
-	private int Add(Box2i region, bool isStretchW, bool isStretchH)
+	private int Add(Box2i region, bool isStretchedHorizontally, bool isStretchedVertically)
 	{
 		var uv = new Box2(region.Min / (Vector2)Texture.Dimensions.Xy, region.Max / (Vector2)Texture.Dimensions.Xy);
 		var (u, v) = uv.Min;
@@ -247,14 +224,14 @@ public class NinePatch
 			// Add half pixel offsets on stretchable dimensions to avoid color bleeding when GL_LINEAR
 			// filtering is used for the texture. This nudges the texture coordinate to the center
 			// of the texel where the neighboring pixel has 0% contribution in linear blending mode.
-			if (isStretchW)
+			if (isStretchedHorizontally)
 			{
 				var halfTexelWidth = 0.5f * 1f / Texture.Width;
 				u += halfTexelWidth;
 				u2 -= halfTexelWidth;
 			}
 
-			if (isStretchH)
+			if (isStretchedVertically)
 			{
 				var halfTexelHeight = 0.5f * 1f / Texture.Height;
 				v -= halfTexelHeight;
@@ -368,4 +345,7 @@ public class NinePatch
 
 		return vertices;
 	}
+
+	public static implicit operator NinePatch(Texture texture) => new(texture);
+	public static implicit operator NinePatch(TextureRegion region) => new(region);
 }

@@ -133,9 +133,9 @@ public class Text : Frame
 		}
 	}
 
-	public override void Draw(IGraphicsProvider graphicsProvider)
+	protected override void AfterDrawBackground(IGraphicsProvider graphicsProvider)
 	{
-		base.Draw(graphicsProvider);
+		base.AfterDrawBackground(graphicsProvider);
 
 		var maxTextWidth = CalculateMaxTextWidth();
 		if (dirty)
@@ -144,7 +144,8 @@ public class Text : Frame
 			var rows = TextContent
 				.Split('\n')
 				.SelectMany(hardRow =>
-					layout.LineBreak(hardRow, maxTextWidth * (font.Atlas.CharacterPixelSize / FontSize), TextBreakStrategy));
+					layout.LineBreak(hardRow, maxTextWidth * (font.Atlas.CharacterPixelSize / FontSize),
+						TextBreakStrategy));
 			textRows.AddRange(rows);
 			dirty = false;
 		}
@@ -162,34 +163,21 @@ public class Text : Frame
 			_ => 0 // Top align is default, no need to check for it
 		};
 
-		if (Overflow != YogaOverflow.Visible)
+		// Draw text
+		var offsetY = 0f;
+		foreach (var row in textRows)
 		{
-			graphicsProvider.BeginOverflow();
-			DrawText();
-			graphicsProvider.EndOverflow();
-		}
-		else
-		{
-			DrawText();
-		}
-
-		void DrawText()
-		{
-			var offsetY = 0f;
-			foreach (var row in textRows)
+			var emptyHorizontalSpace = textAreaSize.X - font.ScalePixelsToFontSize(row.Size.X, FontSize);
+			var offsetX = TextAlign switch
 			{
-				var emptyHorizontalSpace = textAreaSize.X - font.ScalePixelsToFontSize(row.Size.X, FontSize);
-				var offsetX = TextAlign switch
-				{
-					var align when align.HasFlag(TextAlign.Right) => emptyHorizontalSpace,
-					var align when align.HasFlag(TextAlign.HorizontalCenter) => emptyHorizontalSpace / 2f,
-					_ => 0 // Left align is default, no need to check for it
-				};
+				var align when align.HasFlag(TextAlign.Right) => emptyHorizontalSpace,
+				var align when align.HasFlag(TextAlign.HorizontalCenter) => emptyHorizontalSpace / 2f,
+				_ => 0 // Left align is default, no need to check for it
+			};
 
-				var positionOffset = new Vector2(offsetX, offsetY);
-				graphicsProvider.DrawText(Font, row, FontSize, position + positionOffset, FontColor);
-				offsetY += font.ScaleEmToFontSize(font.Metrics.LineHeight, FontSize);
-			}
+			var positionOffset = new Vector2(offsetX, offsetY);
+			graphicsProvider.DrawText(Font, row, FontSize, position + positionOffset, FontColor);
+			offsetY += font.ScaleEmToFontSize(font.Metrics.LineHeight, FontSize);
 		}
 	}
 }

@@ -90,7 +90,7 @@ public partial class Frame
 		}
 	}
 
-	private void UpdateScrollOffset()
+	protected void UpdateScrollOffset()
 	{
 		var maxScrollOffset = CalculateMaxScrollOffset();
 		ScrollOffset = Vector2.ComponentMin(ScrollOffset, maxScrollOffset);
