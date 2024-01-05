@@ -77,7 +77,7 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		{
 			return;
 		}
-		
+
 		Enable(EnableCap.Blend);
 		BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
@@ -126,17 +126,134 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		StencilFunc(StencilFunction.Lequal, overflowLayer, mask: 0xff);
 	}
 
+	public void DrawWindow(Box2 bounds,
+		float borderSize, Texture2D? corners, Texture2D? edges, Texture2D? fill, bool tileFill = false,
+		bool flipEdges = false, bool flipCorners = false)
+	{
+		DrawWindow(bounds, borderSize, corners, corners, corners, corners, edges, fill, tileFill, flipEdges,
+			flipCorners);
+	}
+
+	public void DrawWindow(Box2 bounds,
+		float borderSize, Texture2D? topLeft, Texture2D? topRight, Texture2D? bottomLeft,
+		Texture2D? bottomRight,
+		Texture2D? edges, Texture2D? fill, bool tileFill = false,
+		bool flipEdges = false, bool flipCorners = false)
+	{
+		DrawWindow(bounds, borderSize, topLeft, edges, topRight, bottomLeft, edges, bottomRight, edges, edges, fill,
+			tileFill, flipEdges, flipCorners);
+	}
+
+	public void DrawWindow(Box2 bounds,
+		float borderSize, Texture2D? topLeft, Texture2D? topEdge, Texture2D? topRight,
+		Texture2D? bottomLeft,
+		Texture2D? bottomEdge, Texture2D? bottomRight, Texture2D? leftEdge, Texture2D? rightEdge, Texture2D? fill,
+		bool tileFill = false, bool flipEdges = false, bool flipCorners = false)
+	{
+		const float padding = 0;
+
+		// Draw corners
+		var offset = Vector2.Zero;
+		var cornerSize = new Vector2(borderSize);
+		if (topLeft != null)
+		{
+			DrawImage(Box2.FromSize(bounds.Location + offset, cornerSize), topLeft);
+		}
+
+		offset = new Vector2(x: 0, bounds.Height - borderSize);
+		if (bottomLeft != null)
+		{
+			DrawImage(
+				Box2.FromSize(bounds.Location + offset, cornerSize),
+				bottomLeft,
+				flipY: flipCorners);
+		}
+
+		offset = new Vector2(bounds.Width - borderSize, y: 0);
+		if (topRight != null)
+		{
+			DrawImage(
+				Box2.FromSize(bounds.Location + offset, cornerSize),
+				topRight,
+				flipX: flipCorners);
+		}
+
+		offset = new Vector2(bounds.Width - borderSize, bounds.Height - borderSize);
+		if (bottomRight != null)
+		{
+			DrawImage(
+				Box2.FromSize(bounds.Location + offset, cornerSize),
+				bottomRight,
+				flipX: flipCorners,
+				flipY: flipCorners);
+		}
+
+		// Draw edges
+		offset = new Vector2(borderSize - padding, y: 0);
+		if (topEdge != null)
+		{
+			DrawImage(
+				Box2.FromSize(bounds.Location + offset,
+					new Vector2(bounds.Width - (borderSize - padding) * 2, borderSize)),
+				topEdge);
+		}
+
+		offset = new Vector2(borderSize - padding, bounds.Height - borderSize);
+		if (bottomEdge != null)
+		{
+			DrawImage(
+				Box2.FromSize(bounds.Location + offset,
+					new Vector2(bounds.Width - (borderSize - padding) * 2, borderSize)),
+				bottomEdge,
+				flipY: flipEdges);
+		}
+
+		offset = new Vector2(x: 0, borderSize - padding);
+		if (leftEdge != null)
+		{
+			DrawImage(
+				Box2.FromSize(bounds.Location + offset,
+					new Vector2(borderSize, bounds.Height - (borderSize - padding) * 2)),
+				leftEdge,
+				flipX: flipEdges,
+				flipAxis: flipEdges);
+		}
+
+		offset = new Vector2(bounds.Width - borderSize, borderSize - padding);
+		if (rightEdge != null)
+		{
+			DrawImage(
+				Box2.FromSize(bounds.Location + offset,
+					new Vector2(borderSize, bounds.Height - (borderSize - padding) * 2)),
+				rightEdge,
+				flipY: flipEdges,
+				flipAxis: flipEdges);
+		}
+
+		// Draw fill
+		offset = new Vector2(borderSize - padding, borderSize - padding);
+		if (fill != null)
+		{
+			DrawImage(
+				Box2.FromSize(bounds.Location + offset, bounds.Size - offset * 2),
+				fill);
+		}
+	}
+
 	public void DrawImage(Box2 bounds, Texture2D texture,
 		float borderTopLeftRadius = default,
 		float borderTopRightRadius = default,
 		float borderBottomLeftRadius = default,
-		float borderBottomRightRadius = default)
+		float borderBottomRightRadius = default,
+		bool flipX = false,
+		bool flipY = false,
+		bool flipAxis = false)
 	{
 		if (Camera == null)
 		{
 			return;
 		}
-		
+
 		var prevShader = ActiveShader;
 		ActiveShader = shader;
 		{
@@ -145,6 +262,9 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			                     Matrix4.CreateTranslation(bounds.X, convertedY, z: 0);
 			shader.HasTexture = true;
 			shader.Texture0 = texture;
+			shader.FlipX = flipX;
+			shader.FlipY = flipY;
+			shader.FlipAxis = flipAxis;
 
 			shader.BorderTopLeftRadius = borderTopLeftRadius;
 			shader.BorderTopRightRadius = borderTopRightRadius;
@@ -161,7 +281,7 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		{
 			return;
 		}
-		
+
 		var prevShader = ActiveShader;
 		var fontShader = font.Shader;
 		fontShader.FontAtlas = font.Atlas.Texture;
@@ -204,7 +324,7 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		{
 			return;
 		}
-		
+
 		var prevShader = ActiveShader;
 		ActiveShader = shader;
 		{
@@ -213,6 +333,9 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			                     Matrix4.CreateTranslation(bounds.X, convertedY, z: 0);
 			shader.BackgroundColor = color.ToVector4();
 			shader.HasTexture = false;
+			shader.FlipX = false;
+			shader.FlipY = false;
+			shader.FlipAxis = false;
 
 			shader.Size = bounds.Size;
 
@@ -233,7 +356,7 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		{
 			return Vector2.Zero;
 		}
-		
+
 		var fontShader = font.Shader;
 		fontShader.UvBounds = RemapUV(font.Atlas.Texture, glyph.AtlasBounds);
 

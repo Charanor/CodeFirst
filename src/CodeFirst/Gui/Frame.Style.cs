@@ -62,9 +62,11 @@ public partial class Frame
 	public float BorderBottomLeftRadius { get; set; } = YogaConstants.Undefined;
 	public float BorderBottomRightRadius { get; set; } = YogaConstants.Undefined;
 
+	public FrameSkin FrameSkin { get; set; }
+
 	public Color4<Rgba> BorderColor { get; set; }
 	public Color4<Rgba> BackgroundColor { get; set; }
-	
+
 	public virtual void ApplyStyle()
 	{
 		Node.PositionType = Position;

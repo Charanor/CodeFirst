@@ -147,6 +147,7 @@ public partial class Frame
 			graphicsProvider.BeginOverflow();
 			{
 				DrawRectangles();
+				DrawTextures();
 				DrawChildren();
 			}
 			graphicsProvider.EndOverflow();
@@ -154,6 +155,7 @@ public partial class Frame
 		else
 		{
 			DrawRectangles();
+			DrawTextures();
 			DrawChildren();
 		}
 
@@ -185,6 +187,11 @@ public partial class Frame
 					topLeft, topRight, bottomLeft, bottomRight);
 				// StencilMask(0xff);
 			}
+		}
+
+		void DrawTextures()
+		{
+			FrameSkin.Draw(this, graphicsProvider);
 		}
 
 		void DrawChildren()
