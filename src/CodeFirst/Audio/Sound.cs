@@ -88,16 +88,16 @@ public class Sound
 		if (freeOnStop)
 		{
 			Coroutines.Start(FreeOnStop());
-		}
 
-		IEnumerator<Wait?> FreeOnStop()
-		{
-			while (soundInstance.State != ALSourceState.Stopped)
+			IEnumerator<Wait?> FreeOnStop()
 			{
-				yield return null;
-			}
+				while (soundInstance.State != ALSourceState.Stopped)
+				{
+					yield return null;
+				}
 
-			soundInstance.Free();
+				soundInstance.Free();
+			}
 		}
 
 		currentInstances.Add(soundInstance);

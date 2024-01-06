@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using CodeFirst.Graphics.Core.Utils;
 using OpenTK.Audio.OpenAL;
 using OpenTK.Mathematics;
 
@@ -5,6 +7,7 @@ namespace CodeFirst.Audio.Internals;
 
 internal class AudioListener
 {
+	[Range(minimum: 0, maximum: 1)]
 	public float MasterVolume
 	{
 		get
@@ -13,7 +16,7 @@ internal class AudioListener
 			return gain;
 		}
 
-		set => AL.Listener(ALListenerf.Gain, value);
+		set => AL.Listener(ALListenerf.Gain, value.Clamp(min: 0, max: 1));
 	}
 
 	public Vector3 Position

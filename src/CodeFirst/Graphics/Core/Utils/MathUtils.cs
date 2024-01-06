@@ -64,8 +64,8 @@ public static class MathUtils
 		return Quaternion.FromAxisAngle(axis, angle);
 	}
 
-	public static float Clamp(this float value, float min, float max) => MathHelper.Clamp(value, min, max);
-	public static int Clamp(this int value, int min, int max) => MathHelper.Clamp(value, min, max);
+	public static float Clamp(this float value, float min, float max) => float.Clamp(value, min, max);
+	public static int Clamp(this int value, int min, int max) => int.Clamp(value, min, max);
 
 	public static float LimitMagnitude(this float value, float magnitude)
 	{

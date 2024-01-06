@@ -1,4 +1,5 @@
-﻿using CodeFirst.Audio.Internals;
+﻿using System.ComponentModel.DataAnnotations;
+using CodeFirst.Audio.Internals;
 using OpenTK.Mathematics;
 
 namespace CodeFirst.Audio;
@@ -29,12 +30,13 @@ public sealed class AudioManager : IDisposable
 		set => listener.Orientation = value;
 	}
 
+	[Range(0, 1)]
 	public float MasterVolume
 	{
 		get => listener.MasterVolume;
 		set => listener.MasterVolume = value;
 	}
-
+	
 	public void Dispose()
 	{
 		device.Dispose();
