@@ -180,7 +180,13 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		};
 		spriteBatch.Begin(Camera);
 		{
-			var vertices = ninePatch.GetVertices(bounds);
+			var vertices = ninePatch.GetVertices(bounds).Select(vert => vert with
+			{
+				Position = vert.Position with
+				{
+					Y =  Camera.WorldSize.Y - vert.Position.Y,
+				}
+			}).ToArray();
 			spriteBatch.Draw((Texture2D)ninePatch.Texture, vertices, offset: 0, vertices.Length);
 		}
 		spriteBatch.End();

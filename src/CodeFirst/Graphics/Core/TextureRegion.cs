@@ -44,6 +44,10 @@ public record TextureRegion(Texture Texture, Box3i Bounds)
 	public Vector3i Size => Bounds.Size;
 	public Vector2i Size2D => Bounds2D.Size;
 
+	public int X => Bounds.X;
+	public int Y => Bounds.Y;
+	public int Z => Bounds.Z;
+
 	public int Width => Bounds.Width;
 	public int Height => Bounds.Height;
 	public int Depth => Bounds.Depth;

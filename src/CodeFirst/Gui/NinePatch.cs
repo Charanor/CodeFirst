@@ -51,23 +51,27 @@ public class NinePatch
 		StretchableArea = stretchableArea;
 		ContentPadding = contentPadding;
 		vertices = new SpriteBatch.Vertex[PATCH_COUNT * VERTICES_PER_PATCH];
+		
+		var x = region.X;
+		var y = region.Y;
 
 		var left = stretchableArea.Left;
-		var right = region.Width - stretchableArea.Right;
-		var top = region.Height - stretchableArea.Top;
-		var bottom = stretchableArea.Bottom;
-		var centerWidth = region.Width - left - right;
-		var centerHeight = region.Height - top - bottom;
+		var right = region.Width - stretchableArea.Right + x;
+		var top = stretchableArea.Top;
+		var bottom = region.Height - stretchableArea.Bottom + y;
+		var centerWidth = stretchableArea.Width;
+		var centerHeight = stretchableArea.Height;
 
-		var bottomLeft = Box2i.FromSize(Vector2i.Zero, (left, top));
-		var bottomEdge = Box2i.FromSize((left, 0), (centerWidth, top));
-		var bottomRight = Box2i.FromSize((left + centerWidth, 0), (right, top));
 
-		var leftEdge = Box2i.FromSize((0, top), (left, centerHeight));
+		var bottomLeft = Box2i.FromSize((x, y), (left, top));
+		var bottomEdge = Box2i.FromSize((left, y), (centerWidth, top));
+		var bottomRight = Box2i.FromSize((left + centerWidth, y), (right, top));
+
+		var leftEdge = Box2i.FromSize((x, top), (left, centerHeight));
 		var center = Box2i.FromSize((left, top), (centerWidth, centerHeight));
 		var rightEdge = Box2i.FromSize((left + centerWidth, top), (right, centerHeight));
 
-		var topLeft = Box2i.FromSize((0, top + centerHeight), (left, bottom));
+		var topLeft = Box2i.FromSize((x, top + centerHeight), (left, bottom));
 		var topEdge = Box2i.FromSize((left, top + centerHeight), (centerWidth, bottom));
 		var topRight = Box2i.FromSize((left + centerWidth, top + centerHeight), (right, bottom));
 
@@ -242,19 +246,19 @@ public class NinePatch
 		var i = idx;
 		vertices[i] = vertices[i] with
 		{
-			UVCoordinates = new Vector2(u, v)
+			UVCoordinates = new Vector2(u, v2)
 		};
 		vertices[i + 1] = vertices[i + 1] with
 		{
-			UVCoordinates = new Vector2(u2, v)
+			UVCoordinates = new Vector2(u2, v2)
 		};
 		vertices[i + 2] = vertices[i + 2] with
 		{
-			UVCoordinates = new Vector2(u2, v2)
+			UVCoordinates = new Vector2(u2, v)
 		};
 		vertices[i + 3] = vertices[i + 3] with
 		{
-			UVCoordinates = new Vector2(u, v2)
+			UVCoordinates = new Vector2(u, v)
 		};
 
 		idx += VERTICES_PER_PATCH;
@@ -286,36 +290,38 @@ public class NinePatch
 
 	public SpriteBatch.Vertex[] GetVertices(Box2 bounds)
 	{
-		var x = bounds.X;
-		var y = bounds.Y;
-		var width = bounds.Width;
 		var height = bounds.Height;
-
-		var centerX = x + leftWidth;
-		var centerY = y + bottomHeight;
-		var centerWidth = width - rightWidth - leftWidth;
 		var centerHeight = height - topHeight - bottomHeight;
-		var rightX = x + width - rightWidth;
-		var topY = y + height - topHeight;
+		
+		var topY = bounds.Top;
+		var centerY = topY + topHeight;
+		var bottomY = centerY + centerHeight;
+		
+		var width = bounds.Width;
+		var centerWidth = width - rightWidth - leftWidth;
+		
+		var leftX = bounds.Left;
+		var centerX = leftX + leftWidth;
+		var rightX = centerX + centerWidth;
 
 		if (bottomLeftIdx != -1)
 		{
-			Set(bottomLeftIdx, x, y, leftWidth, bottomHeight);
+			Set(bottomLeftIdx, leftX, bottomY, leftWidth, bottomHeight);
 		}
 
 		if (bottomCenterIdx != -1)
 		{
-			Set(bottomCenterIdx, centerX, y, centerWidth, bottomHeight);
+			Set(bottomCenterIdx, centerX, bottomY, centerWidth, bottomHeight);
 		}
 
 		if (bottomRightIdx != -1)
 		{
-			Set(bottomRightIdx, rightX, y, rightWidth, bottomHeight);
+			Set(bottomRightIdx, rightX, bottomY, rightWidth, bottomHeight);
 		}
 
 		if (middleLeftIdx != -1)
 		{
-			Set(middleLeftIdx, x, centerY, leftWidth, centerHeight);
+			Set(middleLeftIdx, leftX, centerY, leftWidth, centerHeight);
 		}
 
 		if (middleCenterIdx != -1)
@@ -330,7 +336,7 @@ public class NinePatch
 
 		if (topLeftIdx != -1)
 		{
-			Set(topLeftIdx, x, topY, leftWidth, topHeight);
+			Set(topLeftIdx, leftX, topY, leftWidth, topHeight);
 		}
 
 		if (topCenterIdx != -1)
