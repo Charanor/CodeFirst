@@ -28,7 +28,7 @@ public interface IGraphicsProvider
 		bool flipY = false,
 		bool flipAxis = false);
 
-	void DrawNinePatch(NinePatch ninePatch, Box2 bounds);
+	void DrawNinePatch(NinePatch ninePatch, Box2 bounds, Color4<Rgba> color = default);
 
 	void DrawText(Font font, TextRow row, int fontSize, Vector2 position, Color4<Rgba> color);
 	void DrawText(Font font, string text, int fontSize, Vector2 position, Color4<Rgba> color);

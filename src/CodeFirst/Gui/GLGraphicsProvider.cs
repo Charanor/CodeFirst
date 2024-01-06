@@ -165,38 +165,6 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		ActiveShader = prevShader;
 	}
 
-	public void DrawNinePatch(NinePatch ninePatch, Box2 bounds)
-	{
-		if (Camera == null)
-		{
-			return;
-		}
-
-		End();
-		var oldZ = Camera.Position.Z;
-		Camera.Position = Camera.Position with
-		{
-			Z = 0,
-		};
-		spriteBatch.Begin(Camera);
-		{
-			var vertices = ninePatch.GetVertices(bounds).Select(vert => vert with
-			{
-				Position = vert.Position with
-				{
-					Y =  Camera.WorldSize.Y - vert.Position.Y,
-				}
-			}).ToArray();
-			spriteBatch.Draw((Texture2D)ninePatch.Texture, vertices, offset: 0, vertices.Length);
-		}
-		spriteBatch.End();
-		Camera.Position = Camera.Position with
-		{
-			Z = oldZ,
-		};
-		Begin();
-	}
-
 	public void DrawText(Font font, TextRow row, int fontSize, Vector2 position, Color4<Rgba> color)
 	{
 		if (Camera == null)
@@ -269,6 +237,38 @@ public class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			DrawElements(PrimitiveType.Triangles, QuadIndices.Length, DrawElementsType.UnsignedInt, offset: 0);
 		}
 		ActiveShader = prevShader;
+	}
+
+	public void DrawNinePatch(NinePatch ninePatch, Box2 bounds, Color4<Rgba> color = default)
+	{
+		if (Camera == null)
+		{
+			return;
+		}
+
+		End();
+		var oldZ = Camera.Position.Z;
+		Camera.Position = Camera.Position with
+		{
+			Z = 0
+		};
+		spriteBatch.Begin(Camera);
+		{
+			var vertices = ninePatch.GetVertices(bounds, color).Select(vert => vert with
+			{
+				Position = vert.Position with
+				{
+					Y = Camera.WorldSize.Y - vert.Position.Y
+				}
+			}).ToArray();
+			spriteBatch.Draw((Texture2D)ninePatch.Texture, vertices, offset: 0, vertices.Length);
+		}
+		spriteBatch.End();
+		Camera.Position = Camera.Position with
+		{
+			Z = oldZ
+		};
+		Begin();
 	}
 
 	private Vector2 DrawGlyph(Font font, int fontSize, FontGlyph glyph, FontGlyph? previousGlyph, Vector2 virtualCursor,

@@ -267,28 +267,34 @@ public class NinePatch
 	/**
 	 * Set the coordinates and color of a ninth of the patch.
 	 */
-	private void Set(int index, float x, float y, float width, float height)
+	private void Set(int index, float x, float y, float width, float height, Color4<Rgba> color)
 	{
 		vertices[index] = vertices[index] with
 		{
-			Position = (x, y, -1)
+			Position = (x, y, -1),
+			Color = color
 		};
 		vertices[index + 1] = vertices[index + 1] with
 		{
-			Position = (x + width, y, -1)
+			Position = (x + width, y, -1),
+			Color = color
 		};
 		vertices[index + 2] = vertices[index + 2] with
 		{
-			Position = (x + width, y + height, -1)
+			Position = (x + width, y + height, -1),
+			Color = color
 		};
 		vertices[index + 3] = vertices[index + 3] with
 		{
-			Position = (x, y + height, -1)
+			Position = (x, y + height, -1),
+			Color = color
 		};
 	}
 
-	public SpriteBatch.Vertex[] GetVertices(Box2 bounds)
+	public SpriteBatch.Vertex[] GetVertices(Box2 bounds, Color4<Rgba> color = default)
 	{
+		color = color == default ? Color4.White : color;
+		
 		var height = bounds.Height;
 		var centerHeight = height - topHeight - bottomHeight;
 		
@@ -305,47 +311,47 @@ public class NinePatch
 
 		if (bottomLeftIdx != -1)
 		{
-			Set(bottomLeftIdx, leftX, bottomY, leftWidth, bottomHeight);
+			Set(bottomLeftIdx, leftX, bottomY, leftWidth, bottomHeight, color);
 		}
 
 		if (bottomCenterIdx != -1)
 		{
-			Set(bottomCenterIdx, centerX, bottomY, centerWidth, bottomHeight);
+			Set(bottomCenterIdx, centerX, bottomY, centerWidth, bottomHeight, color);
 		}
 
 		if (bottomRightIdx != -1)
 		{
-			Set(bottomRightIdx, rightX, bottomY, rightWidth, bottomHeight);
+			Set(bottomRightIdx, rightX, bottomY, rightWidth, bottomHeight, color);
 		}
 
 		if (middleLeftIdx != -1)
 		{
-			Set(middleLeftIdx, leftX, centerY, leftWidth, centerHeight);
+			Set(middleLeftIdx, leftX, centerY, leftWidth, centerHeight, color);
 		}
 
 		if (middleCenterIdx != -1)
 		{
-			Set(middleCenterIdx, centerX, centerY, centerWidth, centerHeight);
+			Set(middleCenterIdx, centerX, centerY, centerWidth, centerHeight, color);
 		}
 
 		if (middleRightIdx != -1)
 		{
-			Set(middleRightIdx, rightX, centerY, rightWidth, centerHeight);
+			Set(middleRightIdx, rightX, centerY, rightWidth, centerHeight, color);
 		}
 
 		if (topLeftIdx != -1)
 		{
-			Set(topLeftIdx, leftX, topY, leftWidth, topHeight);
+			Set(topLeftIdx, leftX, topY, leftWidth, topHeight, color);
 		}
 
 		if (topCenterIdx != -1)
 		{
-			Set(topCenterIdx, centerX, topY, centerWidth, topHeight);
+			Set(topCenterIdx, centerX, topY, centerWidth, topHeight, color);
 		}
 
 		if (topRightIdx != -1)
 		{
-			Set(topRightIdx, rightX, topY, rightWidth, topHeight);
+			Set(topRightIdx, rightX, topY, rightWidth, topHeight, color);
 		}
 
 		return vertices;

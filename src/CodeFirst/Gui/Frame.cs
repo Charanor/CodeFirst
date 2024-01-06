@@ -166,8 +166,8 @@ public partial class Frame
 			
 			if (BackgroundTexture != null)
 			{
-				// If we have a background texture, only draw the texture, skip drawing colored background
-				graphicsProvider.DrawNinePatch(BackgroundTexture, TransformedBounds);
+				// If we have a background texture, only draw the tinted texture, skip drawing background rectangles
+				graphicsProvider.DrawNinePatch(BackgroundTexture, TransformedBounds, BackgroundColor);
 				AfterDrawBackground(graphicsProvider);
 				return;
 			}
