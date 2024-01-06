@@ -10,6 +10,7 @@ namespace CodeFirst.Graphics.G2D;
 
 public sealed class SpriteBatch : IDisposable
 {
+	// This value is currently arbitrary. There is a bug when too many sprites are rendered, this fixes it.
 	private const int MAX_SPRITES = 50;
 	private const int MAX_VERTEX_ELEMENT_COUNT = short.MaxValue;
 
@@ -96,8 +97,8 @@ public sealed class SpriteBatch : IDisposable
 		DepthMask(false);
 	}
 
-	public void Draw(Texture2D texture, Vector2 position, Vector2 origin, Vector2 size, float rotation,
-		Box2i textureRegion, bool flipX, bool flipY)
+	public void Draw(Texture2D texture, Vector2 position, Vector2 origin, Vector2 size, float rotation = 0,
+		Box2i textureRegion = default, bool flipX = false, bool flipY = false, Color4<Rgba> color = default)
 	{
 		if (lastTexture != texture)
 		{
@@ -131,7 +132,8 @@ public sealed class SpriteBatch : IDisposable
 			var rotatedVertex = Quaternion.FromEulerAngles(pitch: 0, yaw: 0, rotation) * (vertexSize - origin) + origin;
 			vertices[currentSpriteCount * SpriteVertexCount + i] = new Vertex(
 				new Vector3(position + rotatedVertex, z: -1),
-				new Vector2(u, v)
+				new Vector2(u, v),
+				color == default ? Color4.White : color
 			);
 		}
 
@@ -192,12 +194,13 @@ public sealed class SpriteBatch : IDisposable
 	}
 
 	[UsedImplicitly]
-	public readonly record struct Vertex(Vector3 Position, Vector2 UVCoordinates)
+	public readonly record struct Vertex(Vector3 Position, Vector2 UVCoordinates, Color4<Rgba> Color)
 	{
 		public static readonly VertexInfo VertexInfo = new(
 			typeof(Vertex),
 			VertexAttribute.Vector3(VertexAttributeLocation.Position),
-			VertexAttribute.Vector2(VertexAttributeLocation.TexCoords)
+			VertexAttribute.Vector2(VertexAttributeLocation.TexCoords),
+			VertexAttribute.Color4(VertexAttributeLocation.Color)
 		);
 	}
 }
