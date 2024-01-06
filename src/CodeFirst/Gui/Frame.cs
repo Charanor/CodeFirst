@@ -1,4 +1,3 @@
-using CodeFirst.Gui.Components;
 using Facebook.Yoga;
 using OpenTK.Mathematics;
 
@@ -169,6 +168,7 @@ public partial class Frame
 			{
 				// If we have a background texture, only draw the texture, skip drawing colored background
 				graphicsProvider.DrawNinePatch(BackgroundTexture, TransformedBounds);
+				AfterDrawBackground(graphicsProvider);
 				return;
 			}
 
