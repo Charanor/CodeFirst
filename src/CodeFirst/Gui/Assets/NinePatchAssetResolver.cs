@@ -44,122 +44,78 @@ public class NinePatchAssetResolver : IAssetResolver
 			return false;
 		}
 
-		var stretchXStart = 1;
-		var stretchXEnd = texture.Width - 1;
-		var scanning = false;
-		for (var x = 1; x < texture.Width; x++)
-		{
-			var hasPixel = texture.GetRgbaPixel(x, texture.Height - 1).W != 0;
-			if (scanning)
-			{
-				if (hasPixel)
-				{
-					continue;
-				}
-
-				// Stop scan
-				stretchXEnd = x - 1;
-				break;
-			}
-
-			if (!hasPixel)
-			{
-				continue;
-			}
-
-			scanning = true;
-			stretchXStart = x - 1;
-		}
-
-		var stretchYStart = 1;
-		var stretchYEnd = texture.Height - 1;
-		scanning = false;
-		for (var y = texture.Height - 1; y > 0; y--)
-		{
-			var hasPixel = texture.GetRgbaPixel(x: 0, y).W != 0;
-			if (scanning)
-			{
-				if (hasPixel)
-				{
-					continue;
-				}
-
-				// Stop scan
-				stretchYEnd = texture.Height - y - 2;
-				break;
-			}
-
-			if (!hasPixel)
-			{
-				continue;
-			}
-
-			scanning = true;
-			stretchYStart = texture.Height - y - 2;
-		}
-
-		var stretchableArea = new Box2i(stretchXStart, stretchYStart, stretchXEnd, stretchYEnd);
-
-		var paddingLeft = 0;
-		var paddingRight = 0;
-		scanning = false;
-		for (var x = 1; x < texture.Width; x++)
-		{
-			var hasPixel = texture.GetRgbaPixel(x, y: 0).W != 0;
-			if (scanning)
-			{
-				if (hasPixel)
-				{
-					continue;
-				}
-
-				// Stop scan
-				paddingRight = texture.Width - x - 1;
-				break;
-			}
-
-			if (!hasPixel)
-			{
-				continue;
-			}
-
-			scanning = true;
-			paddingLeft = x - 1;
-		}
-
-		var paddingTop = 0;
-		var paddingBottom = 0;
-		scanning = false;
-		for (var y = texture.Height - 1; y > 0; y--)
-		{
-			var hasPixel = texture.GetRgbaPixel(texture.Width - 1, y).W != 0;
-			if (scanning)
-			{
-				if (hasPixel)
-				{
-					continue;
-				}
-
-				// Stop scan
-				paddingBottom = y;
-				break;
-			}
-
-			if (!hasPixel)
-			{
-				continue;
-			}
-
-			scanning = true;
-			paddingTop = texture.Height - y - 2;
-		}
-
-		var contentPadding = new Box2i(paddingLeft, paddingTop, paddingRight, paddingBottom);
-
 		// Remove the 1px border around all nine-patches
-		var region = Box2i.FromSize((1, 1), (texture.Width - 2, texture.Height - 2));
+		var region = new Box2i(minX: 1, minY: 1, texture.Width - 2, texture.Height - 2);
+
+		var (left, right) = GetHorizontalInsets(texture, texture.Height - 1);
+		var (top, bottom) = GetVerticalInsets(texture, texX: 0);
+
+		var (paddingLeft, paddingRight) = GetHorizontalInsets(texture, texY: 0);
+		var (paddingTop, paddingBottom) = GetVerticalInsets(texture, texture.Width - 1);
+
+		var stretchableArea =
+			new Box2i(region.Left + left, region.Top + top, region.Right - right, region.Bottom - bottom);
+		var contentPadding = new Box2i(paddingLeft, paddingTop, paddingRight, paddingBottom);
 		asset = new NinePatch(new TextureRegion(texture, region), stretchableArea, contentPadding);
 		return true;
+	}
+
+	private static (int left, int right) GetHorizontalInsets(Texture texture, int texY)
+	{
+		var left = 0;
+		for (var x = 0; x < texture.Width - 2; x++)
+		{
+			var texX = x + 1;
+			var hasPixel = texture.GetRgbaPixel(texX, texY).W != 0;
+			if (hasPixel)
+			{
+				left = x;
+				break;
+			}
+		}
+
+		var right = 0;
+		for (var x = 0; x < texture.Width - 2; x++)
+		{
+			var texX = texture.Width - x - 2;
+			var hasPixel = texture.GetRgbaPixel(texX, texY).W != 0;
+			if (hasPixel)
+			{
+				right = x;
+				break;
+			}
+		}
+
+		return (left, right);
+	}
+
+	private static (int top, int bottom) GetVerticalInsets(Texture texture, int texX)
+	{
+		var top = 0;
+		for (var y = 0; y < texture.Height - 2; y++)
+		{
+			var texY = y + 1;
+			var hasPixel = texture.GetRgbaPixel(texX, texY).W != 0;
+			if (hasPixel)
+			{
+				top = y;
+				break;
+			}
+		}
+
+		var bottom = 0;
+		for (var y = 0; y < texture.Height - 2; y++)
+		{
+			var texY = texture.Height - y - 2;
+			var hasPixel = texture.GetRgbaPixel(texX, texY).W != 0;
+			if (hasPixel)
+			{
+				bottom = y;
+				break;
+			}
+		}
+
+		return (top, bottom);
 	}
 
 	private static PixelFormat ColorComponentsToPixelFormat(ColorComponents components) => components switch

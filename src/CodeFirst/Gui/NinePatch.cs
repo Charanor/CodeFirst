@@ -62,7 +62,6 @@ public class NinePatch
 		var centerWidth = stretchableArea.Width;
 		var centerHeight = stretchableArea.Height;
 
-
 		var bottomLeft = Box2i.FromSize((x, y), (left, top));
 		var bottomEdge = Box2i.FromSize((left, y), (centerWidth, top));
 		var bottomRight = Box2i.FromSize((left + centerWidth, y), (right, top));
