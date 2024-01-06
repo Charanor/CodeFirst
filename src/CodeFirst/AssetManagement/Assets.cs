@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using CodeFirst.AssetManagement.AssetResolvers;
 using CodeFirst.FileSystem;
 using CodeFirst.Utils;
@@ -24,6 +25,7 @@ public static class Assets
 	};
 
 	private static readonly ConcurrentDictionary<string, Task<object>> AssetTasks = new();
+	private static readonly ConcurrentDictionary<string, int> InstanceCounts = new();
 
 	/// <summary>
 	///     Asynchronously loads the given asset to memory on a different thread and saves it to the cache for future use.
@@ -254,6 +256,11 @@ public static class Assets
 		if (!AssetTasks.TryGetValue(asset, out var assetTask))
 		{
 			return AssetState.Unloaded;
+		}
+
+		if (assetTask.IsFaulted)
+		{
+			return AssetState.Invalid;
 		}
 
 		return assetTask.IsCompletedSuccessfully ? AssetState.Loaded : AssetState.Loading;
@@ -582,6 +589,49 @@ public static class Assets
 		scheme = uriSpan[..separatorIndex];
 		path = uriSpan[(separatorIndex + PATH_SEPARATOR.Length)..];
 		return scheme.Length > 0 && path.Length > 0;
+	}
+
+	/// <summary>
+	///     Finds all classes implementing <see cref="IPrecacheable" /> and calls their
+	///     <see cref="IPrecacheable.Precache" /> method.
+	/// </summary>
+	public static void PrecacheAllResources()
+	{
+		var precachableTypes = AppDomain.CurrentDomain.GetAssemblies()
+			.SelectMany(a => a.GetTypes())
+			.Where(t => typeof(IPrecacheable).IsAssignableFrom(t) && t is { IsClass: true });
+		foreach (var type in precachableTypes)
+		{
+			var precacheMethod = type.GetMethod(nameof(Precache),
+				BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
+			if (precacheMethod == null)
+			{
+				continue;
+			}
+
+			precacheMethod.Invoke(obj: null, parameters: null);
+		}
+	}
+
+	internal static void IncrementInstance<T>([UriString] string asset)
+	{
+		if (InstanceCounts.AddOrUpdate(asset, addValue: 1, (_, i) => i + 1) == 1)
+		{
+			// We just encountered this asset, try to precache it
+			if (GetAssetState(asset) is AssetState.Unloaded)
+			{
+				Precache<T>(asset);
+			}
+		}
+	}
+
+	internal static void DecrementInstance([UriString] string asset)
+	{
+		if (InstanceCounts.AddOrUpdate(asset, addValue: 0, (_, i) => i - 1) <= 0)
+		{
+			// No more references to this asset, unload it
+			Unload(asset);
+		}
 	}
 }
 
