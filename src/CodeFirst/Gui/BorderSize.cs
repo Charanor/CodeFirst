@@ -56,5 +56,5 @@ public record BorderSize
 
 public static class NinePatchExtensions
 {
-	public static BorderSize ToBorderSize(this NinePatch ninePatch) => ninePatch.ContentPadding;
+	public static BorderSize ToBorderSize(this NinePatch ninePatch) => ninePatch.Padding;
 }

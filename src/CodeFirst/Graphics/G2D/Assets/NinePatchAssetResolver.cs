@@ -3,12 +3,12 @@ using CodeFirst.AssetManagement;
 using CodeFirst.FileSystem;
 using CodeFirst.Graphics.Core;
 using CodeFirst.Graphics.Core.Assets;
-using CodeFirst.Graphics.G2D;
+using CodeFirst.Utils;
 using CodeFirst.Utils.Logging;
 using OpenTK.Mathematics;
 using StbImageSharp;
 
-namespace CodeFirst.Gui.Assets;
+namespace CodeFirst.Graphics.G2D.Assets;
 
 public class NinePatchAssetResolver : IAssetResolver
 {
@@ -45,17 +45,16 @@ public class NinePatchAssetResolver : IAssetResolver
 			return false;
 		}
 
-		// Remove the 1px border around all nine-patches
-		var region = new Box2i(minX: 1, minY: 1, texture.Width - 2, texture.Height - 2);
-
 		var (left, right) = GetHorizontalInsets(texture, texture.Height - 1);
 		var (top, bottom) = GetVerticalInsets(texture, texX: 0);
 
 		var (paddingLeft, paddingRight) = GetHorizontalInsets(texture, texY: 0);
 		var (paddingTop, paddingBottom) = GetVerticalInsets(texture, texture.Width - 1);
 
-		var stretchableArea =
-			new Box2i(region.Left + left, region.Top + top, region.Right - right, region.Bottom - bottom);
+		// Remove the 1px border around all nine-patches
+		const int inset = 1;
+		var region = new Box2i(inset, inset, texture.Width - inset - 1, texture.Height - inset - 1);
+		var stretchableArea = new Box2i(left, top, right, bottom);
 		var contentPadding = new Box2i(paddingLeft, paddingTop, paddingRight, paddingBottom);
 		asset = new NinePatch(new TextureRegion(texture, region), stretchableArea, contentPadding);
 		return true;

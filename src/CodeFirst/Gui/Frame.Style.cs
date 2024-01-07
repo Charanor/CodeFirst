@@ -112,7 +112,7 @@ public partial class Frame
 		if (BackgroundTexture != null)
 		{
 			// If we have a background texture we ensure a minimum border around the content
-			var (top, right, bottom, left) = (BorderSize)BackgroundTexture.ContentPadding;
+			var (top, right, bottom, left) = (BorderSize)BackgroundTexture.Padding;
 			// Top and bottom are switched because coordinate system is inverted
 			Node.BorderBottomWidth = top + BorderTopWidth; 
 			Node.BorderTopWidth = bottom + BorderBottomWidth;
