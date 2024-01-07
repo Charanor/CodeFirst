@@ -14,7 +14,7 @@ public abstract class NativeResource : IDisposable
 		IsDisposed = true;
         GC.SuppressFinalize(this);
         DisposeManagedResources();
-		DisposeNativeResources();
+		MainThread.Post(DisposeNativeResources);
 	}
 
 	~NativeResource()
@@ -25,7 +25,7 @@ public abstract class NativeResource : IDisposable
 		}
 
 		IsDisposed = true;
-		DisposeNativeResources();
+		MainThread.Post(DisposeNativeResources);
 	}
 
 	protected abstract void DisposeNativeResources();
