@@ -98,38 +98,32 @@ public sealed class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			return;
 		}
 
-		var prevShader = spriteBatch.Shader;
-		spriteBatch.Shader = basicGraphicsShader;
+		var hasBorderRadius = borderTopLeftRadius > 0 || borderTopRightRadius > 0 || borderBottomLeftRadius > 0 ||
+		                      borderBottomRightRadius > 0;
+
+		using (spriteBatch.SetTemporaryShader(hasBorderRadius ? basicGraphicsShader : null))
 		{
-			basicGraphicsShader.Size = bounds.Size;
-			basicGraphicsShader.BorderTopLeftRadius = borderTopLeftRadius;
-			basicGraphicsShader.BorderTopRightRadius = borderTopRightRadius;
-			basicGraphicsShader.BorderBottomLeftRadius = borderBottomLeftRadius;
-			basicGraphicsShader.BorderBottomRightRadius = borderBottomRightRadius;
+			if (hasBorderRadius)
+			{
+				basicGraphicsShader.Size = bounds.Size;
+				basicGraphicsShader.BorderTopLeftRadius = borderTopLeftRadius;
+				basicGraphicsShader.BorderTopRightRadius = borderTopRightRadius;
+				basicGraphicsShader.BorderBottomLeftRadius = borderBottomLeftRadius;
+				basicGraphicsShader.BorderBottomRightRadius = borderBottomRightRadius;
+			}
 
 			var convertedY = Camera.WorldSize.Y - bounds.Size.Y - bounds.Y;
-			spriteBatch.Draw(texture, (bounds.X, convertedY), bounds.Size / 2f, bounds.Size, color: Color4.White);
+			spriteBatch.Draw(texture, (bounds.X, convertedY), bounds.Size / 2f, bounds.Size, Color4.White);
 		}
-		spriteBatch.Shader = prevShader;
 	}
 
 	public void DrawText(Font font, TextRow row, int fontSize, Vector2 position, Color4<Rgba> color)
 	{
-		if (Camera == null)
-		{
-			return;
-		}
-
 		font.Draw(spriteBatch, row, fontSize, position, color);
 	}
 
 	public void DrawText(Font font, string text, int fontSize, Vector2 position, Color4<Rgba> color)
 	{
-		if (Camera == null)
-		{
-			return;
-		}
-
 		font.Draw(spriteBatch, text, fontSize, position, color);
 	}
 
@@ -144,8 +138,7 @@ public sealed class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			return;
 		}
 
-		var prevShader = spriteBatch.Shader;
-		spriteBatch.Shader = basicGraphicsShader;
+		using (spriteBatch.SetTemporaryShader(basicGraphicsShader))
 		{
 			basicGraphicsShader.Size = bounds.Size;
 			basicGraphicsShader.BorderTopLeftRadius = borderTopLeftRadius;
@@ -156,41 +149,10 @@ public sealed class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			var convertedY = Camera.WorldSize.Y - bounds.Size.Y - bounds.Y;
 			spriteBatch.Draw(color, (bounds.X, convertedY), Vector2.Zero, bounds.Size);
 		}
-		spriteBatch.Shader = prevShader;
 	}
 
-	public void DrawNinePatch(NinePatch ninePatch, Box2 bounds, Color4<Rgba> color = default)
+	public void DrawNinePatch(NinePatch ninePatch, Box2 bounds, Color4<Rgba> color)
 	{
-		if (Camera == null)
-		{
-			return;
-		}
-		
 		spriteBatch.Draw(ninePatch, bounds, color);
-
-		// End();
-		// var oldZ = Camera.Position.Z;
-		// Camera.Position = Camera.Position with
-		// {
-		// 	Z = 0
-		// };
-		// spriteBatch.Camera = Camera;
-		// spriteBatch.Begin();
-		// {
-		// 	var vertices = ninePatch.GetVertices(bounds, color).Select(vert => vert with
-		// 	{
-		// 		Position = vert.Position with
-		// 		{
-		// 			Y = Camera.WorldSize.Y - vert.Position.Y
-		// 		}
-		// 	}).ToArray();
-		// 	spriteBatch.Draw((Texture2D)ninePatch.Texture, vertices, offset: 0, vertices.Length);
-		// }
-		// spriteBatch.End();
-		// Camera.Position = Camera.Position with
-		// {
-		// 	Z = oldZ
-		// };
-		// Begin();
 	}
 }

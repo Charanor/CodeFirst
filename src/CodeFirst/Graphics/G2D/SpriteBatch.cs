@@ -41,14 +41,14 @@ public sealed class SpriteBatch : IDisposable
 	private static readonly int MaxVertexCount = MAX_VERTEX_ELEMENT_COUNT / Vertex.VertexInfo.SizeInBytes;
 	private static readonly int MaxSpriteCount = MaxVertexCount / (int)SpriteVertexCount;
 
-	private readonly SpriteBatchShader defaultShader;
+	private readonly ISpriteBatchShader defaultShader;
 
 	private readonly Vertex[] vertices;
 	private readonly Buffer<Vertex> vertexBuffer;
 	private readonly Buffer<uint> indexBuffer;
 	private readonly VertexArray vertexArray;
 
-	private ShaderProgram? shader;
+	private ISpriteBatchShader? shader;
 	private int currentSpriteCount;
 	private Texture2D? lastTexture;
 
@@ -75,7 +75,7 @@ public sealed class SpriteBatch : IDisposable
 
 	public bool IsStarted { get; private set; }
 
-	public ShaderProgram? Shader
+	public ISpriteBatchShader? Shader
 	{
 		get => shader;
 		set
@@ -100,7 +100,11 @@ public sealed class SpriteBatch : IDisposable
 
 	public void Dispose()
 	{
-		defaultShader.Dispose();
+		if (defaultShader is IDisposable disposable)
+		{
+			disposable.Dispose();
+		}
+
 		vertexBuffer.Dispose();
 		indexBuffer.Dispose();
 		vertexArray.Dispose();
@@ -193,7 +197,7 @@ public sealed class SpriteBatch : IDisposable
 		currentSpriteCount += 1;
 	}
 
-	public void Draw(TextureRegion region, Vector2 position, Vector2 origin, Vector2 size, Color4<Rgba> color, 
+	public void Draw(TextureRegion region, Vector2 position, Vector2 origin, Vector2 size, Color4<Rgba> color,
 		float rotation = 0,
 		bool flipX = false,
 		bool flipY = false)
@@ -268,18 +272,8 @@ public sealed class SpriteBatch : IDisposable
 		var indexCount = currentSpriteCount * (int)SpriteIndexCount;
 		vertexBuffer.SetData(vertices);
 
-		if (Shader != null)
-		{
-			if (Shader.TryGetUniformLocation("texture0", out var texture0Loc))
-			{
-				Shader.SetUniform(texture0Loc, value: 0);
-				BindTextureUnit(unit: 0, lastTexture);
-			}
-		}
-		else
-		{
-			defaultShader.Texture0 = lastTexture;
-		}
+		var currentShader = Shader ?? defaultShader;
+		currentShader.Texture0 = lastTexture;
 
 		DrawElements(PrimitiveType.Triangles, indexCount, DrawElementsType.UnsignedInt, offset: 0);
 		currentSpriteCount = 0;
@@ -287,39 +281,19 @@ public sealed class SpriteBatch : IDisposable
 
 	private void BindShader()
 	{
-		if (Shader != null)
-		{
-			if (Shader.TryGetUniformLocation("projectionMatrix", out var projMatrixLoc))
-			{
-				Shader.SetUniform(projMatrixLoc, ProjectionMatrix);
-			}
-
-			if (Shader.TryGetUniformLocation("viewMatrix", out var viewMatrixLoc))
-			{
-				Shader.SetUniform(viewMatrixLoc, ViewMatrix);
-			}
-
-			Shader.Bind();
-		}
-		else
-		{
-			defaultShader.ProjectionMatrix = ProjectionMatrix;
-			defaultShader.ViewMatrix = ViewMatrix;
-			defaultShader.Bind();
-		}
+		var currentShader = Shader ?? defaultShader;
+		currentShader.ProjectionMatrix = ProjectionMatrix;
+		currentShader.ViewMatrix = ViewMatrix;
+		currentShader.Bind();
 	}
 
 	private void UnbindShader()
 	{
-		if (Shader != null)
-		{
-			Shader.Unbind();
-		}
-		else
-		{
-			defaultShader.Unbind();
-		}
+		var currentShader = Shader ?? defaultShader;
+		currentShader.Unbind();
 	}
+
+	public IDisposable SetTemporaryShader(ISpriteBatchShader? tempShader) => new TemporaryShaderHandle(this, tempShader);
 
 	[UsedImplicitly]
 	public readonly record struct Vertex(Vector3 Position, Vector2 UVCoordinates, Color4<Rgba> Color)
@@ -330,5 +304,23 @@ public sealed class SpriteBatch : IDisposable
 			VertexAttribute.Vector2(VertexAttributeLocation.TexCoords),
 			VertexAttribute.Color4(VertexAttributeLocation.Color)
 		);
+	}
+
+	private sealed class TemporaryShaderHandle : IDisposable
+	{
+		private readonly SpriteBatch spriteBatch;
+		private readonly ISpriteBatchShader? prevShader;
+
+		public TemporaryShaderHandle(SpriteBatch spriteBatch, ISpriteBatchShader? shader)
+		{
+			this.spriteBatch = spriteBatch;
+			prevShader = spriteBatch.Shader;
+			spriteBatch.Shader = shader;
+		}
+
+		public void Dispose()
+		{
+			spriteBatch.Shader = prevShader;
+		}
 	}
 }

@@ -215,17 +215,20 @@ public class NinePatch : IDrawable
 		Texture.Height - ContentPadding.Bottom
 	);
 
-	public void Draw(SpriteBatch batch, Box2 region, Color4<Rgba> color = default)
+	public void Draw(SpriteBatch batch, Box2 region, Color4<Rgba> color)
 	{
-		var camera = batch.Camera;
-		var verts = GetVertices(region, color).Select(vert => vert with
+		using (batch.SetTemporaryShader(null))
 		{
-			Position = vert.Position with
+			var camera = batch.Camera;
+			var verts = GetVertices(region, color).Select(vert => vert with
 			{
-				Y = (camera?.WorldSize.Y ?? 0) - vert.Position.Y
-			}
-		}).ToArray();
-		batch.Draw((Texture2D)Texture, verts, offset: 0, verts.Length);
+				Position = vert.Position with
+				{
+					Y = (camera?.WorldSize.Y ?? 0) - vert.Position.Y
+				}
+			}).ToArray();
+			batch.Draw((Texture2D)Texture, verts, offset: 0, verts.Length);
+		}
 	}
 
 	private int Add(Box2i region, bool isStretchedHorizontally, bool isStretchedVertically)
@@ -303,10 +306,8 @@ public class NinePatch : IDrawable
 		};
 	}
 
-	public SpriteBatch.Vertex[] GetVertices(Box2 bounds, Color4<Rgba> color = default)
+	private IEnumerable<SpriteBatch.Vertex> GetVertices(Box2 bounds, Color4<Rgba> color)
 	{
-		color = color == default ? Color4.White : color;
-
 		var height = bounds.Height;
 		var centerHeight = height - topHeight - bottomHeight;
 
