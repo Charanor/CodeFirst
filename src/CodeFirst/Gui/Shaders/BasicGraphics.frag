@@ -1,14 +1,11 @@
 ﻿#version 460 core
 
-const float BORDER_ANTI_ALIASING = 1.0;
-
 in vec2 texCoords;
+in vec4 color;
 
-out vec4 fragColor;
+out vec4 FragColor;
 
-uniform vec4 backgroundColor;
 uniform sampler2D texture0;
-uniform bool hasTexture;
 
 uniform float borderTopLeftRadius;
 uniform float borderTopRightRadius;
@@ -29,7 +26,7 @@ float signedDistance(vec2 inPosition, vec2 inSize) {
 
 void main() {
     vec2 position = size * texCoords;
-    vec4 color = hasTexture ? texture(texture0, texCoords) : backgroundColor;
+    vec4 mixedColor = color * texture(texture0, texCoords);
     float dist = signedDistance(position - size / 2.0, size);
-    fragColor = (dist < 0.0) ? color : vec4(0.0);
+    FragColor = (dist < 0.0) ? mixedColor : vec4(0.0);
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using CodeFirst.Graphics.Core.Exceptions;
@@ -77,13 +78,7 @@ public class ShaderProgram : NativeResource
 	// Integer operations
 	public void SetUniform(int location, bool value) => SetUniform(location, value ? 1 : 0);
 	public void SetUniform(int location, int value) => ProgramUniform1i(handle, location, value);
-	public void SetUniform(int location, TextureHandle value) => SetUniform(location, value.Handle);
 	public void SetUniform(int location, ReadOnlySpan<int> values) => ProgramUniform1iv(handle, location, values);
-
-	public void SetUniform(int location, ReadOnlySpan<TextureHandle> values)
-	{
-		SetUniform(location, Array.ConvertAll(values.ToArray(), textureHandle => textureHandle.Handle));
-	}
 
 	// Float operations
 	public void SetUniform(int location, float value) => ProgramUniform1f(handle, location, value);

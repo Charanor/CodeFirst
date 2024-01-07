@@ -1,23 +1,20 @@
 ﻿#version 460 core
 
-layout (location = VERTEX_POSITION_IDX) in vec2 vertexPosition;
+// Inputs
+layout (location = VERTEX_POSITION_IDX) in vec3 vertexPosition;
+layout (location = VERTEX_TEX_COORDS_IDX) in vec2 vertexTexCoords;
+layout (location = VERTEX_COLOR_IDX) in vec4 vertexColor;
 
+// Outputs
 out vec2 texCoords;
+out vec4 color;
 
-uniform mat4 modelMatrix;
-uniform mat4 viewMatrix;
+// Matrices
 uniform mat4 projectionMatrix;
-
-uniform bool flipX;
-uniform bool flipY;
-uniform bool flipAxis;
+uniform mat4 viewMatrix;
 
 void main() {
-    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(vertexPosition, 0.0, 1.0);
-    float texCoordX = flipX ? 1 - vertexPosition.x : vertexPosition.x;
-    float texCoordY = flipY ? 1 - vertexPosition.y : vertexPosition.y;
-    texCoords = vec2(
-        flipAxis ? texCoordY : texCoordX,
-        flipAxis ? texCoordX : texCoordY    
-    );
+    gl_Position = projectionMatrix * viewMatrix * vec4(vertexPosition, 1.0);
+    texCoords = vertexTexCoords;
+    color = vertexColor;
 }

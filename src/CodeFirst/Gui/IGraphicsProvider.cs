@@ -1,4 +1,5 @@
 ﻿using CodeFirst.Graphics.Core;
+using CodeFirst.Graphics.G2D;
 using CodeFirst.Graphics.Text;
 using CodeFirst.Graphics.Text.Layout;
 using OpenTK.Mathematics;
@@ -23,10 +24,7 @@ public interface IGraphicsProvider
 		float borderTopLeftRadius = default,
 		float borderTopRightRadius = default,
 		float borderBottomLeftRadius = default,
-		float borderBottomRightRadius = default,
-		bool flipX = false,
-		bool flipY = false,
-		bool flipAxis = false);
+		float borderBottomRightRadius = default);
 
 	void DrawNinePatch(NinePatch ninePatch, Box2 bounds, Color4<Rgba> color = default);
 

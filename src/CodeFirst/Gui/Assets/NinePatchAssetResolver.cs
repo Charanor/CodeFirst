@@ -3,6 +3,7 @@ using CodeFirst.AssetManagement;
 using CodeFirst.FileSystem;
 using CodeFirst.Graphics.Core;
 using CodeFirst.Graphics.Core.Assets;
+using CodeFirst.Graphics.G2D;
 using CodeFirst.Utils.Logging;
 using OpenTK.Mathematics;
 using StbImageSharp;

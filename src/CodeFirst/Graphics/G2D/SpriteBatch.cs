@@ -28,24 +28,33 @@ public sealed class SpriteBatch : IDisposable
 		0u, 1u, 2u
 	};
 
+	private static readonly Texture2D WhiteSquare = new(
+		new byte[] { 255, 255, 255, 255 },
+		width: 1,
+		height: 1,
+		format: PixelFormat.Rgba,
+		type: PixelType.UnsignedByte
+	);
+
 	private static readonly uint SpriteVertexCount = (uint)QuadPositions.Length;
 	private static readonly uint SpriteIndexCount = (uint)QuadIndices.Length;
 	private static readonly int MaxVertexCount = MAX_VERTEX_ELEMENT_COUNT / Vertex.VertexInfo.SizeInBytes;
 	private static readonly int MaxSpriteCount = MaxVertexCount / (int)SpriteVertexCount;
 
-	private readonly SpriteBatchShader shader;
+	private readonly SpriteBatchShader defaultShader;
 
 	private readonly Vertex[] vertices;
 	private readonly Buffer<Vertex> vertexBuffer;
 	private readonly Buffer<uint> indexBuffer;
 	private readonly VertexArray vertexArray;
 
+	private ShaderProgram? shader;
 	private int currentSpriteCount;
 	private Texture2D? lastTexture;
 
 	public SpriteBatch()
 	{
-		shader = new SpriteBatchShader();
+		defaultShader = new SpriteBatchShader();
 		vertices = new Vertex[MaxVertexCount];
 
 		var indices = new uint[MaxSpriteCount * SpriteIndexCount];
@@ -64,42 +73,86 @@ public sealed class SpriteBatch : IDisposable
 		vertexArray = VertexArray.CreateForVertexInfo(Vertex.VertexInfo, vertexBuffer, indexBuffer);
 	}
 
+	public bool IsStarted { get; private set; }
+
+	public ShaderProgram? Shader
+	{
+		get => shader;
+		set
+		{
+			if (!IsStarted)
+			{
+				shader = value;
+				return;
+			}
+
+			Flush();
+			UnbindShader();
+			shader = value;
+			BindShader();
+		}
+	}
+
+	public Camera? Camera { get; set; }
+
+	private Matrix4 ProjectionMatrix => Camera?.Projection ?? Matrix4.Identity;
+	private Matrix4 ViewMatrix => Camera?.View ?? Matrix4.Identity;
+
 	public void Dispose()
 	{
-		shader.Dispose();
+		defaultShader.Dispose();
 		vertexBuffer.Dispose();
 		indexBuffer.Dispose();
 		vertexArray.Dispose();
 	}
 
-	public void Begin(Camera camera)
+	public void Begin()
 	{
-		shader.ProjectionMatrix = camera.Projection;
-		shader.ViewMatrix = camera.View;
+		if (IsStarted)
+		{
+			return;
+		}
 
 		Enable(EnableCap.Blend);
 		BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 		Disable(EnableCap.DepthTest);
 		DepthMask(false);
 
-		shader.Bind();
+		BindShader();
+
 		vertexArray.Bind();
 		lastTexture = null;
+		IsStarted = true;
 	}
 
 	public void End()
 	{
+		if (!IsStarted)
+		{
+			return;
+		}
+
 		// Flush everything that remains
 		Flush();
 
 		vertexArray.Unbind();
-		shader.Unbind();
+		UnbindShader();
+
 		DepthMask(false);
+		IsStarted = false;
 	}
 
-	public void Draw(Texture2D texture, Vector2 position, Vector2 origin, Vector2 size, float rotation = 0,
-		Box2i textureRegion = default, bool flipX = false, bool flipY = false, Color4<Rgba> color = default)
+	public void Draw(Texture2D texture, Vector2 position, Vector2 origin, Vector2 size, Color4<Rgba> color,
+		float rotation = 0,
+		Box2i textureRegion = default, bool flipX = false, bool flipY = false)
 	{
+		if (!IsStarted)
+		{
+			DevTools.Throw<SpriteBatch>(
+				new InvalidOperationException($"Cannot call {nameof(Draw)} before calling {nameof(Begin)}"));
+			return;
+		}
+
 		if (lastTexture != texture)
 		{
 			// Switch texture
@@ -133,21 +186,30 @@ public sealed class SpriteBatch : IDisposable
 			vertices[currentSpriteCount * SpriteVertexCount + i] = new Vertex(
 				new Vector3(position + rotatedVertex, z: -1),
 				new Vector2(u, v),
-				color == default ? Color4.White : color
+				color
 			);
 		}
 
 		currentSpriteCount += 1;
 	}
 
-	public void Draw(TextureRegion region, Vector2 position, Vector2 origin, Vector2 size, float rotation, bool flipX,
-		bool flipY)
+	public void Draw(TextureRegion region, Vector2 position, Vector2 origin, Vector2 size, Color4<Rgba> color, 
+		float rotation = 0,
+		bool flipX = false,
+		bool flipY = false)
 	{
-		Draw((Texture2D)region.Texture, position, origin, size, rotation, region.Bounds2D, flipX, flipY);
+		Draw((Texture2D)region.Texture, position, origin, size, color, rotation, region.Bounds2D, flipX, flipY);
 	}
 
 	public void Draw(Texture2D texture, Vertex[] vertices, int offset, int count)
 	{
+		if (!IsStarted)
+		{
+			DevTools.Throw<SpriteBatch>(
+				new InvalidOperationException($"Cannot call {nameof(Draw)} before calling {nameof(Begin)}"));
+			return;
+		}
+
 		if (vertices.Length % SpriteVertexCount != 0)
 		{
 			DevTools.Throw<SpriteBatch>(
@@ -171,8 +233,26 @@ public sealed class SpriteBatch : IDisposable
 		Flush();
 	}
 
+	public void Draw(Color4<Rgba> color, Vector2 position, Vector2 origin, Vector2 size, float rotation = 0)
+	{
+		Draw(WhiteSquare, position, origin, size, color, rotation);
+	}
+
+	public void Draw(IDrawable drawable, Vector2 position, Vector2 size, Color4<Rgba> color = default) =>
+		drawable.Draw(this, Box2.FromSize(position, size), color);
+
+	public void Draw(IDrawable drawable, Box2 region, Color4<Rgba> color = default) =>
+		drawable.Draw(this, region, color);
+
 	private void Flush()
 	{
+		if (!IsStarted)
+		{
+			DevTools.Throw<SpriteBatch>(
+				new InvalidOperationException($"Cannot call {nameof(Flush)} before calling {nameof(Begin)}"));
+			return;
+		}
+
 		if (currentSpriteCount == 0)
 		{
 			// We haven't drawn anything. This more or less only happens the first time we switch textures.
@@ -188,9 +268,57 @@ public sealed class SpriteBatch : IDisposable
 		var indexCount = currentSpriteCount * (int)SpriteIndexCount;
 		vertexBuffer.SetData(vertices);
 
-		shader.Tex = lastTexture;
+		if (Shader != null)
+		{
+			if (Shader.TryGetUniformLocation("texture0", out var texture0Loc))
+			{
+				Shader.SetUniform(texture0Loc, value: 0);
+				BindTextureUnit(unit: 0, lastTexture);
+			}
+		}
+		else
+		{
+			defaultShader.Texture0 = lastTexture;
+		}
+
 		DrawElements(PrimitiveType.Triangles, indexCount, DrawElementsType.UnsignedInt, offset: 0);
 		currentSpriteCount = 0;
+	}
+
+	private void BindShader()
+	{
+		if (Shader != null)
+		{
+			if (Shader.TryGetUniformLocation("projectionMatrix", out var projMatrixLoc))
+			{
+				Shader.SetUniform(projMatrixLoc, ProjectionMatrix);
+			}
+
+			if (Shader.TryGetUniformLocation("viewMatrix", out var viewMatrixLoc))
+			{
+				Shader.SetUniform(viewMatrixLoc, ViewMatrix);
+			}
+
+			Shader.Bind();
+		}
+		else
+		{
+			defaultShader.ProjectionMatrix = ProjectionMatrix;
+			defaultShader.ViewMatrix = ViewMatrix;
+			defaultShader.Bind();
+		}
+	}
+
+	private void UnbindShader()
+	{
+		if (Shader != null)
+		{
+			Shader.Unbind();
+		}
+		else
+		{
+			defaultShader.Unbind();
+		}
 	}
 
 	[UsedImplicitly]

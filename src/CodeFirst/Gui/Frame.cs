@@ -163,7 +163,7 @@ public partial class Frame
 			{
 				return;
 			}
-			
+
 			if (BackgroundTexture != null)
 			{
 				// If we have a background texture, only draw the tinted texture, skip drawing background rectangles
@@ -187,6 +187,7 @@ public partial class Frame
 
 			graphicsProvider.DrawRect(innerRectangleBounds, BackgroundColor,
 				topLeft, topRight, bottomLeft, bottomRight);
+
 			AfterDrawBackground(graphicsProvider);
 		}
 
@@ -206,19 +207,13 @@ public partial class Frame
 		}
 	}
 
-	protected virtual bool BeforeDrawBackground(IGraphicsProvider graphicsProvider)
-	{
-		return true;
-	}
+	protected virtual bool BeforeDrawBackground(IGraphicsProvider graphicsProvider) => true;
 
 	protected virtual void AfterDrawBackground(IGraphicsProvider graphicsProvider)
 	{
 	}
 
-	protected virtual bool BeforeDrawChildren(IGraphicsProvider graphicsProvider)
-	{
-		return true;
-	}
+	protected virtual bool BeforeDrawChildren(IGraphicsProvider graphicsProvider) => true;
 
 	protected virtual void AfterDrawChildren(IGraphicsProvider graphicsProvider)
 	{

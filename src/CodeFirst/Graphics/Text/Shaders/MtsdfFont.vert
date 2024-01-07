@@ -1,24 +1,19 @@
 #version 460 core
 
-layout (location = VERTEX_POSITION_IDX) in vec2 vertexPosition;
+// Inputs
+layout (location = VERTEX_POSITION_IDX) in vec3 vertexPosition;
+layout (location = VERTEX_TEX_COORDS_IDX) in vec2 vertexTexCoords;
+layout (location = VERTEX_COLOR_IDX) in vec4 vertexColor;
 
-uniform mat4 viewMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 modelMatrix;
-uniform vec4 uvBounds;
-
+// Outputs
 out vec2 texCoords;
+out vec4 color;
 
-float map01(float value, float min2, float max2);
+// Matrices
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
 
 void main() {
-    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(vertexPosition, 0.0, 1.0);
-    texCoords = vec2(
-        map01(vertexPosition.x, uvBounds.x, uvBounds.z),
-        map01(vertexPosition.y, uvBounds.y, uvBounds.w)
-    );
-}
-
-float map01(float value, float min2, float max2) {
-    return min2 + (max2 - min2) * value;
+    gl_Position = projectionMatrix * viewMatrix * vec4(vertexPosition, 1.0);
+    texCoords = vertexTexCoords;
 }

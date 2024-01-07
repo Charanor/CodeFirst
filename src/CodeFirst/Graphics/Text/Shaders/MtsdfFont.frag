@@ -4,7 +4,7 @@ in vec2 texCoords;
 
 out vec4 FragColor;
 
-uniform sampler2D fontAtlas;
+uniform sampler2D texture0;
 
 uniform float distanceFieldRange;
 
@@ -17,7 +17,7 @@ float median(vec3 vector);
 float calculateScreenPixelRange();
 
 void main() {
-    vec4 mtsd = texture(fontAtlas, texCoords);
+    vec4 mtsd = texture(texture0, texCoords);
     float signedDistance = median(mtsd.rgb);
     float softDistance = mtsd.a;
 
@@ -36,7 +36,7 @@ float median(vec3 vector) {
 }
 
 float calculateScreenPixelRange() {
-    vec2 unitRange = vec2(distanceFieldRange) / vec2(textureSize(fontAtlas, 0));
+    vec2 unitRange = vec2(distanceFieldRange) / vec2(textureSize(texture0, 0));
     vec2 screenTexSize = vec2(1.0) / fwidth(texCoords);
     return max(0.5 * dot(unitRange, screenTexSize), 1.0);
 }

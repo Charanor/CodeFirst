@@ -1,10 +1,9 @@
 ﻿using CodeFirst.Graphics.Core;
-using CodeFirst.Graphics.G2D;
 using OpenTK.Mathematics;
 
-namespace CodeFirst.Gui;
+namespace CodeFirst.Graphics.G2D;
 
-public class NinePatch
+public class NinePatch : IDrawable
 {
 	private const int PATCH_COUNT = 9;
 	private const int VERTICES_PER_PATCH = 4;
@@ -51,7 +50,7 @@ public class NinePatch
 		StretchableArea = stretchableArea;
 		ContentPadding = contentPadding;
 		vertices = new SpriteBatch.Vertex[PATCH_COUNT * VERTICES_PER_PATCH];
-		
+
 		var x = region.X;
 		var y = region.Y;
 
@@ -216,6 +215,19 @@ public class NinePatch
 		Texture.Height - ContentPadding.Bottom
 	);
 
+	public void Draw(SpriteBatch batch, Box2 region, Color4<Rgba> color = default)
+	{
+		var camera = batch.Camera;
+		var verts = GetVertices(region, color).Select(vert => vert with
+		{
+			Position = vert.Position with
+			{
+				Y = (camera?.WorldSize.Y ?? 0) - vert.Position.Y
+			}
+		}).ToArray();
+		batch.Draw((Texture2D)Texture, verts, offset: 0, verts.Length);
+	}
+
 	private int Add(Box2i region, bool isStretchedHorizontally, bool isStretchedVertically)
 	{
 		var uv = new Box2(region.Min / (Vector2)Texture.Dimensions.Xy, region.Max / (Vector2)Texture.Dimensions.Xy);
@@ -294,17 +306,17 @@ public class NinePatch
 	public SpriteBatch.Vertex[] GetVertices(Box2 bounds, Color4<Rgba> color = default)
 	{
 		color = color == default ? Color4.White : color;
-		
+
 		var height = bounds.Height;
 		var centerHeight = height - topHeight - bottomHeight;
-		
+
 		var topY = bounds.Top;
 		var centerY = topY + topHeight;
 		var bottomY = centerY + centerHeight;
-		
+
 		var width = bounds.Width;
 		var centerWidth = width - rightWidth - leftWidth;
-		
+
 		var leftX = bounds.Left;
 		var centerX = leftX + leftWidth;
 		var rightX = centerX + centerWidth;
