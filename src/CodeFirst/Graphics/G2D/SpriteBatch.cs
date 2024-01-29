@@ -11,7 +11,7 @@ namespace CodeFirst.Graphics.G2D;
 public sealed class SpriteBatch : IDisposable
 {
 	// This value is currently arbitrary. There is a bug when too many sprites are rendered, this fixes it.
-	private const int MAX_SPRITES = 50;
+	private const int MAX_SPRITES = 35;
 	private const int MAX_VERTEX_ELEMENT_COUNT = short.MaxValue;
 
 	private static readonly Vector3[] QuadPositions =
@@ -175,7 +175,7 @@ public sealed class SpriteBatch : IDisposable
 		var textureSize = (Vector2)texture.Dimensions.Xy;
 		var uvBounds = new Box2(textureRegion.Min / textureSize, textureRegion.Max / textureSize).ToVector4();
 
-		for (var i = 0; i < QuadPositions.Length; i++)
+		for (var i = 0; i < SpriteVertexCount; i++)
 		{
 			var quadPosition = QuadPositions[i];
 			var u = flipX
