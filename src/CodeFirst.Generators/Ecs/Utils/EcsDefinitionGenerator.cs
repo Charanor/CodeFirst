@@ -294,6 +294,24 @@ public class EcsDefinitionGenerator
 						builder.NewLine();
 						builder.IndentedLn("return ref mapper.Get(entity);");
 					}
+
+					// Component checker
+					using (builder.Block($"public bool Has{component}(Entity entity)"))
+					{
+						using (builder.Block("if (!entity.IsValid)"))
+						{
+							builder.IndentedLn("throw new InvalidEntityException();");
+						}
+
+						using (builder.Block("if (!HasEntity(entity))"))
+						{
+							builder.IndentedLn("throw new EntityDoesNotExistException(entity);");
+						}
+
+						builder.NewLine();
+						builder.IndentedLn($"var mapper = GetMapper<{component}>();");
+						builder.IndentedLn("return mapper.Has(entity);");
+					}
 				}
 			}
 		}
