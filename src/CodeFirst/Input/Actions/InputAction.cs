@@ -58,6 +58,9 @@ public abstract record InputAction
 	public virtual MultiInputAction Remove(InputAction action) => new(this);
 
 	public static implicit operator InputAction(Keys key) => new KeyInputAction(key);
+
+	public static implicit operator InputAction((Keys Negative, Keys Positive) axis) =>
+		new KeyAxisInputAction(axis.Positive, axis.Negative);
 	public static implicit operator InputAction(MouseButton button) => new MouseButtonInputAction(button);
 	public static implicit operator InputAction(GamepadButton button) => new GamepadButtonInputAction(Id: 0, button);
 	public static implicit operator InputAction(GamepadAxis axis) => new GamepadAxisInputAction(Id: 0, axis);
