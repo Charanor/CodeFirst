@@ -99,6 +99,8 @@ public static class Coroutines
 	public static Coroutine StartAfter(Wait waitFor, Action action) =>
 		Start(StartAfterRoutine(waitFor, action));
 
+	public static Coroutine StartNextFrame(Action action) => StartAfter(waitFor: 0, action);
+
 	private static IEnumerator<Wait?> StartAfterRoutine(Wait waitFor, IEnumerator<Wait?> coroutine)
 	{
 		yield return waitFor;
