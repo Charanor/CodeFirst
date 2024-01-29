@@ -185,7 +185,7 @@ public class ComponentMapper<T> : IComponentMapper, IComponentMapper<T> where T 
 
 	#region Non-generics
 
-	IComponent IComponentMapper.Create(Entity entity) => Get(entity);
+	IComponent IComponentMapper.Create(Entity entity) => Create(entity);
 
 	IComponent IComponentMapper.Get(Entity entity) => Get(entity);
 
