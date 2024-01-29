@@ -7,6 +7,7 @@ namespace CodeFirst.Physics;
 
 public class PhysicsWorld
 {
+	private const float EQUAL_FLOATS = 0.0001f;
 	private static readonly ILogger Logger = LoggingManager.Get<PhysicsWorld>();
 
 	private readonly HashSet<Guid> items;
@@ -121,8 +122,11 @@ public class PhysicsWorld
 
 		var body = bodies[item];
 		var collisions = new List<Collision>();
+		var closestGuids = new List<Guid>();
 		while (true)
 		{
+			closestGuids.Clear();
+
 			var velocity = destination - body.Center;
 			var broadphaseRectangle = CreateBroadphaseRectangle(
 				body.X, body.Y,
@@ -134,7 +138,6 @@ public class PhysicsWorld
 			var closestTheta = 1f;
 			var closestNormal = Vector2.Zero;
 			var closestResolution = CollisionResolution.None;
-			Guid closestGuid = default;
 
 			var hits = quadTree.Query(broadphaseRectangle.Left, broadphaseRectangle.Top, broadphaseRectangle.Right,
 				broadphaseRectangle.Bottom, element);
@@ -163,9 +166,9 @@ public class PhysicsWorld
 					continue;
 				}
 
-				// This collision was not closer
-				if (theta >= closestTheta)
+				if (theta - closestTheta > EQUAL_FLOATS)
 				{
+					// This collision was not closer
 					continue;
 				}
 
@@ -175,12 +178,18 @@ public class PhysicsWorld
 					// No resolution to this collision
 					continue;
 				}
+				
+				if (Math.Abs(theta - closestTheta) > EQUAL_FLOATS)
+				{
+					// Theta is closer, use this theta for collision resolution
+					closestTheta = theta;
+					closestNormal = normal;
+					closestResolution = resolution;
+				}
 
+				// This collision was closer or just as far away, add it to collision list
 				hasCollision = true;
-				closestTheta = theta;
-				closestNormal = normal;
-				closestResolution = resolution;
-				closestGuid = other;
+				closestGuids.Add(other);
 			}
 
 			if (!hasCollision)
@@ -196,7 +205,10 @@ public class PhysicsWorld
 				continue;
 			}
 
-			collisions.Add(new Collision(item, closestGuid, closestResolution, closestNormal, closestTheta));
+			foreach (var closestGuid in closestGuids)
+			{
+				collisions.Add(new Collision(item, closestGuid, closestResolution, closestNormal, closestTheta));
+			}
 
 			var resolutionTheta = 1 - closestTheta;
 			switch (closestResolution)
