@@ -6,6 +6,12 @@ public class SpoofLogger : ILogger
 {
 	public string Name => "SpoofLogger";
 	public string IndentString => string.Empty;
+	
+	public bool EnableDebugTrace { get; set; }
+	public bool EnableInfoTrace { get; set; }
+	public bool EnableWarnTrace { get; set; }
+	public bool EnableErrorTrace { get; set; }
+	public bool EnableTraceTrace { get; set; }
 
 	public void Trace(string msg,
 		[CallerFilePath] string sourceFilePath = ILogger.DefaultSourceFilePath,

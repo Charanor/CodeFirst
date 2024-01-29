@@ -10,7 +10,12 @@ public interface ILogger
 	protected const int DefaultSourceLineNumber = -1;
 
 	string Name { get; }
-	string IndentString { get; }
+	
+	bool EnableDebugTrace { get; set; }
+	bool EnableInfoTrace { get; set; }
+	bool EnableWarnTrace { get; set; }
+	bool EnableErrorTrace { get; set; }
+	bool EnableTraceTrace { get; set; }
 
 	void Trace(string msg,
 		[CallerFilePath] string sourceFilePath = DefaultSourceFilePath,
