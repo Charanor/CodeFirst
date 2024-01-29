@@ -57,5 +57,30 @@ public static class VectorExtensions
 	public static float Angle(this Vector2 vector) => AngleTowards(Vector2.UnitX, vector);
 	public static float SignedAngle(this Vector2 vector) => SignedAngleTowards(Vector2.UnitX, vector);
 
-	public static Vector2 UseAsAngleForVector2(this float angleRad) => MathF.SinCos(angleRad);
+	public static Vector2 AsAngleForVector2(this float angleRad) => MathF.SinCos(angleRad);
+	public static Vector2 FromAngle(float angleRad) => MathF.SinCos(angleRad);
+
+	public static Vector2 Rotate(this Vector2 vector, float rotationRad) => new()
+	{
+		X = vector.X * MathF.Cos(rotationRad) - vector.Y * MathF.Sin(rotationRad),
+		Y = vector.X * MathF.Sin(rotationRad) - vector.Y * MathF.Cos(rotationRad)
+	};
+
+	public static Vector2 ClockwiseNormal(this Vector2 vector) => new(vector.Y, -vector.X);
+	public static Vector2 CounterClockwiseNormal(this Vector2 vector) => new(-vector.Y, vector.X);
+
+	public static Vector2 ReflectX(this Vector2 vector) => new(-vector.X, vector.Y);
+	public static Vector2 ReflectY(this Vector2 vector) => new(vector.X, -vector.Y);
+
+	public static Vector2 Project(this Vector2 vec, Vector2 axis)
+	{
+		var axisMagnitude = axis.LengthSquared;
+		if (axisMagnitude == 0)
+		{
+			// This isn't very correct at all. Maybe it would be better to return a NaN vector or just throw.
+			return vec;
+		}
+
+		return axis * (Vector2.Dot(vec, axis) / axisMagnitude);
+	}
 }
