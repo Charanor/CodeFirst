@@ -592,14 +592,14 @@ public static class Assets
 	}
 
 	/// <summary>
-	///     Finds all classes implementing <see cref="IPrecacheable" /> and calls their
-	///     <see cref="IPrecacheable.Precache" /> method.
+	///     Finds all classes implementing <see cref="IPrecachedResource" /> and calls their
+	///     <see cref="IPrecachedResource.Precache" /> method.
 	/// </summary>
 	public static void PrecacheAllResources()
 	{
 		var precachableTypes = AppDomain.CurrentDomain.GetAssemblies()
 			.SelectMany(a => a.GetTypes())
-			.Where(t => typeof(IPrecacheable).IsAssignableFrom(t) && t is { IsClass: true });
+			.Where(t => typeof(IPrecachedResource).IsAssignableFrom(t) && t is { IsClass: true });
 		foreach (var type in precachableTypes)
 		{
 			var precacheMethod = type.GetMethod(nameof(Precache),

@@ -86,7 +86,12 @@ public abstract class IteratingSystem : EntitySystem
 	}
 
 	protected Entity CurrentEntity { get; set; }
-
+	
+	/// <summary>
+	///     Called every time the system is added to a World. The <see cref="Entities" /> and <see cref="World" />
+	///     properties are guaranteed to be initialized when this is called, as well as any injected dependencies.
+	/// </summary>
+	/// <param name="world">the world this system was added to. Functionally identical to <see cref="World" /></param>
 	public override void Initialize(World world)
 	{
 		base.Initialize(world);
@@ -104,9 +109,9 @@ public abstract class IteratingSystem : EntitySystem
 			var entity = entities[i];
 			CurrentEntity = entity;
 			Update(entity, delta);
-			CurrentEntity = Entity.Invalid;
 		}
 
+		CurrentEntity = Entity.Invalid;
 		Entities.Commit();
 	}
 
@@ -166,6 +171,11 @@ public abstract class IteratingSystem : EntitySystem
 	{
 	}
 
+	/// <summary>
+	///		Checks if the given Entity is the Entity currently being processed by this system.
+	/// </summary>
+	/// <param name="entity"></param>
+	/// <returns></returns>
 	public bool IsCurrentEntity(Entity entity) => entity == CurrentEntity;
 
 	private void OnItemRemoved(IReadOnlySnapshotList<Entity> _, EventArgs<Entity> e) => EntityRemoved(e.Value);

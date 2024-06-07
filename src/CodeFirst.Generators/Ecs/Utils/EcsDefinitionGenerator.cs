@@ -252,6 +252,12 @@ public class EcsDefinitionGenerator
 				{
 					AddSystem(system);
 				}
+				
+				builder.IndentedLn("// This is to ensure components always get their ID:s in consistent order.");
+				foreach (var (component, _) in program.Components)
+				{
+					builder.IndentedLn($"_ = ComponentManager.GetId<{component}>();");
+				}
 
 				void AddSystem(string system)
 				{

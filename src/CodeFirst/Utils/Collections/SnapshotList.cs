@@ -1,10 +1,11 @@
 ﻿using System.Collections;
 using CodeFirst.Utils.Events;
+using JetBrains.Annotations;
 
 namespace CodeFirst.Utils.Collections;
 
 /// <summary>
-///     A list implementation that guaranteed that no add/remove operations will happen inside a <see cref="Begin()" />{
+///     A list implementation that guarantees that no add/remove operations will happen inside a <see cref="Begin()" />{
 ///     ... }[<see cref="Commit" /> / <see cref="Discard" />] block. Any changes will be applied (if ending with
 ///     <see cref="Commit" />) or discarded (if ending with <see cref="Discard" />) after the respective methods are
 ///     called, not before.
@@ -14,10 +15,13 @@ namespace CodeFirst.Utils.Collections;
 ///     <br />
 ///     for(var i = 0; i &lt; size; i++) { var item = snapshot[i]; } <br />
 ///     <br />
-///     MyList.Commit();<br />
-///     // Or: MyList.Discard();
+///     MyList.Commit(); // Or: MyList.Discard();<br />
+///		// Can also be used with foreach like so: <br /><br />
+///		var handle = MyList.BeginHandle();<br />
+///		foreach (var entity in handle) { ... }
 /// </example>
 /// <typeparam name="T">the item type</typeparam>
+[PublicAPI]
 public class SnapshotList<T> : IList<T>, ISnapshotList<T>
 {
 	private readonly IList<T> backingList;

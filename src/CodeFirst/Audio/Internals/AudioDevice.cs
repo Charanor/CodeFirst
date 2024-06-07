@@ -15,8 +15,8 @@ internal class AudioDevice : NativeResource
 			// Something went wrong
 			var error = ALC.GetError(device);
 			var nullNote = deviceName == null ? " (note: \"null\" is a valid name)" : "";
-			throw new NullReferenceException(
-				$"Could not create OpenAL device with name \"{deviceName}\"{nullNote}. Reason: {error}");
+			// throw new NullReferenceException(
+			// 	$"Could not create OpenAL device with name \"{deviceName}\"{nullNote}. Reason: {error}");
 		}
 	}
 

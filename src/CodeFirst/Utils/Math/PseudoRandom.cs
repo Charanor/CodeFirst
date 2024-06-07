@@ -1,5 +1,21 @@
+using JetBrains.Annotations;
+
 namespace CodeFirst.Utils.Math;
 
+/// <summary>
+///		A pseudo-random implementation where each failed attempt will increase the chance of a success on
+///		following attempts, resetting when a success is made. This has the effect of making success and failure streaks
+///		rare while still allowing the success chance to average out at the given percentage over time. Essentially
+///		this changes the proc-curve to something more like a bell-curve.
+///
+///		For example if the percentage chance is 20% (0.2) then <see cref="Success"/> will return <c>true</c> approximately
+///		every five tries while also making it less likely to return <c>true</c> several times in a row, or <c>false</c>
+///		after more than five tries.
+/// </summary>
+/// <remarks>
+///		Inspired by how some abilities, such as crit, worked in Warcraft 3.
+/// </remarks>
+[PublicAPI]
 public class PseudoRandom
 {
 	private readonly Random random;
@@ -13,6 +29,10 @@ public class PseudoRandom
 		random = new Random();
 	}
 
+	/// <summary>
+	///		Checks if we had a success or not. Note that this is NOT a pure getter and has side-effects
+	///		(can be confusing, sorry -author).
+	/// </summary>
 	public bool Success
 	{
 		get
@@ -28,8 +48,13 @@ public class PseudoRandom
 		}
 	}
 
+	/// <summary>
+	///		Checks what the current percentage chance of <see cref="Success"/> returning <c>true</c> is. This is a pure
+	///		getter, unlike <see cref="Success"/> itself.
+	/// </summary>
 	public double Chance
 	{
+		[Pure]
 		get => chanceIncrease * (tries + 1);
 		init => chanceIncrease = ChanceIncreaseFromProcChance(value);
 	}
@@ -37,9 +62,9 @@ public class PseudoRandom
 	private static double ChanceIncreaseFromProcChance(double chance)
 	{
 		var upperBounds = chance;
-		double lowerBounds = 0;
-		double middle;
-		double chance2 = 1;
+		var lowerBounds = 0.0;
+		var middle = 0.0;
+		var chance2 = 1.0;
 
 		while (true)
 		{

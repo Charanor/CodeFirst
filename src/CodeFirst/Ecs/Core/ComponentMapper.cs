@@ -78,8 +78,7 @@ public class ComponentMapper<T> : IComponentMapper, IComponentMapper<T> where T 
 	///     Gets the component data in the backing array for the given entity. This is similar to
 	///     <see cref="Get(Entity)" /> but it <b>does not make any guarantees about the returned component</b>, such as
 	///     checking if the entity even has a component of this type. This also means that the returned data might be
-	///     invalid in any number of ways. <b>Tl;dr</b> use <see cref="Get(Entity)" /> unless you know what you are
-	///     doing (and if you did, you probably would not be reading this documentation ;) ).
+	///     invalid in any number of ways. <b>Tl;dr</b> use <see cref="Get(Entity)" /> unless you know what you are doing.
 	/// </summary>
 	/// <param name="entity">the entity</param>
 	/// <returns>the raw component data</returns>

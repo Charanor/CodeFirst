@@ -2,6 +2,12 @@ using System.Text;
 
 namespace CodeFirst.Utils.Logging;
 
+/// <summary>
+///		Handles the creation of <see cref="ILogger"/> instances and saving logging output to a stream, e.g. a file.
+/// </summary>
+/// <seealso cref="LoggerFactory"/>
+/// <seealso cref="Get{T}"/>
+/// <seealso cref="Get"/>
 public static class LoggingManager
 {
 	private static readonly IDictionary<string, ILogger> Loggers = new Dictionary<string, ILogger>();

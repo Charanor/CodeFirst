@@ -53,7 +53,10 @@ public class World : IDisposable
 	///     pass (if it is its time to run, that is).
 	/// </remarks>
 	public float FixedUpdateDelta { get; set; }
-	
+
+	/// <summary>
+	///		Disposes all <see cref="EntitySystem"/>s that implement <see cref="IDisposable"/>.
+	/// </summary>
 	public void Dispose()
 	{
 		GC.SuppressFinalize(this);
@@ -163,10 +166,6 @@ public class World : IDisposable
 	{
 		foreach (var removedEntity in removedEntities)
 		{
-			entities.Remove(removedEntity);
-			entityFlags.Remove(removedEntity);
-			dirtyEntities.Remove(removedEntity);
-
 			foreach (var (_, aspectEntities) in entitiesForAspects)
 			{
 				if (aspectEntities.Contains(removedEntity))
@@ -174,7 +173,11 @@ public class World : IDisposable
 					aspectEntities.Remove(removedEntity);
 				}
 			}
-			
+
+			entities.Remove(removedEntity);
+			entityFlags.Remove(removedEntity);
+			dirtyEntities.Remove(removedEntity);
+
 			foreach (var (_, mapper) in mappers)
 			{
 				mapper.Remove(removedEntity);
@@ -189,47 +192,33 @@ public class World : IDisposable
 	/// <summary>
 	///     Creates a new entity and adds it to the world.
 	/// </summary>
-	/// <param name="id">
-	///     the optional id of the entity. If left as default, or <c>&lt;0</c>, will pick the 1st available id. This
-	///     parameter is, for the most part, unnecessary to set and is primarily offered as a way to re-initialize a
-	///     world from some state, or to synchronize entity ID:s across server/client pairs.
-	/// </param>
 	/// <returns>the created entity. In non-dev environments this may be <see cref="Entity.Invalid" /> if an error occurs.</returns>
 	/// <exception cref="IndexOutOfRangeException">
-	///     (Dev only) If we have ran out of new entity ID:s (
-	///     <c>int.MaxValue = 2147483647</c>)
+	///     (Dev only) If we have ran out of new entity ID:s (<c>int.MaxValue = 2147483647</c>)
 	/// </exception>
-	/// <exception cref="EntityAlreadyExistsException">(Dev only) An entity with the given ID already exists</exception>
-	public Entity CreateEntity(int id = -1)
+	public Entity CreateEntity()
 	{
-		if (id < 0)
+		var id = -1;
+
+		// Search for 1st valid ID
+		for (var i = 0; i < int.MaxValue; i++)
 		{
-			// Search for 1st valid ID
-			for (var i = 0; i < int.MaxValue; i++)
+			if (entities.Has(i))
 			{
-				if (entities.Has(i))
-				{
-					continue;
-				}
-
-				id = i;
-				break;
+				continue;
 			}
 
-			if (id < 0)
-			{
-				DevTools.Throw<World>(new IndexOutOfRangeException($"Max number of entities reached, {int.MaxValue}"));
-				return Entity.Invalid;
-			}
+			id = i;
+			break;
 		}
 
-		var entity = new Entity(id);
-		if (entities.Has(id))
+		if (id < 0)
 		{
-			DevTools.Throw<World>(new EntityAlreadyExistsException(entity));
+			DevTools.Throw<World>(new IndexOutOfRangeException($"Max number of entities reached, {int.MaxValue}"));
 			return Entity.Invalid;
 		}
 
+		var entity = new Entity(id);
 		entities.Add(entity);
 		MarkEntityDirty(entity);
 		return entity;
@@ -240,7 +229,7 @@ public class World : IDisposable
 	///     draw).
 	/// </summary>
 	/// <param name="entity">the entity</param>
-	/// <exception cref="InvalidEntityException">(Dev only) if <see cref="Entity.IsValid" /> is false</exception>
+	/// <exception cref="InvalidEntityException">(Dev only) if <see cref="Entity.IsValid" /> is <c>false</c></exception>
 	public void DeleteEntity(Entity entity)
 	{
 		if (!entity.IsValid)
@@ -322,16 +311,19 @@ public class World : IDisposable
 	///     Injects any injectable dependencies registered with this world into the given object,
 	///     for example component mappers. Fields that receive injected dependencies must be marked as 'readonly'.
 	///     <code>
-	///  		// If you are using nullable context, initialise the value to "null!" to prevent nullability warnings :)
-	///   	private readonly ComponentMapper&lt;MyComponent&gt; myComponentMapper = null!;
-	///    </code>
+	/// 		private readonly ComponentMapper&lt;MyComponent&gt; myComponentMapper = null!;
+	/// 		
+	/// 		[All(typeof(Transform), typeof(Movement)]
+	/// 		private readonly Aspect myAspect = null!;
+	/// 		
+	/// 		[All(typeof(Transform), typeof(Movement)]
+	/// 		private readonly IReadonlySnapshotComponent&lt;Entity&gt; myEntities = null!;
+	///     </code>
 	/// </summary>
 	/// <param name="obj">The object to inject the dependencies into</param>
 	/// <exception cref="InjectionException">If the field definition of the injected dependency is not 'readonly'</exception>
 	/// <example>
-	///     // If you are using nullable context, initialise the value to "null!" to prevent nullability warnings :)
-	///     <br />
-	///     private readonly ComponentMapper&lt;MyComponent&gt; myComponentMapper = null!;
+	///     <code>private readonly ComponentMapper&lt;MyComponent&gt; myComponentMapper = null!;</code>
 	/// </example>
 	/// <seealso cref="InjectComponentMappers" />
 	public void Inject(object obj)
@@ -351,7 +343,6 @@ public class World : IDisposable
 	/// <param name="obj">the object to inject the mappers into</param>
 	/// <exception cref="InjectionException">(Dev only) If the component mapper field definition is not 'readonly'</exception>
 	/// <example>
-	///     // If you are using nullable context, initialise the value to "null!" to prevent nullability warnings :)
 	///     private readonly ComponentMapper&lt;MyComponent&gt; myComponentMapper = null!;
 	/// </example>
 	/// <seealso cref="Inject" />
@@ -418,6 +409,7 @@ public class World : IDisposable
 		}
 	}
 
+	/// <inheritdoc cref="RemoveSystem(System.Type)" />
 	public void RemoveSystem<TSystem>() where TSystem : EntitySystem => RemoveSystem(typeof(TSystem));
 
 	/// <summary>
@@ -462,10 +454,10 @@ public class World : IDisposable
 	/// <summary>
 	///     Get the component mapper for the given component.
 	/// </summary>
-	/// <typeparam name="T">The type of component</typeparam>
+	/// <typeparam name="TComponent">The type of component</typeparam>
 	/// <returns>the component mapper for the component type T</returns>
-	public ComponentMapper<T> GetMapper<T>() where T : IComponent =>
-		(ComponentMapper<T>)GetMapperNoTypeCheck(typeof(T));
+	public ComponentMapper<TComponent> GetMapper<TComponent>() where TComponent : IComponent =>
+		(ComponentMapper<TComponent>)GetMapperNoTypeCheck(typeof(TComponent));
 
 	/// <summary>
 	///     Get the component mapper for the given singleton component.
@@ -475,6 +467,7 @@ public class World : IDisposable
 	public SingletonComponentMapper<T> GetSingletonMapper<T>() where T : ISingletonComponent, new() =>
 		(SingletonComponentMapper<T>)GetMapperNoTypeCheck(typeof(T));
 
+	/// <inheritdoc cref="GetMapper{TComponent}" />
 	public IComponentMapper GetMapper(Type componentType)
 	{
 		if (!componentType.IsAssignableTo(typeof(IComponent)))
@@ -486,9 +479,17 @@ public class World : IDisposable
 		return GetMapperNoTypeCheck(componentType);
 	}
 
-	public ref T GetSingletonComponent<T>() where T : ISingletonComponent, new() =>
-		ref GetSingletonMapper<T>().SingletonInstance;
+	/// <summary>
+	///     Returns the singleton component of type <typeparamref name="TSingletonComponent" />
+	/// </summary>
+	/// <typeparam name="TSingletonComponent"></typeparam>
+	/// <returns></returns>
+	/// <seealso cref="GetSingletonMapper{T}" />
+	public ref TSingletonComponent GetSingletonComponent<TSingletonComponent>()
+		where TSingletonComponent : ISingletonComponent, new() =>
+		ref GetSingletonMapper<TSingletonComponent>().SingletonInstance;
 
+	/// <inheritdoc cref="GetSingletonComponent{TSingletonComponent}" />
 	public ISingletonComponent GetSingletonComponent(Type componentType)
 	{
 		if (!componentType.IsAssignableTo(typeof(ISingletonComponent)) ||
@@ -603,6 +604,7 @@ public class World : IDisposable
 			{
 				DevTools.Throw<World>(new EntityDoesNotExistException(entity));
 			}
+
 			return;
 		}
 

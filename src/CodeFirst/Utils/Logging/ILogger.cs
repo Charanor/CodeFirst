@@ -2,6 +2,9 @@ using System.Runtime.CompilerServices;
 
 namespace CodeFirst.Utils.Logging;
 
+/// <summary>
+///		Create new instances using <see cref="LoggingManager"/>'s <see cref="LoggingManager.Get"/> or <see cref="LoggingManager.Get{T}"/>
+/// </summary>
 public interface ILogger
 {
 	protected const string DefaultExpression = "<none>";

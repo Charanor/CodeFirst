@@ -1,13 +1,17 @@
 using System.Diagnostics;
 using System.Reflection;
 using CodeFirst.Ecs.Core.Attributes;
+using CodeFirst.Utils;
 
 namespace CodeFirst.Ecs.Core;
 
 /// <summary>
-///     The base entity system class. The entity system is responsible for processing groups of entities defined
-///     by an <see cref="Aspect" />.
+///     The base entity system class.
 /// </summary>
+/// <remarks>
+///		If a system implements <see cref="IDisposable"/> it will be disposed of when
+///		<see cref="CodeFirst.Ecs.Core.World.Dispose">World.Dispose</see> is called.
+/// </remarks>
 public abstract class EntitySystem
 {
 	protected EntitySystem(Pass pass)
@@ -41,8 +45,13 @@ public abstract class EntitySystem
 	public World? World { get; internal set; }
 
 	/// <summary>
-	///     If <code>false</code> this system will not be updated.
+	///     If <c>false</c> this system will not be updated.
 	/// </summary>
+	/// <remarks>
+	///		Be aware that this property is only respected if <see cref="ShouldUpdate"/> uses it, so if you are
+	///		overriding <see cref="ShouldUpdate"/> make sure to take <see cref="Enabled"/> into account.
+	/// </remarks>
+	/// <seealso cref="ShouldUpdate"/>
 	public bool Enabled { get; set; } = true;
 
 	public abstract void Update(float delta);
@@ -51,7 +60,11 @@ public abstract class EntitySystem
 	///     Checks if this system should update or not. The default implementation simply checks if the entity system is
 	///     enabled.
 	/// </summary>
+	/// <remarks>
+	///		Make sure to take <see cref="Enabled"/> into account in any overwritten implementation.
+	/// </remarks>
 	/// <returns><c>true</c> if the system should update, <c>false</c> otherwise</returns>
+	/// <seealso cref="Enabled"/>
 	public virtual bool ShouldUpdate() => Enabled;
 
 	private Pass GetPassFromAttribute()
@@ -68,28 +81,34 @@ public abstract class EntitySystem
 	}
 
 	/// <summary>
-	///     Called when the system begins processing, right before <c>EntitySystem#Update</c>.
+	///     Called when the system begins processing, right before <see cref="EntitySystem.Update"/>.
 	/// </summary>
+	/// <seealso cref="Update"/>
 	public virtual void Begin()
 	{
 	}
 
 	/// <summary>
-	///     Called when the systems end processing, right after <c>EntitySystem#Update</c>.
+	///     Called when the system stops processing, right after <see cref="EntitySystem.Update" />.
 	/// </summary>
+	/// <seealso cref="Update"/>
 	public virtual void End()
 	{
 	}
 
 	/// <summary>
-	///     Called every time the system is added to a World. The <see cref="Entities" /> and <see cref="World" />
-	///     values are guaranteed to be initialized when this is called, as well as any injected dependencies.
+	///     Called every time the system is added to a World. The <see cref="World" /> property is guaranteed to be
+	///		initialized when this is called, as well as any injected dependencies.
 	/// </summary>
 	/// <param name="world">the world this system was added to. Functionally identical to <see cref="World" /></param>
 	public virtual void Initialize(World world)
 	{
 	}
 
+	/// <summary>
+	///		Utility method to remove the given entity from the world.
+	/// </summary>
+	/// <param name="entity">the entity to remove</param>
 	protected virtual void Remove(Entity entity)
 	{
 		Debug.Assert(World != null);

@@ -1,12 +1,8 @@
-﻿using System.Diagnostics;
-using CodeFirst.Ecs.Utils;
-using CodeFirst.Utils.Collections;
-
-namespace CodeFirst.Ecs.Core;
+﻿namespace CodeFirst.Ecs.Core;
 
 public abstract class OrderedIteratingSystem : IteratingSystem
 {
-	private readonly EntitySnapshotList entityCache = new();
+	private readonly List<Entity> entityCache = new();
 	private IComparer<Entity> entityComparer = null!;
 
 	protected abstract IComparer<Entity> CreateComparer();
@@ -15,17 +11,22 @@ public abstract class OrderedIteratingSystem : IteratingSystem
 	{
 		base.Initialize(world);
 		entityComparer = CreateComparer();
-		
-		foreach (var entity in Entities.Order(entityComparer))
-		{
-			entityCache.Add(entity);
-		}
+		entityCache.AddRange(Entities.Order(entityComparer));
 	}
 
 	protected override void EntityAdded(Entity entity)
 	{
 		base.EntityAdded(entity);
-		entityCache.Add(entity);
+		var index = entityCache.BinarySearch(entity, entityComparer);
+		if (index < 0)
+		{
+			// From MSDN : Return Value The zero-based index of item in the sorted List<T>, if item is found; otherwise,
+			// a negative number that is the bitwise complement of the index of the next element that is larger than
+			// item or, if there is no larger element, the bitwise complement of Count.
+			index = ~index;
+		}
+
+		entityCache.Insert(index, entity);
 	}
 
 	protected override void EntityRemoved(Entity entity)
@@ -36,8 +37,7 @@ public abstract class OrderedIteratingSystem : IteratingSystem
 
 	public override void Update(float delta)
 	{
-		using var handle = entityCache.BeginHandle();
-		foreach (var entity in handle)
+		foreach (var entity in entityCache)
 		{
 			CurrentEntity = entity;
 			Update(entity, delta);

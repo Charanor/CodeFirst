@@ -33,6 +33,8 @@ public class PhysicsWorld
 		reclaimedIds = new Queue<int>();
 	}
 
+	public IEnumerable<Guid> Items => items.AsEnumerable();
+
 	public Guid Create(float x, float y, float width, float height) =>
 		Create(new Box2(x - width / 2f, y - height / 2f, x + width / 2f, y + height / 2f));
 

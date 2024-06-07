@@ -1,5 +1,13 @@
 ﻿namespace CodeFirst.Utils;
 
+/// <summary>
+///		Used to count FPS in the main game loop. Instantiate a new instance and attach a handler to the <see cref="OnFps"/>
+///		event, and make sure to call <see cref="Update"/> and <see cref="Draw"/> methods in the respective update and
+///		draw frames.
+/// </summary>
+/// <remarks>
+///		If <see cref="Update"/> or <see cref="Draw"/> is not called FPS for that type will simply not be recorded.
+/// </remarks>
 public class FpsCounter
 {
 	private const double ONE_SECOND = 1f;

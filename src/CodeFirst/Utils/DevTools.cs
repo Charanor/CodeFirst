@@ -11,6 +11,13 @@ public static class DevTools
 	
 	private static readonly ILogger Logger = LoggingManager.Get(nameof(DevTools));
 
+	/// <summary>
+	///		A zero-arg function that returns <c>true</c> if we are currently in dev mode, or <c>false</c> if we are not
+	///		in dev mode. By default this is a function that returns <c>true</c> when <c>DEBUG</c> is defined through environment
+	///		variable or <c>#define DEBUG</c>. If your setup requires some other check, simply assign a new function to
+	///		this property.
+	/// </summary>
+	/// <example>if (DevTools.IsDevMode()) throw new FooBarException("Missing baz!")</example>
 	public static Func<bool> IsDevMode { get; set; } = () =>
 	{
 #if DEBUG
@@ -20,7 +27,7 @@ public static class DevTools
 	};
 
 	/// <summary>
-	///     Throws the given exception if DEBUG is defined, otherwise does nothing.
+	///     Throws the given exception if <see cref="IsDevMode"/> return <c>true</c>, otherwise does nothing.
 	/// </summary>
 	/// <param name="exception"></param>
 	/// <exception cref="Exception"></exception>
@@ -45,7 +52,7 @@ public static class DevTools
 	}
 
 	/// <summary>
-	///     Throws the given exception if DEBUG is defined, otherwise does nothing.
+	///     Throws the given exception if <see cref="IsDevMode"/> return <c>true</c>, otherwise does nothing.
 	/// </summary>
 	/// <param name="throwingClass">the class that is throwing this exception</param>
 	/// <param name="exception"></param>
@@ -70,7 +77,7 @@ public static class DevTools
 	}
 
 	/// <summary>
-	///     Throws the given exception if DEBUG is defined, otherwise does nothing.
+	///     Throws the given exception if <see cref="IsDevMode"/> return <c>true</c>, otherwise does nothing.
 	/// </summary>
 	/// <param name="exception"></param>
 	/// <exception cref="Exception"></exception>
@@ -94,7 +101,7 @@ public static class DevTools
 	}
 
 	/// <summary>
-	///     Throws the given exception if DEBUG is defined, otherwise returns value.
+	///     Throws the given exception if <see cref="IsDevMode"/> return <c>true</c>, otherwise returns value.
 	/// </summary>
 	/// <param name="value"></param>
 	/// <param name="exception"></param>
@@ -118,7 +125,7 @@ public static class DevTools
 	}
 
 	/// <summary>
-	///     Throws the given exception if DEBUG is defined, otherwise returns value.
+	///     Throws the given exception if <see cref="IsDevMode"/> return <c>true</c>, otherwise returns value.
 	/// </summary>
 	/// <param name="value"></param>
 	/// <param name="exception"></param>
@@ -141,9 +148,9 @@ public static class DevTools
 	}
 
 	/// <summary>
-	///     Attempts to run the factory method. If the factory method throws AND DEBUG is defined: throws the exception,
-	///     otherwise if the factory method throws and DEBUG is not defined, returns the default value.
-	///     If the factory method does not throw, simply returns the returned value.
+	///     Attempts to run the factory method. If the factory method throws AND if <see cref="IsDevMode"/> return <c>true</c>:
+	///		throws the exception, otherwise if the factory method throws and if <see cref="IsDevMode"/> return <c>false</c>,
+	///		returns the default value. If the factory method does not throw, simply returns the returned value.
 	/// </summary>
 	/// <param name="factory"></param>
 	/// <param name="defaultValue"></param>
@@ -174,9 +181,9 @@ public static class DevTools
 	}
 
 	/// <summary>
-	///     Attempts to run the factory method. If the factory method throws AND DEBUG is defined: throws the exception,
-	///     otherwise if the factory method throws and DEBUG is not defined, returns the default value.
-	///     If the factory method does not throw, simply returns the returned value.
+	///     Attempts to run the factory method. If the factory method throws AND if <see cref="IsDevMode"/> return <c>true</c>:
+	///		throws the exception, otherwise if the factory method throws and if <see cref="IsDevMode"/> return <c>false</c>,
+	///		returns the default value. If the factory method does not throw, simply returns the returned value.
 	/// </summary>
 	/// <param name="factory"></param>
 	/// <param name="defaultValue"></param>

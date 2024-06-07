@@ -4,6 +4,7 @@ using CodeFirst.Ecs.Core;
 using CodeFirst.Ecs.Core.Exceptions;
 using CodeFirst.Utils.Collections;
 using CodeFirst.Utils.Events;
+using OpenTK.Mathematics;
 
 namespace CodeFirst.Ecs.Utils;
 
@@ -63,6 +64,7 @@ public class EntitySnapshotList : ISnapshotList<Entity>
 			{
 				OnItemRemoved?.Invoke(this, new EventArgs<Entity>(prevItem));
 			}
+
 			OnItemAdded?.Invoke(this, new EventArgs<Entity>(value));
 		}
 	}
@@ -176,7 +178,6 @@ public class EntitySnapshotList : ISnapshotList<Entity>
 	/// </remarks>
 	public int IndexOf(Entity item) => item.Id < 0 || item.Id >= backingArray.Length ? -1 : item.Id;
 
-
 	/// <summary>
 	///     Checks if this list contains the given item.
 	/// </summary>
@@ -190,7 +191,8 @@ public class EntitySnapshotList : ISnapshotList<Entity>
 	{
 		if (IsIterating)
 		{
-			throw new InvalidOperationException($"Cannot iterate over a {nameof(EntitySnapshotList)} that is already iterating!");
+			throw new InvalidOperationException(
+				$"Cannot iterate over a {nameof(EntitySnapshotList)} that is already iterating!");
 		}
 
 		// ReSharper disable once ForCanBeConvertedToForeach
@@ -375,7 +377,8 @@ public class EntitySnapshotList : ISnapshotList<Entity>
 			return;
 		}
 
-		Array.Resize(ref backingArray, arrayLength * 2);
+		var newSize = MathHelper.NextPowerOfTwo(containedIndex + 1);
+		Array.Resize(ref backingArray, newSize);
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,5 +1,8 @@
+using JetBrains.Annotations;
+
 namespace CodeFirst.Ecs.Core.Attributes;
 
+[PublicAPI]
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class ProcessPassAttribute : Attribute
 {

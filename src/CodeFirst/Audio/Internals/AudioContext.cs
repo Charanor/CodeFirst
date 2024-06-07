@@ -14,7 +14,7 @@ internal class AudioContext : NativeResource
 		{
 			// Something went wrong
 			var error = ALC.GetError(device);
-			throw new NullReferenceException($"Could not create OpenAL context. Reason: {error}");
+			// throw new NullReferenceException($"Could not create OpenAL context. Reason: {error}");
 		}
 	}
 
