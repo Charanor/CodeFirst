@@ -15,6 +15,7 @@ public static class LoggingManager
 
 	public static string LogsDirectory { get; set; } = "Logs";
 	public static Func<string, ILogger> LoggerFactory { get; set; } = CreateLogger;
+	public static LogLevel LogLevel { get; set; } = LogLevel.All;
 
 	public static void Write(string text) => LogBuilder.Append(text);
 
