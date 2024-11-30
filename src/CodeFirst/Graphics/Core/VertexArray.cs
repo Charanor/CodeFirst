@@ -78,4 +78,26 @@ public class VertexArray : NativeResource
 		vertexArray.LinkElementBuffer(indexBuffer);
 		return vertexArray;
 	}
+
+	public static VertexArray CreateForVertexInfo<TVertex>(VertexInfo vertexInfo, Buffer<TVertex> vertexBuffer)
+		where TVertex : unmanaged
+	{
+		if (typeof(TVertex) != vertexInfo.VertexType)
+		{
+			throw new ArgumentException(
+				$"Vertex buffer underlying type (got: {typeof(TVertex)}) must be the same as the {nameof(vertexInfo)} type (got: {vertexInfo.VertexType}).");
+		}
+
+		var vertexArray = new VertexArray();
+
+		var sizeInBytes = vertexInfo.SizeInBytes;
+		var offset = 0;
+		foreach (var attribute in vertexInfo.VertexAttributes)
+		{
+			vertexArray.LinkVertexAttribute(attribute, vertexBuffer, sizeInBytes, offset);
+			offset += attribute.Size;
+		}
+
+		return vertexArray;
+	}
 }
