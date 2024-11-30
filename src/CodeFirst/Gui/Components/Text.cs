@@ -58,10 +58,10 @@ public class Text : Frame
 		}
 	}
 
-	public int FontSize { get; init; } = 18;
-	public Color4<Rgba> FontColor { get; init; } = Color4.Black;
-	public TextAlign TextAlign { get; init; } = TextAlign.TopLeft;
-	public TextBreakStrategy TextBreakStrategy { get; init; } = TextBreakStrategy.Whitespace;
+	public int FontSize { get; set; } = 18;
+	public Color4<Rgba> FontColor { get; set; } = Color4.Black;
+	public TextAlign TextAlign { get; set; } = TextAlign.TopLeft;
+	public TextBreakStrategy TextBreakStrategy { get; set; } = TextBreakStrategy.Whitespace;
 
 	public string TextContent
 	{
