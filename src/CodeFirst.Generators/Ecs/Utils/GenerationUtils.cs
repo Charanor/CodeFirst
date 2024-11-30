@@ -39,6 +39,17 @@ internal static class GenerationUtils
 		builder.IndentedLn($"{funcName}({firstArgument}, {string.Join(", ", arguments)});");
 	}
 
+	public static void FunctionCall(
+		this ClassBuilder builder,
+		string funcName,
+		string firstArgument,
+		string secondArgument,
+		IEnumerable<string> arguments
+	)
+	{
+		builder.IndentedLn($"{funcName}({firstArgument}, {secondArgument}, {string.Join(", ", arguments)});");
+	}
+
 	public static ComponentMapperContext ComponentMapper(this ClassBuilder builder, string componentName,
 		string? componentNamespace, bool isSingleton, bool isIteratingSystem)
 	{

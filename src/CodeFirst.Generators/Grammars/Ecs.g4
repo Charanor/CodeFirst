@@ -33,7 +33,7 @@ components: (NEWLINE | component)*;
 component: SINGLETON? COMPONENT Identifier NEWLINE;
 
 systems: (NEWLINE | system)*;
-system: ORDERED? SYSTEM Identifier COLON NEWLINE INDENT processParam aspectParam DEDENT;
+system: ORDERED? ASYNC? SYSTEM Identifier COLON NEWLINE INDENT processParam aspectParam DEDENT;
 
 processParam: PROCESS COLON ProcessPass NEWLINE;
 
@@ -79,6 +79,7 @@ READONLY: 'readonly';
 SINGLETON: 'singleton';
 TAG: 'tag';
 EXCLUDE: 'exclude';
+ASYNC: 'async';
 
 // Compounds
 ProcessPass: 'Update' | 'FixedUpdate' | 'Draw';

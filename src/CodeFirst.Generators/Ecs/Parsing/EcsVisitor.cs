@@ -48,7 +48,7 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 			return Empty;
 		}
 
-		return Single(new EcsSystem(name, processPass, aspect, context.ORDERED() != null));
+		return Single(new EcsSystem(name, processPass, aspect, context.ORDERED() != null, context.ASYNC() != null));
 	}
 
 	public override IEnumerable<EcsDefinition> VisitProcessParam(EcsParser.ProcessParamContext context)
@@ -124,7 +124,7 @@ public record EcsNamespace(string Name) : EcsDefinition;
 public record EcsComponent(string Name, bool IsSingleton) : EcsDefinition;
 
 public record EcsSystem
-	(string Name, EcsProcessPassParameter ProcessPass, EcsAspectParameter Aspect, bool IsOrdered) : EcsDefinition;
+	(string Name, EcsProcessPassParameter ProcessPass, EcsAspectParameter Aspect, bool IsOrdered, bool IsAsync) : EcsDefinition;
 
 public record EcsProcessPassParameter(ProcessPass Pass) : EcsDefinition;
 

@@ -77,6 +77,11 @@ public class EcsDefinitionGenerator
 			// We can not have an ordered system with an external aspect
 			// TODO: Exception
 		}
+		else if (system is { IsOrdered: true, IsAsync: true })
+		{
+			// We can not have an async ordered system, that makes no sense!
+			// TODO: Exception
+		}
 
 		if (system.Aspect.IsExternal)
 		{
@@ -118,7 +123,7 @@ public class EcsDefinitionGenerator
 		var components = system.Aspect.Components.ToList();
 		var mandatory = components
 			.Where(component => !component.IsOptional && !IsSingleton(component))
-			.Cast<EcsAspectComponentBase>()
+			.Cast<EcsAspectComponentBase>() // Cast instead of OfType because we want the exception fallback here
 			.Concat(system.Aspect.Tags)
 			.ToList();
 		if (mandatory.Count > 0)
@@ -132,7 +137,13 @@ public class EcsDefinitionGenerator
 			AttributeLine("None", string.Join(",", excluded.Select(c => $"typeof({c.Name})")));
 		}
 
-		using (SystemBlock(system.Name, system.IsOrdered ? "OrderedIteratingSystem" : "IteratingSystem"))
+		var systemClassName = system switch
+		{
+			{ IsOrdered: true } => "OrderedIteratingSystem",
+			{ IsAsync: true } => "ParallelIteratingSystem",
+			_ => "IteratingSystem"
+		};
+		using (SystemBlock(system.Name, systemClassName))
 		{
 			var mapperContexts = components.ToDictionary(
 				cmp => cmp.Name,
@@ -177,6 +188,7 @@ public class EcsDefinitionGenerator
 			using (builder.Block("protected override void Update(Entity entity, float delta)"))
 			{
 				builder.AssignmentOp("CurrentEntity", "entity");
+
 				foreach (var component in paramComponents)
 				{
 					var mapperContext = mapperContexts[component.Name];
@@ -188,15 +200,33 @@ public class EcsDefinitionGenerator
 				var paramList = paramComponents.Select(
 					cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {ToCamelCase(cmp.Name)}"
 				).ToList();
-				builder.FunctionCall("ProcessEntity", paramList);
-				builder.FunctionCall("ProcessEntity", "delta", paramList);
+				if (paramList.Count > 0)
+				{
+					builder.FunctionCall("ProcessEntity", paramList);
+					builder.FunctionCall("ProcessEntity", "delta", paramList);
+				}
+				else
+				{
+					builder.FunctionCall("ProcessEntity");
+					builder.FunctionCall("ProcessEntity", "delta");
+				}
+
+				// We do not want to assign "CurrentEntity" for parallel iterating systems
 				builder.AssignmentOp("CurrentEntity", "Entity.Invalid");
 			}
 
 			var processEntityParameterList = string.Join(",",
 				paramComponents.Select(cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {cmp.Name} {ToCamelCase(cmp.Name)}"));
-			builder.IndentedLn($"partial void ProcessEntity(float delta, {processEntityParameterList});");
-			builder.IndentedLn($"partial void ProcessEntity({processEntityParameterList});");
+			if (processEntityParameterList.Length > 0)
+			{
+				builder.IndentedLn($"partial void ProcessEntity(float delta, {processEntityParameterList});");
+				builder.IndentedLn($"partial void ProcessEntity({processEntityParameterList});");
+			}
+			else
+			{
+				builder.IndentedLn("partial void ProcessEntity(float delta);");
+				builder.IndentedLn("partial void ProcessEntity();");
+			}
 		}
 	}
 
@@ -252,7 +282,7 @@ public class EcsDefinitionGenerator
 				{
 					AddSystem(system);
 				}
-				
+
 				builder.IndentedLn("// This is to ensure components always get their ID:s in consistent order.");
 				foreach (var (component, _) in program.Components)
 				{
@@ -294,7 +324,7 @@ public class EcsDefinitionGenerator
 						using (builder.Block("if (!mapper.Has(entity))"))
 						{
 							builder.IndentedLn(
-								$"throw new NullReferenceException(\"Entity does not have {component}.\");");
+								$"throw new System.NullReferenceException(\"Entity does not have {component}.\");");
 						}
 
 						builder.NewLine();
