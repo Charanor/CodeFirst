@@ -185,7 +185,7 @@ public sealed class SpriteBatch : IDisposable
 				? Interpolation.Linear.Apply(uvBounds.W, uvBounds.Y, quadPosition.Y)
 				: Interpolation.Linear.Apply(uvBounds.Y, uvBounds.W, quadPosition.Y);
 
-			var vertexSize = new Vector2(size.X, size.Y) * quadPosition.Xy;
+			var vertexSize = size * (quadPosition.Xy - Vector2.One / 2f);
 			var rotatedVertex = Quaternion.FromEulerAngles(pitch: 0, yaw: 0, rotation) * (vertexSize - origin) + origin;
 			vertices[currentSpriteCount * SpriteVertexCount + i] = new Vertex(
 				new Vector3(position + rotatedVertex, z: -1),
