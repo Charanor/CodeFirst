@@ -52,7 +52,7 @@ public class TextureAssetResolver : IAssetResolver
 		var actualInfo = fileInfo.Value;
 		var imageResult = ImageResult.FromStream(fileStream, actualInfo.ColorComponents);
 
-		Logger.Info($"Successfully loaded asset {definition}");
+		Logger.Info($"Successfully loaded asset {fileHandle.FilePath} {definition}");
 		var pixelFormat = ColorComponentsToPixelFormat(imageResult.Comp);
 		Logger.Trace(
 			$"{(imageResult.Data.Length, imageResult.Width, imageResult.Height, mipMapLevels, SizedInternalFormat.Rgba8, pixelFormat, PixelType.UnsignedByte)}");
