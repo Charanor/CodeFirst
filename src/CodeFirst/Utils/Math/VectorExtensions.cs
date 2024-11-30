@@ -66,6 +66,12 @@ public static class VectorExtensions
 		Y = vector.X * MathF.Sin(rotationRad) - vector.Y * MathF.Cos(rotationRad)
 	};
 
+	public static Vector2 RotateAround(this Vector2 vector, Vector2 origin, float rotationRad) => new()
+	{
+		X = origin.X + (vector.X - origin.X) * MathF.Cos(rotationRad) - (vector.Y - origin.Y) * MathF.Sin(rotationRad),
+		Y = origin.Y + (vector.X - origin.X) * MathF.Sin(rotationRad) - (vector.Y - origin.Y) * MathF.Cos(rotationRad)
+	};
+
 	public static Vector2 ClockwiseNormal(this Vector2 vector) => new(vector.Y, -vector.X);
 	public static Vector2 CounterClockwiseNormal(this Vector2 vector) => new(-vector.Y, vector.X);
 
