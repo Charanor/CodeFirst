@@ -8,7 +8,7 @@ public record ComponentFlags
 	public static readonly ComponentFlags Empty = new();
 
 	private readonly bool[] componentFlags;
-	
+
 	public ComponentFlags(params bool[] componentFlags)
 	{
 		this.componentFlags = new bool[componentFlags.Length];

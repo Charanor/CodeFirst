@@ -9,46 +9,46 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <AdditionalFiles Include="Graphics\G2D\Shaders\SpriteBatch.frag" />
-        <AdditionalFiles Include="Graphics\G2D\Shaders\SpriteBatch.vert" />
-        <AdditionalFiles Include="Graphics\Text\Shaders\MtsdfFont.frag" />
-        <AdditionalFiles Include="Graphics\Text\Shaders\MtsdfFont.vert" />
-        <AdditionalFiles Include="Gui\Shaders\BasicGraphics.frag" />
-        <AdditionalFiles Include="Gui\Shaders\BasicGraphics.vert" />
+        <AdditionalFiles Include="Graphics\G2D\Shaders\SpriteBatch.frag"/>
+        <AdditionalFiles Include="Graphics\G2D\Shaders\SpriteBatch.vert"/>
+        <AdditionalFiles Include="Graphics\Text\Shaders\MtsdfFont.frag"/>
+        <AdditionalFiles Include="Graphics\Text\Shaders\MtsdfFont.vert"/>
+        <AdditionalFiles Include="Gui\Shaders\BasicGraphics.frag"/>
+        <AdditionalFiles Include="Gui\Shaders\BasicGraphics.vert"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AssimpNet" Version="5.0.0-beta1" />
-        <PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
-        <PackageReference Include="NVorbis" Version="0.10.5" />
-        <PackageReference Include="OpenTK" Version="5.0.0-pre.8" />
-        <PackageReference Include="StbImageSharp" Version="2.27.13" />
-        <PackageReference Include="IceReaper.YogaSharp" Version="1.18.0.3" />
-    </ItemGroup>
-    
-    <ItemGroup>
-        <ProjectReference Include="..\CodeFirst.Generators\CodeFirst.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <PackageReference Include="AssimpNet" Version="5.0.0-beta1"/>
+        <PackageReference Include="JetBrains.Annotations" Version="2023.2.0"/>
+        <PackageReference Include="NVorbis" Version="0.10.5"/>
+        <PackageReference Include="OpenTK" Version="5.0.0-pre.8"/>
+        <PackageReference Include="StbImageSharp" Version="2.27.13"/>
+        <PackageReference Include="IceReaper.YogaSharp" Version="1.18.0.3"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Cartography\TiledMap.Loader.cs">
-        <DependentUpon>TiledMap.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Cartography\TiledMapTileSet.Loader.cs">
-        <DependentUpon>TiledMapTileSet.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Gui\Frame.Style.cs">
-        <DependentUpon>Frame.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Gui\Frame.Input.cs">
-        <DependentUpon>Frame.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Gui\Frame.Children.cs">
-        <DependentUpon>Frame.cs</DependentUpon>
-      </Compile>
-      <Compile Update="Gui\Frame.Scroll.cs">
-        <DependentUpon>Frame.cs</DependentUpon>
-      </Compile>
+        <Compile Update="Cartography\TiledMap.Loader.cs">
+            <DependentUpon>TiledMap.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Cartography\TiledMapTileSet.Loader.cs">
+            <DependentUpon>TiledMapTileSet.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Gui\Frame.Style.cs">
+            <DependentUpon>Frame.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Gui\Frame.Input.cs">
+            <DependentUpon>Frame.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Gui\Frame.Children.cs">
+            <DependentUpon>Frame.cs</DependentUpon>
+        </Compile>
+        <Compile Update="Gui\Frame.Scroll.cs">
+            <DependentUpon>Frame.cs</DependentUpon>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\CodeFirst.Generators\CodeFirst.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>
 
 </Project>

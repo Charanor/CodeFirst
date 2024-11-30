@@ -3,8 +3,11 @@
 namespace CodeFirst.Gui;
 
 public partial class Frame : IEnumerable<Frame>
-{	
-	public  void AddChild(Frame frame)
+{
+	public IEnumerator<Frame> GetEnumerator() => GetChildren().GetEnumerator();
+	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+	public void AddChild(Frame frame)
 	{
 		Node.AddChild(frame.Node);
 		frame.Parent = this;
@@ -12,7 +15,7 @@ public partial class Frame : IEnumerable<Frame>
 		children.Add(frame);
 	}
 
-	public  bool RemoveChild(Frame frame)
+	public bool RemoveChild(Frame frame)
 	{
 		var removed = children.Remove(frame);
 		if (removed)
@@ -63,11 +66,11 @@ public partial class Frame : IEnumerable<Frame>
 	}
 
 	/// <summary>
-	///		Checks if this frame, or any child of this frame (recursive) contains the given frame as a child.
+	///     Checks if this frame, or any child of this frame (recursive) contains the given frame as a child.
 	/// </summary>
 	/// <param name="frame"></param>
 	/// <returns></returns>
-	/// <seealso cref="HasDirectChild"/>
+	/// <seealso cref="HasDirectChild" />
 	public bool HasChild(Frame frame)
 	{
 		foreach (var child in GetChildren())
@@ -87,15 +90,12 @@ public partial class Frame : IEnumerable<Frame>
 	}
 
 	/// <summary>
-	///		Checks if this frame has the given frame as a direct child.
+	///     Checks if this frame has the given frame as a direct child.
 	/// </summary>
 	/// <param name="frame"></param>
 	/// <returns></returns>
-	/// <seealso cref="HasChild"/>
+	/// <seealso cref="HasChild" />
 	public bool HasDirectChild(Frame frame) => GetChildren().Contains(frame);
-
-	public IEnumerator<Frame> GetEnumerator() => GetChildren().GetEnumerator();
-	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 	public IEnumerable<Frame> GetChildren() => children;
 	public IEnumerable<T> GetChildren<T>() => GetChildren().OfType<T>();

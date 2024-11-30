@@ -25,7 +25,7 @@ void main() {
     float opacity = clamp(screenDistance + 0.5, 0.0, 1.0);
 
     vec4 bg = backgroundColor;
-    if(debug) {
+    if (debug) {
         bg = vec4(0, 1, 0, 1);
     }
     FragColor = mix(bg, foregroundColor, opacity);

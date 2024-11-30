@@ -3,5 +3,4 @@
 [AttributeUsage(AttributeTargets.Enum)]
 public class StateMachineAttribute : Attribute
 {
-	
 }

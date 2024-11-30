@@ -86,7 +86,7 @@ public abstract class IteratingSystem : EntitySystem
 	}
 
 	protected Entity CurrentEntity { get; set; }
-	
+
 	/// <summary>
 	///     Called every time the system is added to a World. The <see cref="Entities" /> and <see cref="World" />
 	///     properties are guaranteed to be initialized when this is called, as well as any injected dependencies.
@@ -134,7 +134,7 @@ public abstract class IteratingSystem : EntitySystem
 		AssertHasEntity(nameof(RemoveEntity));
 		base.Remove(CurrentEntity);
 	}
-	
+
 	/// <summary>
 	///     Called when an entity that will be processed by this EntitySystem is added to the parent <see cref="World" />.
 	/// </summary>
@@ -172,7 +172,7 @@ public abstract class IteratingSystem : EntitySystem
 	}
 
 	/// <summary>
-	///		Checks if the given Entity is the Entity currently being processed by this system.
+	///     Checks if the given Entity is the Entity currently being processed by this system.
 	/// </summary>
 	/// <param name="entity"></param>
 	/// <returns></returns>
