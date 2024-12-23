@@ -27,12 +27,17 @@ public enum TextAlign
 
 public class Text : Frame
 {
+	private const int DEFAULT_FONT_SIZE = 18;
+	private const TextBreakStrategy DEFAULT_BREAK_STRATEGY = TextBreakStrategy.Whitespace;
+
 	private readonly List<TextRow> textRows;
 
 	private Font font;
 	private TextLayout layout;
-	private bool dirty = true;
+
 	private string textContent;
+	private int fontSize = DEFAULT_FONT_SIZE;
+	private TextBreakStrategy textBreakStrategy = DEFAULT_BREAK_STRATEGY;
 
 	public Text(Font font, string value = "")
 	{
@@ -40,6 +45,7 @@ public class Text : Frame
 		Font = this.font = font;
 		TextContent = textContent = value;
 		layout ??= new TextLayout(font);
+		Node.SetMeasureFunction(Measure);
 	}
 
 	public Font Font
@@ -54,14 +60,42 @@ public class Text : Frame
 
 			font = value;
 			layout = new TextLayout(font);
-			dirty = true;
+			Node.MarkDirty();
 		}
 	}
 
-	public int FontSize { get; set; } = 18;
+	public int FontSize
+	{
+		get => fontSize;
+		set
+		{
+			if (fontSize == value)
+			{
+				return;
+			}
+
+			fontSize = value;
+			Node.MarkDirty();
+		}
+	}
+
 	public Color4<Rgba> FontColor { get; set; } = Color4.Black;
 	public TextAlign TextAlign { get; set; } = TextAlign.TopLeft;
-	public TextBreakStrategy TextBreakStrategy { get; set; } = TextBreakStrategy.Whitespace;
+
+	public TextBreakStrategy TextBreakStrategy
+	{
+		get => textBreakStrategy;
+		set
+		{
+			if (textBreakStrategy == value)
+			{
+				return;
+			}
+
+			textBreakStrategy = value;
+			Node.MarkDirty();
+		}
+	}
 
 	public string TextContent
 	{
@@ -74,11 +108,11 @@ public class Text : Frame
 			}
 
 			textContent = value;
-			dirty = true;
+			Node.MarkDirty();
 		}
 	}
 
-	public Vector2 TextSize => dirty ? new Vector2(float.NaN, float.NaN) : layout.CalculateTextSize(textRows);
+	public Vector2 TextSize { get; private set; }
 
 	private float CalculateMaxTextWidth()
 	{
@@ -103,34 +137,20 @@ public class Text : Frame
 		return maxTextWidth;
 	}
 
-	public override void ApplyStyle()
+	protected override void OnNewLayout()
 	{
-		base.ApplyStyle();
+		base.OnNewLayout();
 
-		if (dirty)
-		{
-			var maxTextWidth = CalculateMaxTextWidth();
-			textRows.Clear();
-			var rows = TextContent
-				.Split('\n')
-				.SelectMany(hardRow =>
-					layout.LineBreak(hardRow, maxTextWidth * (font.Atlas.CharacterPixelSize / FontSize),
-						TextBreakStrategy));
-			textRows.AddRange(rows);
-			dirty = false;
-		}
-
-		var textSize = font.ScalePixelsToFontSize(TextSize, FontSize);
-
-		if (MinWidth.Unit is YogaUnit.Auto or YogaUnit.Undefined)
-		{
-			Node.MinWidth = textSize.X;
-		}
-
-		if (MinHeight.Unit is YogaUnit.Auto or YogaUnit.Undefined)
-		{
-			Node.MinHeight = textSize.Y;
-		}
+		var maxTextWidth = CalculateMaxTextWidth();
+		textRows.Clear();
+		textRows.AddRange(TextContent
+			.Split('\n')
+			.SelectMany(hardRow => layout.LineBreak(
+				hardRow,
+				maxTextWidth * (font.Atlas.CharacterPixelSize / FontSize),
+				TextBreakStrategy
+			)));
+		TextSize = font.ScalePixelsToFontSize(layout.CalculateTextSize(textRows), FontSize);
 	}
 
 	protected override void AfterDrawBackground(IGraphicsProvider graphicsProvider)
@@ -138,24 +158,11 @@ public class Text : Frame
 		base.AfterDrawBackground(graphicsProvider);
 
 		var maxTextWidth = CalculateMaxTextWidth();
-		if (dirty)
-		{
-			textRows.Clear();
-			var rows = TextContent
-				.Split('\n')
-				.SelectMany(hardRow =>
-					layout.LineBreak(hardRow, maxTextWidth * (font.Atlas.CharacterPixelSize / FontSize),
-						TextBreakStrategy));
-			textRows.AddRange(rows);
-			dirty = false;
-		}
-
-		var textSize = font.ScalePixelsToFontSize(TextSize, FontSize);
 
 		var textAreaSize = TransformedBounds.Size;
 		textAreaSize.X = textAreaSize.X <= 0 ? maxTextWidth : MathF.Min(textAreaSize.X, maxTextWidth);
 		var position = TransformedBounds.Location;
-		var emptyVerticalSpace = textAreaSize.Y - textSize.Y;
+		var emptyVerticalSpace = textAreaSize.Y - TextSize.Y;
 		position.Y += TextAlign switch
 		{
 			var align when align.HasFlag(TextAlign.Bottom) => emptyVerticalSpace,
@@ -179,5 +186,32 @@ public class Text : Frame
 			graphicsProvider.DrawText(Font, row, FontSize, position + positionOffset, FontColor);
 			offsetY += font.ScaleEmToFontSize(font.Metrics.LineHeight, FontSize);
 		}
+	}
+
+	private YogaSize Measure(YogaNode node,
+		float width, YogaMeasureMode widthMode,
+		float height, YogaMeasureMode heightMode)
+	{
+		var maxWidth = widthMode == YogaMeasureMode.Undefined ? float.PositiveInfinity : width;
+		var textSize = font.ScalePixelsToFontSize(
+			layout.CalculateTextSize(textContent, maxWidth, TextBreakStrategy),
+			FontSize
+		);
+
+		return new YogaSize
+		{
+			width = widthMode switch
+			{
+				YogaMeasureMode.Exactly => width,
+				YogaMeasureMode.AtMost => Math.Min(textSize.X, width),
+				_ => textSize.X
+			},
+			height = heightMode switch
+			{
+				YogaMeasureMode.Exactly => height,
+				YogaMeasureMode.AtMost => Math.Min(textSize.Y, height),
+				_ => textSize.Y
+			}
+		};
 	}
 }

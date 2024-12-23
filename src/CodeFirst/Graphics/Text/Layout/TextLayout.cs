@@ -43,6 +43,7 @@ public class TextLayout
 	public IEnumerable<TextRow> LineBreak(IEnumerable<FontGlyph> fontGlyphs, float maxWidth,
 		TextBreakStrategy strategy = TextBreakStrategy.Whitespace)
 	{
+		// FIXME: There is a bug in here somewhere, some glyphs go over the max width and does not cause a break.
 		if (strategy == TextBreakStrategy.None)
 		{
 			// We can't linebreak so just return all the glyphs
@@ -89,7 +90,9 @@ public class TextLayout
 
 	private IEnumerable<FontGlyph> TrimStart(IEnumerable<FontGlyph> glyphs, TextBreakStrategy strategy)
 	{
-		return glyphs.SkipWhile(glyph => strategy.ShouldLineBreakOn((char)glyph.Code));
+		return strategy == TextBreakStrategy.Whitespace
+			? glyphs.SkipWhile(glyph => strategy.ShouldLineBreakOn((char)glyph.Code))
+			: glyphs;
 	}
 
 	public Vector2 CalculateTextSize(string text, float maxWidth = float.PositiveInfinity,
@@ -103,7 +106,7 @@ public class TextLayout
 		return CalculateTextSize(rows);
 	}
 
-	public Vector2 CalculateTextSize(IEnumerable<TextRow> rows, bool skipFirstLine = false)
+	public Vector2 CalculateTextSize(IEnumerable<TextRow> rows)
 	{
 		var rowList = rows.ToList();
 		if (!rowList.Any())

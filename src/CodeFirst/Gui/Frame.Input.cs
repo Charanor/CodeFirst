@@ -39,9 +39,9 @@ public partial class Frame
 	/// </summary>
 	public bool IsHovered { get; private set; }
 
-	public event EventHandler<Frame, UiActionEvent>? OnPressIn;
-	public event EventHandler<Frame, UiActionEvent>? OnPressOut;
-	public event EventHandler<Frame, UiActionEvent>? OnFullPress;
+	public event EventHandler<Frame, UIActionEvent>? OnPressIn;
+	public event EventHandler<Frame, UIActionEvent>? OnPressOut;
+	public event EventHandler<Frame, UIActionEvent>? OnFullPress;
 
 	public event EventHandler<Frame, CursorEvent>? OnCursorEnter;
 	public event EventHandler<Frame, CursorEvent>? OnCursorExit;
@@ -49,9 +49,9 @@ public partial class Frame
 	/// <returns>
 	///     <c>true</c> if this frame is currently being pressed <b>down</b> on.
 	/// </returns>
-	public bool IsPressed(UiAction action) => pressedActions.Contains(action);
+	public bool IsPressed(UIAction action) => pressedActions.Contains(action);
 
-	private void SetPressed(UiAction action, bool pressed)
+	private void SetPressed(UIAction action, bool pressed)
 	{
 		if (pressed)
 		{
@@ -114,14 +114,14 @@ public partial class Frame
 		ClearPressed(); // If we exit the frame we should not fire "FullPress" events.
 	}
 
-	internal bool PressIn(UiAction action)
+	internal bool PressIn(UIAction action)
 	{
 		SetPressed(action, pressed: true);
 
-		var evt = new UiActionEvent(action);
+		var evt = new UIActionEvent(action);
 		if (OnPressIn != null)
 		{
-			foreach (var handler in OnPressIn.GetInvocationList().OfType<EventHandler<Frame, UiActionEvent>>())
+			foreach (var handler in OnPressIn.GetInvocationList().OfType<EventHandler<Frame, UIActionEvent>>())
 			{
 				handler(this, evt);
 				if (evt.Cancelled)
@@ -141,12 +141,12 @@ public partial class Frame
 		return evt.Handled || nativelyHandled;
 	}
 
-	internal bool PressOut(UiAction action)
+	internal bool PressOut(UIAction action)
 	{
-		var evt = new UiActionEvent(action);
+		var evt = new UIActionEvent(action);
 		if (OnPressOut != null)
 		{
-			foreach (var handler in OnPressOut.GetInvocationList().OfType<EventHandler<Frame, UiActionEvent>>())
+			foreach (var handler in OnPressOut.GetInvocationList().OfType<EventHandler<Frame, UIActionEvent>>())
 			{
 				handler(this, evt);
 				if (evt.Cancelled)
@@ -172,12 +172,12 @@ public partial class Frame
 		return handled || fullPress;
 	}
 
-	private bool FullPress(UiAction action)
+	private bool FullPress(UIAction action)
 	{
-		var evt = new UiActionEvent(action);
+		var evt = new UIActionEvent(action);
 		if (OnFullPress != null)
 		{
-			foreach (var handler in OnFullPress.GetInvocationList().OfType<EventHandler<Frame, UiActionEvent>>())
+			foreach (var handler in OnFullPress.GetInvocationList().OfType<EventHandler<Frame, UIActionEvent>>())
 			{
 				handler(this, evt);
 				if (evt.Cancelled)
@@ -197,9 +197,9 @@ public partial class Frame
 		return evt.Handled || nativelyHandled;
 	}
 
-	protected virtual bool HandlePressIn(UiAction action) => true;
-	protected virtual bool HandlePressOut(UiAction action) => true;
-	protected virtual bool HandleFullPress(UiAction action) => true;
+	protected virtual bool HandlePressIn(UIAction action) => true;
+	protected virtual bool HandlePressOut(UIAction action) => true;
+	protected virtual bool HandleFullPress(UIAction action) => true;
 
 	protected virtual void HandleCursorEnter()
 	{

@@ -1,6 +1,4 @@
-﻿using CodeFirst.Graphics.Core;
-using CodeFirst.Graphics.G2D;
-using OpenTK.Mathematics;
+﻿using CodeFirst.Graphics.G2D;
 
 // ReSharper disable once CheckNamespace
 namespace CodeFirst.Graphics.Generated;

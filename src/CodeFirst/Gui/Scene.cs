@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using CodeFirst.Graphics.Core;
 using CodeFirst.Input;
 using Facebook.Yoga;
 using OpenTK.Mathematics;
@@ -8,20 +9,27 @@ using InputAction = OpenTK.Windowing.GraphicsLibraryFramework.InputAction;
 
 namespace CodeFirst.Gui;
 
-public class Scene : IEnumerable<Frame>
+public sealed class Scene : IEnumerable<Frame>, IDisposable
 {
+	private readonly GLGraphicsProvider graphicsProvider;
 	private readonly List<Frame> frames;
-	private Vector2 mousePosition;
 
+	private Vector2 mousePosition;
 	private Frame? previousHoverFrame;
 
-	public Scene(IGraphicsProvider graphicsProvider)
+	public Scene(Camera? camera)
 	{
-		GraphicsProvider = graphicsProvider;
 		frames = new List<Frame>();
+		graphicsProvider = new GLGraphicsProvider(camera);
 	}
 
-	public IGraphicsProvider GraphicsProvider { get; init; }
+	public IGraphicsProvider GraphicsProvider => graphicsProvider;
+
+	public Camera? Camera
+	{
+		get => graphicsProvider.Camera;
+		set => graphicsProvider.Camera = value;
+	}
 
 	public Vector2 Size { get; set; } = new(float.NaN, float.NaN);
 
@@ -43,6 +51,11 @@ public class Scene : IEnumerable<Frame>
 		}
 	}
 
+	public void Dispose()
+	{
+		graphicsProvider.Dispose();
+	}
+
 	public IEnumerator<Frame> GetEnumerator() => frames.GetEnumerator();
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -57,7 +70,7 @@ public class Scene : IEnumerable<Frame>
 					case MouseButton.Left:
 						if (mouseButtonEvent.Action == InputAction.Press)
 						{
-							if (PressIn(UiAction.Primary))
+							if (PressIn(UIAction.Primary))
 							{
 								e.Handle();
 							}
@@ -65,14 +78,14 @@ public class Scene : IEnumerable<Frame>
 						else if (mouseButtonEvent.Action == InputAction.Release)
 						{
 							// NOTE: Do not "handle" this event, it needs to be propagated.
-							PressOut(UiAction.Primary);
+							PressOut(UIAction.Primary);
 						}
 
 						break;
 					case MouseButton.Right:
 						if (mouseButtonEvent.Action == InputAction.Press)
 						{
-							if (PressIn(UiAction.Secondary))
+							if (PressIn(UIAction.Secondary))
 							{
 								e.Handle();
 							}
@@ -80,22 +93,34 @@ public class Scene : IEnumerable<Frame>
 						else if (mouseButtonEvent.Action == InputAction.Release)
 						{
 							// NOTE: Do not "handle" this event, it needs to be propagated.
-							PressOut(UiAction.Secondary);
+							PressOut(UIAction.Secondary);
 						}
+
 						break;
 				}
 
 				break;
 			}
 			case MouseWheelInputEvent mouseWheelEvent:
+				// TODO: Replace hardcoded scalar
 				if (ScrollBy(mouseWheelEvent.Offset * 100))
 				{
 					e.Handle();
 				}
+
 				break;
 			case MouseMoveInputEvent mouseMoveEvent:
 				// NOTE Do not mark this event as handled
-				mousePosition = mouseMoveEvent.Position;
+				if (Camera != null)
+				{
+					var pos = Camera.UnProject(mouseMoveEvent.Position);
+					pos.Y = Camera.WorldSize.Y - pos.Y;
+					MousePosition = pos;
+				}
+				else
+				{
+					MousePosition =  mouseMoveEvent.Position;
+				}
 				break;
 		}
 	}
@@ -104,7 +129,7 @@ public class Scene : IEnumerable<Frame>
 
 	public void Update(float delta)
 	{
-		foreach (var frame in frames.Where(c => c.Visible))
+		foreach (var frame in frames)
 		{
 			frame.Update(delta);
 		}
@@ -218,7 +243,7 @@ public class Scene : IEnumerable<Frame>
 		return null;
 	}
 
-	public bool PressIn(UiAction action)
+	public bool PressIn(UIAction action)
 	{
 		var hit = Hit(MousePosition);
 		if (hit == null)
@@ -229,7 +254,7 @@ public class Scene : IEnumerable<Frame>
 		return hit.PressIn(action);
 	}
 
-	public bool PressOut(UiAction action)
+	public bool PressOut(UIAction action)
 	{
 		var hit = Hit(MousePosition);
 		if (hit == null)

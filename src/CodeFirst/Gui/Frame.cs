@@ -6,15 +6,15 @@ namespace CodeFirst.Gui;
 public partial class Frame
 {
 	private readonly List<Frame> children;
-	private readonly HashSet<UiAction> pressedActions;
+	private readonly HashSet<UIAction> pressedActions;
 
-	protected internal readonly YogaNode Node;
+	protected readonly YogaNode Node;
 	private Scene? scene;
 
 	public Frame()
 	{
 		children = new List<Frame>();
-		pressedActions = new HashSet<UiAction>();
+		pressedActions = new HashSet<UIAction>();
 		Node = new YogaNode
 		{
 			Data = this
@@ -70,7 +70,7 @@ public partial class Frame
 	/// <summary>
 	///     The parent of this Component (if any).
 	/// </summary>
-	public Frame? Parent { get; protected internal set; }
+	public Frame? Parent { get; private set; }
 
 	public Scene? Scene
 	{
@@ -82,8 +82,13 @@ public partial class Frame
 				return;
 			}
 
-			OnRemovedFromScene();
+			if (scene != null)
+			{
+				OnRemovedFromScene();
+			}
+
 			scene = value;
+
 			if (scene != null)
 			{
 				OnAddedToScene();
@@ -226,6 +231,21 @@ public partial class Frame
 	public void CalculateLayout(float sceneWidth = float.NaN, float sceneHeight = float.NaN)
 	{
 		Node.CalculateLayout(sceneWidth, sceneHeight);
+		NotifyLayout();
+	}
+
+	private void NotifyLayout()
+	{
+		if (Node.HasNewLayout)
+		{
+			OnNewLayout();
+			Node.MarkLayoutSeen();
+		}
+
+		foreach (var child in children)
+		{
+			child.NotifyLayout();
+		}
 	}
 
 	/// <summary>
@@ -240,6 +260,10 @@ public partial class Frame
 		}
 
 		return Parent.CalculateTotalTransform() + Transform;
+	}
+
+	protected virtual void OnNewLayout()
+	{
 	}
 
 	private static float NaNSwitch(float value, float fallback) => float.IsNaN(value) ? fallback : value;

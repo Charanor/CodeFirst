@@ -17,8 +17,8 @@ public class UILoader
 	private static readonly ILogger Logger = LoggingManager.Get<UILoader>();
 
 	private static readonly IDictionary<string, Type> BuiltinComponents;
-
-	private readonly IGraphicsProvider graphicsProvider;
+	
+	private readonly Camera? camera;
 
 	static UILoader()
 	{
@@ -32,17 +32,17 @@ public class UILoader
 			BuiltinComponents.Add(subclass.Name, subclass);
 		}
 
-		AssetManagement.Assets.AddAssetResolver(new FontAssetResolver());
+		Assets.AddAssetResolver(new FontAssetResolver());
 	}
 
-	public UILoader(IGraphicsProvider graphicsProvider)
+	public UILoader(Camera? camera)
 	{
-		this.graphicsProvider = graphicsProvider;
+		this.camera = camera;
 	}
 
 	public Scene LoadSceneFromXml(XDocument document)
 	{
-		var scene = new Scene(graphicsProvider);
+		var scene = new Scene(camera);
 
 		var xRoot = document.Root;
 		if (xRoot is null)
@@ -194,13 +194,12 @@ public class UILoader
 	{
 		if (type == typeof(Texture2D))
 		{
-			
-			return AssetManagement.Assets.Get<Texture2D>(property);
+			return Assets.Get<Texture2D>(property);
 		}
 
 		if (type == typeof(Font))
 		{
-			return AssetManagement.Assets.Get<Font>(property);
+			return Assets.Get<Font>(property);
 		}
 
 		return Convert.ChangeType(property, type);

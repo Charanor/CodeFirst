@@ -186,7 +186,7 @@ public sealed class SpriteBatch : IDisposable
 				: Interpolation.Linear.Apply(uvBounds.Y, uvBounds.W, quadPosition.Y);
 
 			var vertexSize = size * (quadPosition.Xy - Vector2.One / 2f);
-			var rotatedVertex = Quaternion.FromEulerAngles(pitch: 0, yaw: 0, rotation) * (vertexSize - origin) + origin;
+			var rotatedVertex = Quaternion.FromEulerAngles(pitch: 0, yaw: 0, rotation) * (vertexSize - origin); //  + origin
 			vertices[currentSpriteCount * SpriteVertexCount + i] = new Vertex(
 				new Vector3(position + rotatedVertex, z: -1),
 				new Vector2(u, v),
@@ -247,6 +247,16 @@ public sealed class SpriteBatch : IDisposable
 
 	public void Draw(IDrawable drawable, Box2 region, Color4<Rgba> color = default) =>
 		drawable.Draw(this, region, color);
+
+	public void DrawLine(Vector2 start, Vector2 end, Color4<Rgba> color, float size)
+	{
+		var direction = end - start;
+		var distance = direction.Length;
+		direction = direction.Normalized();
+		var angle = direction.Angle();
+		var midpoint = (start + end) / 2f;
+		Draw(color, midpoint, Vector2.Zero, new Vector2(distance, y: size), angle);
+	}
 
 	private void Flush()
 	{

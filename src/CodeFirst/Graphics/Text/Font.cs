@@ -117,15 +117,15 @@ public class Font : IDisposable
 		next.Advance + GetKerningBetween(glyph, next);
 
 	public void Draw(SpriteBatch batch, string text, float fontSize, Vector2 position, Color4<Rgba> color,
-		Color4<Rgba> backgroundColor = default)
+		Color4<Rgba> backgroundColor = default, bool reflectY = true)
 	{
 		var layout = new TextLayout(this);
 		var textRow = new TextRow(this, layout.TextToGlyphs(text));
-		Draw(batch, textRow, fontSize, position, color, backgroundColor);
+		Draw(batch, textRow, fontSize, position, color, backgroundColor, reflectY);
 	}
 
 	public void Draw(SpriteBatch batch, TextRow row, float fontSize, Vector2 position, Color4<Rgba> color,
-		Color4<Rgba> backgroundColor = default)
+		Color4<Rgba> backgroundColor = default, bool reflectY = true)
 	{
 		Shader.BackgroundColor = backgroundColor.ToVector4();
 		Shader.ForegroundColor = color.ToVector4();
@@ -142,7 +142,7 @@ public class Font : IDisposable
 			foreach (var glyph in row.Glyphs)
 			{
 				var lineHeight = ScalePixelsToFontSize(row.Size.Y, fontSize);
-				virtualCursor = DrawGlyph(batch, fontSize, glyph, previousGlyph, virtualCursor, lineHeight);
+				virtualCursor = DrawGlyph(batch, fontSize, glyph, previousGlyph, virtualCursor, lineHeight, reflectY);
 				previousGlyph = glyph;
 			}
 		}
@@ -150,22 +150,26 @@ public class Font : IDisposable
 	}
 
 	private Vector2 DrawGlyph(SpriteBatch batch, float fontSize, FontGlyph glyph, FontGlyph? previousGlyph,
-		Vector2 virtualCursor,
-		float lineHeight)
+		Vector2 virtualCursor, float lineHeight, bool reflectY)
 	{
 		var kerning = previousGlyph == null ? 0 : GetKerningBetween(previousGlyph, glyph);
 		var offset = ScaleEmToFontSize(glyph.Offset, fontSize);
 		var location = offset.Location;
 		//location.Y = font.ScalePixelsToFontSize(glyph.Size.Y, fontSize) - location.Y;
-		location.Y *= -1; // Gotta invert coordinate system 
+		if (reflectY)
+		{
+			location.Y *= -1; // Gotta invert coordinate system 
+		}
+
 		location.Y += lineHeight; // Move origin to top left corner instead of bottom left
 		var position = virtualCursor + location + new Vector2(kerning, y: 0);
 
 		var camera = batch.Camera;
+		var drawPosition = camera == null || !reflectY ? position : (position.X, camera.WorldSize.Y - position.Y);
 		batch.Draw(
 			Atlas.Texture,
-			camera == null ? position : (position.X, camera.WorldSize.Y - position.Y),
-			Vector2.Zero,
+			drawPosition,
+			-offset.Size / 2f,
 			offset.Size,
 			Color4.White,
 			textureRegion: Box2.Round(glyph.AtlasBounds)

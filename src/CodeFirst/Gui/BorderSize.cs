@@ -21,8 +21,8 @@ public record BorderSize
 
 	public float Top { get; init; }
 	public float Right { get; init; }
-	public float Left { get; init; }
 	public float Bottom { get; init; }
+	public float Left { get; init; }
 
 	public void Deconstruct(out float top, out float right, out float bottom, out float left)
 	{

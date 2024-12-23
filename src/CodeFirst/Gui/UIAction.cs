@@ -1,6 +1,6 @@
 ﻿namespace CodeFirst.Gui;
 
-public enum UiAction
+public enum UIAction
 {
 	Primary,
 	Secondary

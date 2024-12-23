@@ -58,17 +58,18 @@ public class NinePatch : IDrawable
 		var centerWidth = region.Width - left - right;
 		var centerHeight = region.Height - top - bottom;
 
-		TopLeft = new TextureRegion(region, Box2i.FromSize((0, top + centerHeight), (left, bottom)));
-		TopEdge = new TextureRegion(region, Box2i.FromSize((left, top + centerHeight), (centerWidth, bottom)));
-		TopRight = new TextureRegion(region, Box2i.FromSize((left + centerWidth, top + centerHeight), (right, bottom)));
+		BottomLeft = new TextureRegion(region, Box2i.FromSize((0, top + centerHeight), (left, bottom)));
+		BottomEdge = new TextureRegion(region, Box2i.FromSize((left, top + centerHeight), (centerWidth, bottom)));
+		BottomRight = new TextureRegion(region,
+			Box2i.FromSize((left + centerWidth, top + centerHeight), (right, bottom)));
 
 		LeftEdge = new TextureRegion(region, Box2i.FromSize((0, top), (left, centerHeight)));
 		Center = new TextureRegion(region, Box2i.FromSize((left, top), (centerWidth, centerHeight)));
 		RightEdge = new TextureRegion(region, Box2i.FromSize((left + centerWidth, top), (right, centerHeight)));
 
-		BottomLeft = new TextureRegion(region, Box2i.FromSize((0, 0), (left, top)));
-		BottomEdge = new TextureRegion(region, Box2i.FromSize((left, 0), (centerWidth, top)));
-		BottomRight = new TextureRegion(region, Box2i.FromSize((left + centerWidth, 0), (right, top)));
+		TopLeft = new TextureRegion(region, Box2i.FromSize((0, 0), (left, top)));
+		TopEdge = new TextureRegion(region, Box2i.FromSize((left, 0), (centerWidth, top)));
+		TopRight = new TextureRegion(region, Box2i.FromSize((left + centerWidth, 0), (right, top)));
 
 		if (left == 0 && centerWidth == 0)
 		{
@@ -181,18 +182,15 @@ public class NinePatch : IDrawable
 	public Box2i Insets { get; }
 	public Box2i Padding { get; }
 
+	public int Width => TextureRegion.Width;
+	public int Height => TextureRegion.Height;
+	public Vector2i Size => TextureRegion.Size2D;
+
 	public void Draw(SpriteBatch batch, Box2 region, Color4<Rgba> color)
 	{
 		using (batch.SetTemporaryShader(null))
 		{
-			var camera = batch.Camera;
-			var verts = GetVertices(region, color).Select(vert => vert with
-			{
-				Position = vert.Position with
-				{
-					Y = (camera?.WorldSize.Y ?? 0) - vert.Position.Y
-				}
-			}).ToArray();
+			var verts = GetVertices(region, color);
 			batch.Draw((Texture2D)TextureRegion.Texture, verts, offset: 0, verts.Length);
 		}
 	}
@@ -233,19 +231,19 @@ public class NinePatch : IDrawable
 		var i = idx;
 		vertices[i] = vertices[i] with
 		{
-			UVCoordinates = new Vector2(u, v2)
+			UVCoordinates = new Vector2(u, v)
 		};
 		vertices[i + 1] = vertices[i + 1] with
 		{
-			UVCoordinates = new Vector2(u2, v2)
+			UVCoordinates = new Vector2(u2, v)
 		};
 		vertices[i + 2] = vertices[i + 2] with
 		{
-			UVCoordinates = new Vector2(u2, v)
+			UVCoordinates = new Vector2(u2, v2)
 		};
 		vertices[i + 3] = vertices[i + 3] with
 		{
-			UVCoordinates = new Vector2(u, v)
+			UVCoordinates = new Vector2(u, v2)
 		};
 
 		idx += VERTICES_PER_PATCH;
@@ -276,7 +274,7 @@ public class NinePatch : IDrawable
 		};
 	}
 
-	private IEnumerable<SpriteBatch.Vertex> GetVertices(Box2 bounds, Color4<Rgba> color)
+	private SpriteBatch.Vertex[] GetVertices(Box2 bounds, Color4<Rgba> color)
 	{
 		var height = bounds.Height;
 		var centerHeight = height - topHeight - bottomHeight;

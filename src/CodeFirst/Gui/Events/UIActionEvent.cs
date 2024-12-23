@@ -1,13 +1,13 @@
 ﻿namespace CodeFirst.Gui.Events;
 
-public class UiActionEvent : UiEvent
+public class UIActionEvent : UIEvent
 {
-	public UiActionEvent(UiAction action)
+	public UIActionEvent(UIAction action)
 	{
 		Action = action;
 	}
 
-	public UiAction Action { get; }
+	public UIAction Action { get; }
 	
 	public bool Handled { get; private set; }
 

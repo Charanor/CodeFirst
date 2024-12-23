@@ -4,11 +4,13 @@ using CodeFirst.Graphics.G2D;
 using CodeFirst.Graphics.Generated;
 using CodeFirst.Graphics.Text;
 using CodeFirst.Graphics.Text.Layout;
+using JetBrains.Annotations;
 using OpenTK.Mathematics;
 using StencilOp = OpenTK.Graphics.OpenGL.StencilOp;
 
 namespace CodeFirst.Gui;
 
+[PublicAPI]
 public sealed class GLGraphicsProvider : IGraphicsProvider, IDisposable
 {
 	private readonly SpriteBatch spriteBatch;
@@ -16,12 +18,12 @@ public sealed class GLGraphicsProvider : IGraphicsProvider, IDisposable
 
 	private int overflowLayer;
 
-	public GLGraphicsProvider(SpriteBatch spriteBatch, Camera? camera = null)
+	public GLGraphicsProvider(Camera? camera = null)
 	{
-		this.spriteBatch = spriteBatch;
+		spriteBatch = new SpriteBatch();
 		basicGraphicsShader = new BasicGraphicsShader();
-		Camera = camera;
 		overflowLayer = 0;
+		Camera = camera;
 	}
 
 	public Camera? Camera
@@ -33,16 +35,12 @@ public sealed class GLGraphicsProvider : IGraphicsProvider, IDisposable
 	public void Dispose()
 	{
 		basicGraphicsShader.Dispose();
+		spriteBatch.Dispose();
 	}
 
 	public void Begin(bool centerCamera = true)
 	{
-		if (Camera == null)
-		{
-			return;
-		}
-
-		if (centerCamera)
+		if (centerCamera && Camera != null)
 		{
 			Camera.Position = new Vector3(Camera.WorldSize.X / 2, Camera.WorldSize.Y / 2, z: 0);
 		}
@@ -93,11 +91,6 @@ public sealed class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		float borderBottomLeftRadius = default,
 		float borderBottomRightRadius = default)
 	{
-		if (Camera == null)
-		{
-			return;
-		}
-
 		var hasBorderRadius = borderTopLeftRadius > 0 || borderTopRightRadius > 0 || borderBottomLeftRadius > 0 ||
 		                      borderBottomRightRadius > 0;
 
@@ -112,8 +105,8 @@ public sealed class GLGraphicsProvider : IGraphicsProvider, IDisposable
 				basicGraphicsShader.BorderBottomRightRadius = borderBottomRightRadius;
 			}
 
-			var convertedY = Camera.WorldSize.Y - bounds.Size.Y - bounds.Y;
-			spriteBatch.Draw(texture, (bounds.X, convertedY), bounds.Size / 2f, bounds.Size, Color4.White);
+			var convertedY = Camera == null ? bounds.Y : Camera.WorldSize.Y - bounds.Size.Y - bounds.Y;
+			spriteBatch.Draw(texture, (bounds.X, convertedY), -bounds.Size / 2f, bounds.Size, Color4.White);
 		}
 	}
 
@@ -133,11 +126,6 @@ public sealed class GLGraphicsProvider : IGraphicsProvider, IDisposable
 		float borderBottomLeftRadius = default,
 		float borderBottomRightRadius = default)
 	{
-		if (Camera == null)
-		{
-			return;
-		}
-
 		using (spriteBatch.SetTemporaryShader(basicGraphicsShader))
 		{
 			basicGraphicsShader.Size = bounds.Size;
@@ -146,13 +134,17 @@ public sealed class GLGraphicsProvider : IGraphicsProvider, IDisposable
 			basicGraphicsShader.BorderBottomLeftRadius = borderBottomLeftRadius;
 			basicGraphicsShader.BorderBottomRightRadius = borderBottomRightRadius;
 
-			var convertedY = Camera.WorldSize.Y - bounds.Size.Y - bounds.Y;
-			spriteBatch.Draw(color, (bounds.X, convertedY), Vector2.Zero, bounds.Size);
+			var convertedY = Camera == null ? bounds.Y : Camera.WorldSize.Y - bounds.Size.Y - bounds.Y;
+			spriteBatch.Draw(color, (bounds.X, convertedY), -bounds.Size / 2f, bounds.Size);
 		}
 	}
 
 	public void DrawNinePatch(NinePatch ninePatch, Box2 bounds, Color4<Rgba> color)
 	{
+		if (Camera != null)
+		{
+			bounds = Box2.FromSize((bounds.X, Camera.WorldSize.Y - bounds.Size.Y - bounds.Y), bounds.Size);
+		}
 		spriteBatch.Draw(ninePatch, bounds, color);
 	}
 }

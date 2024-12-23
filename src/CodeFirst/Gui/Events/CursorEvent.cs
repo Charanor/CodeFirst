@@ -1,5 +1,5 @@
 ﻿namespace CodeFirst.Gui.Events;
 
-public class CursorEvent : UiEvent
+public class CursorEvent : UIEvent
 {
 }

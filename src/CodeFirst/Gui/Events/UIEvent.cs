@@ -1,6 +1,6 @@
 ﻿namespace CodeFirst.Gui.Events;
 
-public abstract class UiEvent
+public abstract class UIEvent
 {
 	public bool DefaultPrevented { get; private set; }
 

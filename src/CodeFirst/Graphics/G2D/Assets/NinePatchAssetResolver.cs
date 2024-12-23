@@ -3,7 +3,6 @@ using CodeFirst.AssetManagement;
 using CodeFirst.FileSystem;
 using CodeFirst.Graphics.Core;
 using CodeFirst.Graphics.Core.Assets;
-using CodeFirst.Utils;
 using CodeFirst.Utils.Logging;
 using OpenTK.Mathematics;
 using StbImageSharp;
@@ -55,7 +54,14 @@ public class NinePatchAssetResolver : IAssetResolver
 		const int inset = 1;
 		var region = new Box2i(inset, inset, texture.Width - inset - 1, texture.Height - inset - 1);
 		var stretchableArea = new Box2i(left, top, right, bottom);
-		var contentPadding = new Box2i(paddingLeft, paddingTop, paddingRight, paddingBottom);
+		// For padding the left/right is switched
+		var contentPadding = new Box2i
+		{
+			Left = paddingLeft,
+			Right = paddingRight,
+			Top = paddingTop,
+			Bottom = paddingBottom
+		};
 		asset = new NinePatch(new TextureRegion(texture, region), stretchableArea, contentPadding);
 		return true;
 	}

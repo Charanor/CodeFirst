@@ -68,7 +68,7 @@ public partial class Frame
 
 	public NinePatch? BackgroundTexture { get; set; }
 
-	public virtual void ApplyStyle()
+	public void ApplyStyle()
 	{
 		Node.PositionType = Position;
 		Node.Display = Display;
@@ -91,10 +91,23 @@ public partial class Frame
 		Node.MarginVertical = MarginVertical;
 		Node.MarginHorizontal = MarginHorizontal;
 		Node.Padding = Padding;
-		Node.PaddingLeft = PaddingLeft;
-		Node.PaddingRight = PaddingRight;
-		Node.PaddingTop = PaddingTop;
-		Node.PaddingBottom = PaddingBottom;
+		if (BackgroundTexture != null)
+		{
+			// If we have a background texture we ensure a minimum border around the content
+			var (top, right, bottom, left) = (BorderSize)BackgroundTexture.Padding;
+			// Top and bottom are switched because coordinate system is inverted
+			Node.PaddingLeft = left + (PaddingLeft.Unit == YogaUnit.Point ? PaddingLeft.Value : 0);
+			Node.PaddingRight = right + (PaddingRight.Unit == YogaUnit.Point ? PaddingRight.Value : 0);
+			Node.PaddingTop = bottom + (PaddingTop.Unit == YogaUnit.Point ? PaddingTop.Value : 0);
+			Node.PaddingBottom = top + (PaddingBottom.Unit == YogaUnit.Point ? PaddingBottom.Value : 0);
+		}
+		else
+		{
+			Node.PaddingLeft = PaddingLeft;
+			Node.PaddingRight = PaddingRight;
+			Node.PaddingTop = PaddingTop;
+			Node.PaddingBottom = PaddingBottom;
+		}
 		Node.PaddingVertical = PaddingVertical;
 		Node.PaddingHorizontal = PaddingHorizontal;
 		Node.Width = Width;
@@ -108,25 +121,11 @@ public partial class Frame
 		Node.MaxWidth = MaxWidth;
 		Node.MaxHeight = MaxHeight;
 		Node.BorderWidth = BorderWidth;
-
-		if (BackgroundTexture != null)
-		{
-			// If we have a background texture we ensure a minimum border around the content
-			var (top, right, bottom, left) = (BorderSize)BackgroundTexture.Padding;
-			// Top and bottom are switched because coordinate system is inverted
-			Node.BorderBottomWidth = top + BorderTopWidth; 
-			Node.BorderTopWidth = bottom + BorderBottomWidth;
-			Node.BorderLeftWidth = left + BorderLeftWidth;
-			Node.BorderRightWidth = right + BorderRightWidth;
-		}
-		else
-		{
-			// Top and bottom are switched because coordinate system is inverted
-			Node.BorderBottomWidth = BorderTopWidth; 
-			Node.BorderTopWidth = BorderBottomWidth;
-			Node.BorderLeftWidth = BorderLeftWidth;
-			Node.BorderRightWidth = BorderRightWidth;
-		}
+		// Top and bottom are switched because coordinate system is inverted
+		Node.BorderBottomWidth = BorderTopWidth;
+		Node.BorderTopWidth = BorderBottomWidth;
+		Node.BorderLeftWidth = BorderLeftWidth;
+		Node.BorderRightWidth = BorderRightWidth;
 
 		foreach (var child in children)
 		{

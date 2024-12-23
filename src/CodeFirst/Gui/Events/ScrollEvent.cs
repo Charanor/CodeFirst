@@ -2,7 +2,7 @@
 
 namespace CodeFirst.Gui.Events;
 
-public class ScrollEvent : UiEvent
+public class ScrollEvent : UIEvent
 {
 	/// <summary>
 	///     How much was scrolled.
