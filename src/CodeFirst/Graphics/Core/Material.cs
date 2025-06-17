@@ -26,17 +26,34 @@ public abstract class Material : IDisposable
 
 	public void Apply()
 	{
-		if (modelLoc != NULL_UNIFORM || Shader.TryGetUniformLocation("modelMatrix", out modelLoc))
+		// Update uniform locations
+		if (modelLoc == NULL_UNIFORM)
+		{
+			modelLoc = Shader.GetUniformLocation("modelMatrix");
+		}
+
+		if (viewLoc == NULL_UNIFORM)
+		{
+			viewLoc = Shader.GetUniformLocation("viewMatrix");
+		}
+
+		if (projLoc == NULL_UNIFORM)
+		{
+			projLoc = Shader.GetUniformLocation("projectionMatrix");
+		}
+
+		// Apply uniform values
+		if (modelLoc != NULL_UNIFORM)
 		{
 			Shader.SetUniform(modelLoc, ModelMatrix);
 		}
 
-		if (viewLoc != NULL_UNIFORM || Shader.TryGetUniformLocation("viewMatrix", out viewLoc))
+		if (viewLoc != NULL_UNIFORM)
 		{
 			Shader.SetUniform(viewLoc, ViewMatrix);
 		}
 
-		if (projLoc != NULL_UNIFORM || Shader.TryGetUniformLocation("projectionMatrix", out projLoc))
+		if (projLoc != NULL_UNIFORM)
 		{
 			Shader.SetUniform(projLoc, ProjectionMatrix);
 		}

@@ -1,7 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using CodeFirst.Graphics.Core.Exceptions;
 using CodeFirst.Graphics.Core.Utils;
 using CodeFirst.Utils;
@@ -15,9 +12,6 @@ public class ShaderProgram : NativeResource
 	protected const int GL_FALSE = 0;
 
 	private readonly ProgramHandle handle;
-
-	private readonly IImmutableDictionary<string, ActiveUniformInfo> uniformNameMapper;
-	private readonly IImmutableDictionary<int, ActiveUniformInfo> uniformLocationMapper;
 
 	private readonly int activeUniformCount;
 
@@ -47,33 +41,9 @@ public class ShaderProgram : NativeResource
 		DeleteShader(fragmentShaderId);
 
 		GetProgrami(handle, ProgramPropertyARB.ActiveUniforms, ref activeUniformCount);
-		(uniformNameMapper, uniformLocationMapper) = CreateUniformMappers();
 	}
 
 	public int ActiveUniformCount => activeUniformCount;
-
-	private (IImmutableDictionary<string, ActiveUniformInfo>, IImmutableDictionary<int, ActiveUniformInfo>)
-		CreateUniformMappers()
-	{
-		var nameMap = new Dictionary<string, ActiveUniformInfo>();
-		var locationMap = new Dictionary<int, ActiveUniformInfo>();
-
-		var maxLength = 0;
-		GetProgrami(handle, ProgramPropertyARB.ActiveUniformMaxLength, ref maxLength);
-		for (var location = 0; location < ActiveUniformCount; location++)
-		{
-			var length = 0;
-			var uniformSize = 0;
-			var uniformType = UniformType.Float;
-			GetActiveUniform(handle, (uint)location, maxLength, ref length, ref uniformSize, ref uniformType,
-				out var name);
-			var info = new ActiveUniformInfo(location, name, uniformSize, uniformType);
-			nameMap.Add(name, info);
-			locationMap.Add(location, info);
-		}
-
-		return (nameMap.ToImmutableDictionary(), locationMap.ToImmutableDictionary());
-	}
 
 	// Integer operations
 	public void SetUniform(int location, bool value) => SetUniform(location, value ? 1 : 0);
@@ -121,31 +91,13 @@ public class ShaderProgram : NativeResource
 	public void SetUniform(int location, ReadOnlySpan<Matrix4> values) =>
 		ProgramUniformMatrix4f(handle, location, values.Length, transpose: false, values);
 
-	public bool TryGetUniform(string name, [MaybeNullWhen(returnValue: false)] out ActiveUniformInfo info) =>
-		uniformNameMapper.TryGetValue(name, out info);
-
-	public bool TryGetUniform(int location, [MaybeNullWhen(returnValue: false)] out ActiveUniformInfo info) =>
-		uniformLocationMapper.TryGetValue(location, out info);
-
-	public bool TryGetUniformLocation(string name, out int location)
-	{
-		if (!TryGetUniform(name, out var info))
-		{
-			location = 0;
-			return false;
-		}
-
-		location = info.Location;
-		return true;
-	}
-
 	/// <summary>
 	///     Gets the uniform location. Returns <c>-1</c> if the uniform does not exist.
 	/// </summary>
 	/// <param name="name">the name of the uniform in GLSL code</param>
 	/// <returns>the uniform index, or -1 if uniform does not exist.</returns>
-	public int GetUniformLocation(string name) =>
-		uniformNameMapper.TryGetValue(name, out var info) ? info.Location : -1;
+	public int GetUniformLocation(string name) => GL.GetUniformLocation(handle, name);
+		// uniformNameMapper.TryGetValue(name, out var info) ? info.Location : -1;
 
 	public virtual void Bind()
 	{
