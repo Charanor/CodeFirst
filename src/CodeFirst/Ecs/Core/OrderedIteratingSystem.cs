@@ -13,7 +13,7 @@ public abstract class OrderedIteratingSystem : IteratingSystem
 		entityComparer = CreateComparer();
 		entityCache.AddRange(Entities.Order(entityComparer));
 	}
-
+	
 	protected override void EntityAdded(Entity entity)
 	{
 		base.EntityAdded(entity);
