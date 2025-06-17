@@ -229,10 +229,10 @@ public abstract class Camera
 		var (viewportX, viewportY, viewportWidth, viewportHeight) = Viewport;
 		var x = screenCoords.X - viewportX;
 		var y = WindowSize.Y - screenCoords.Y - viewportY;
-		screenCoords.X = x * 2 / viewportWidth - 1;
-		screenCoords.Y = y * 2 / viewportHeight - 1;
+		screenCoords.X = x * 2f / viewportWidth - 1f;
+		screenCoords.Y = y * 2f / viewportHeight - 1f;
 
-		var vec4 = new Vector4(screenCoords, w: 1);
+		var vec4 = new Vector4(screenCoords, w: 1f);
 		vec4 *= Matrix4.Invert(Projection);
 		vec4 *= Matrix4.Invert(View);
 
@@ -244,12 +244,36 @@ public abstract class Camera
 		}
 
 		return vec4.Xyz;
+		// This *almost* works, however Y translation is inverted. Kind of confused, get back to it later.
 		// return Vector3.Unproject(screenCoords, viewportX, viewportY, viewportWidth, viewportHeight, NearClippingPlane,
-		// 	FarClippingPlane, Matrix4.Invert(Combined * Matrix4.CreateTranslation(Position)));
+		// 	FarClippingPlane, Matrix4.Invert(View * Projection));
 	}
 
 	[Pure]
 	public Vector2 UnProject(Vector2 screenCoords) => UnProject(new Vector3(screenCoords)).Xy;
+
+	[Pure]
+	public Vector3 ScreenToWorld(Vector3 screenCoords) => UnProject(screenCoords);
+
+	[Pure]
+	public Vector2 ScreenToWorld(Vector2 screenCoords) => UnProject(screenCoords);
+
+	[Pure]
+	public Vector3 Project(Vector3 worldCoords)
+	{
+		var (viewportX, viewportY, viewportWidth, viewportHeight) = Viewport;
+		return Vector3.Project(worldCoords, viewportX, viewportY, viewportWidth, viewportHeight, NearClippingPlane,
+			FarClippingPlane, View * Projection);
+	}
+
+	[Pure]
+	public Vector2 Project(Vector2 worldCoords) => Project(new Vector3(worldCoords)).Xy;
+
+	[Pure]
+	public Vector3 WorldToScreen(Vector3 screenCoords) => Project(screenCoords);
+
+	[Pure]
+	public Vector2 WorldToScreen(Vector2 screenCoords) => Project(screenCoords);
 
 	// public Ray ScreenPointToRay(Vector2 point)
 	// {
