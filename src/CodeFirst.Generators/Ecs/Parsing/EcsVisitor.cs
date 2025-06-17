@@ -6,11 +6,11 @@ namespace CodeFirst.Generators.Ecs.Parsing;
 
 public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 {
-	private static IEnumerable<EcsDefinition> Empty => Enumerable.Empty<EcsDefinition>();
+	private static IEnumerable<EcsDefinition> Empty => [];
 
 	protected override IEnumerable<EcsDefinition> DefaultResult => Empty;
 
-	private static IEnumerable<T> Single<T>(T definition) where T : EcsDefinition => new[] { definition };
+	private static IEnumerable<T> Single<T>(T definition) where T : EcsDefinition => [definition];
 
 	protected override IEnumerable<EcsDefinition> AggregateResult(IEnumerable<EcsDefinition> aggregate,
 		IEnumerable<EcsDefinition> nextResult) => aggregate.Concat(nextResult);
@@ -91,14 +91,8 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 
 	public override IEnumerable<EcsDefinition> VisitWorld(EcsParser.WorldContext context) => Single(new EcsWorld(
 		context.Identifier()?.GetText(),
-		(
-			context.worldBody().PreWildcard?.Accept(this).OfType<EcsWorldSystemCollection>() ??
-			Enumerable.Empty<EcsWorldSystemCollection>()
-		).ToList(),
-		(
-			context.worldBody().PostWildcard?.Accept(this).OfType<EcsWorldSystemCollection>() ??
-			Enumerable.Empty<EcsWorldSystemCollection>()
-		).ToList()
+		(context.worldBody().PreWildcard?.Accept(this).OfType<EcsWorldSystemCollection>() ?? []).ToList(),
+		(context.worldBody().PostWildcard?.Accept(this).OfType<EcsWorldSystemCollection>() ?? []).ToList()
 	));
 
 	public override IEnumerable<EcsDefinition> VisitWorldSystemDeclaration(
@@ -116,15 +110,22 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 
 public abstract record EcsDefinition;
 
-public record EcsProgram(EcsNamespace? Namespace, IEnumerable<EcsComponent> Components,
-	IEnumerable<EcsSystem> Systems, EcsWorld World) : EcsDefinition;
+public record EcsProgram(
+	EcsNamespace? Namespace,
+	IEnumerable<EcsComponent> Components,
+	IEnumerable<EcsSystem> Systems,
+	EcsWorld World) : EcsDefinition;
 
 public record EcsNamespace(string Name) : EcsDefinition;
 
 public record EcsComponent(string Name, bool IsSingleton) : EcsDefinition;
 
-public record EcsSystem
-	(string Name, EcsProcessPassParameter ProcessPass, EcsAspectParameter Aspect, bool IsOrdered, bool IsAsync) : EcsDefinition;
+public record EcsSystem(
+	string Name,
+	EcsProcessPassParameter ProcessPass,
+	EcsAspectParameter Aspect,
+	bool IsOrdered,
+	bool IsAsync) : EcsDefinition;
 
 public record EcsProcessPassParameter(ProcessPass Pass) : EcsDefinition;
 
@@ -144,7 +145,8 @@ public record EcsAspectParameter(
 
 public abstract record EcsAspectComponentBase(string Name) : EcsDefinition;
 
-public record EcsAspectComponent(string Name, bool IsOptional, bool IsReadonly, bool IsExternal) : EcsAspectComponentBase(Name);
+public record EcsAspectComponent(string Name, bool IsOptional, bool IsReadonly, bool IsExternal)
+	: EcsAspectComponentBase(Name);
 
 public record EcsTagComponent(string Name) : EcsAspectComponentBase(Name);
 

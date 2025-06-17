@@ -3,26 +3,33 @@
 tokens { INDENT, DEDENT }
 
 @lexer::header {
-    #nullable enable
-    using CodeFirst.Generators.Ecs.Utils;
+#nullable enable
+using CodeFirst.Generators.Ecs.Utils;
+// Console is not supported in generators
+#pragma warning disable RS1035
+}
+
+@parser::header {
+// Console is not supported in generators
+#pragma warning disable RS1035
 }
 
 @lexer::members {
-    private DenterHelper denter;
-      
-    public override IToken NextToken()
+private DenterHelper denter;
+  
+public override IToken NextToken()
+{
+    if (denter == null)
     {
-        if (denter == null)
-        {
-            denter = DenterHelper.Builder()
-                .Nl(NEWLINE)
-                .Indent(EcsParser.INDENT)
-                .Dedent(EcsParser.DEDENT)
-                .PullToken(base.NextToken);
-        }
-    
-        return denter.NextToken();
+        denter = DenterHelper.Builder()
+            .Nl(NEWLINE)
+            .Indent(EcsParser.INDENT)
+            .Dedent(EcsParser.DEDENT)
+            .PullToken(base.NextToken);
     }
+
+    return denter.NextToken();
+}
 }
 
 program: NEWLINE* namespace? components systems NEWLINE* world NEWLINE* EOF;

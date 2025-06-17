@@ -99,6 +99,7 @@ public class StateMachineGenerator : IIncrementalGenerator
 
 				using (builder.Block($"protected override void OnStateEnter({enumIdentifier} previousState)"))
 				{
+					builder.IndentedLn($"{StateEnterMethod("Global")}(previousState);");
 					using (builder.Block("switch (State)"))
 					{
 						foreach (var memberName in memberNames)
@@ -114,6 +115,8 @@ public class StateMachineGenerator : IIncrementalGenerator
 
 				builder.NewLine();
 
+				builder.IndentedLn(
+					$"partial void {StateEnterMethod("Global")}({enumIdentifier} previousState);");
 				foreach (var memberName in memberNames)
 				{
 					builder.IndentedLn(
@@ -124,6 +127,7 @@ public class StateMachineGenerator : IIncrementalGenerator
 
 				using (builder.Block($"protected override void OnStateExit({enumIdentifier} upcomingState)"))
 				{
+					builder.IndentedLn($"{StateExitMethod("Global")}(upcomingState);");
 					using (builder.Block("switch (State)"))
 					{
 						foreach (var memberName in memberNames)
@@ -139,6 +143,8 @@ public class StateMachineGenerator : IIncrementalGenerator
 
 				builder.NewLine();
 
+				builder.IndentedLn(
+					$"partial void {StateExitMethod("Global")}({enumIdentifier} upcomingState);");
 				foreach (var memberName in memberNames)
 				{
 					builder.IndentedLn(

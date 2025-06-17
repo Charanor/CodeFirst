@@ -37,7 +37,7 @@ public class GenerateDefinitions : IIncrementalGenerator
 	{
 		Execute(source.Files.CastArray<FileInfo>(), sourceProductionContext);
 	}
-	
+
 	private static void Execute(ImmutableArray<FileInfo> definitions, SourceProductionContext context)
 	{
 		if (definitions.IsDefaultOrEmpty)
@@ -48,7 +48,7 @@ public class GenerateDefinitions : IIncrementalGenerator
 		foreach (var (fileName, definition) in definitions)
 		{
 			var inputStream = new AntlrInputStream(definition);
-			var lexer = new EcsLexer(inputStream);
+			var lexer = new  EcsLexer(inputStream);
 			var commonTokenStream = new CommonTokenStream(lexer);
 			var parser = new EcsParser(commonTokenStream);
 			parser.AddErrorListener(new DebugErrorListener(context, fileName));

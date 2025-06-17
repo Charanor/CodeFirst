@@ -86,9 +86,10 @@ public class GenerateShaderResources : IIncrementalGenerator
 					var visitor = new ShaderVisitor(shaderType);
 					return visitor.Visit(parser.translation_unit()).Append(new GLSLShaderSource(shaderType, shaderSource));
 				}
+				// ReSharper disable once RedundantCatchClause
 				catch (Exception e)
 				{
-					Console.WriteLine(e);
+					// TODO: Display exception
 					throw;
 				}
 			});

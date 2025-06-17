@@ -16,8 +16,18 @@
 
 grammar GLSL;
 
+@lexer::header {
+// Console is not supported in generators
+#pragma warning disable RS1035
+}
+
+@parser::header {
+// Console is not supported in generators
+#pragma warning disable RS1035
+}
+
 @lexer::members {
-   bool ignoreNewLine = true;
+bool ignoreNewLine = true;
 }
 
 translation_unit:
