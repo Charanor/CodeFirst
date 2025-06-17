@@ -409,6 +409,16 @@ public static class Assets
 	}
 
 	/// <summary>
+	///     Tries to get the asset. If the asset could not be loaded, the asset engine attempt to load it in the background.
+	/// </summary>
+	/// <param name="asset"></param>
+	/// <param name="result"></param>
+	/// <typeparam name="TAsset"></typeparam>
+	/// <returns></returns>
+	public static bool TryGetAssetOrPrecache<TAsset>([UriString] string asset, [NotNullWhen(true)] out TAsset? result)
+		=> TryGetAssetOrPrecache(asset, out result, out _);
+
+	/// <summary>
 	///     Checks if the given asset string is a correctly formatted asset string.
 	/// </summary>
 	/// <remarks>
