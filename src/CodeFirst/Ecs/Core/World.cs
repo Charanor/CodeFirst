@@ -55,7 +55,7 @@ public class World : IDisposable
 	public float FixedUpdateDelta { get; set; }
 
 	/// <summary>
-	///		Disposes all <see cref="EntitySystem"/>s that implement <see cref="IDisposable"/>.
+	///     Disposes all <see cref="EntitySystem" />s that implement <see cref="IDisposable" />.
 	/// </summary>
 	public void Dispose()
 	{

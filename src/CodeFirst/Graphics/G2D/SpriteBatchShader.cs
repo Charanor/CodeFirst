@@ -5,5 +5,4 @@ namespace CodeFirst.Graphics.Generated;
 
 public partial class SpriteBatchShader : ISpriteBatchShader
 {
-	
 }

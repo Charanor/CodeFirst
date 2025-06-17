@@ -349,7 +349,7 @@ public class PhysicsWorld
 
 	public bool Raycast(in Ray2D ray, out List<RaycastHit> hits)
 	{
-		hits = new List<RaycastHit>();
+		hits = [];
 		return Raycast(in ray, hits);
 	}
 

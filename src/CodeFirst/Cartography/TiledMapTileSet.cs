@@ -24,7 +24,7 @@ public partial class TiledMapTileSet
 	///     The class of this tile set, as set in the Tiled editor.
 	/// </summary>
 	/// <remarks>Defaults to <c>string.Empty</c>.</remarks>
-	public string Class { get; init; }
+	public string Class { get; init; } = string.Empty;
 
 	/// <summary>
 	///     The maximum width of a tile, in pixels.
