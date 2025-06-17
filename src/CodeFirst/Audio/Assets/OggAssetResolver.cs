@@ -69,7 +69,7 @@ public class OggAssetResolver : IAssetResolver
 		var result = new short[length];
 		for (var i = 0; i < length; i++)
 		{
-			result[i] = (short)MathHelper.Clamp((int)(samples[i] * short.MaxValue), short.MinValue, short.MaxValue);
+			result[i] = (short)Math.Clamp((int)(samples[i] * short.MaxValue), short.MinValue, short.MaxValue);
 		}
 
 		return result;

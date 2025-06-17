@@ -177,7 +177,7 @@ public class InputManager
 			var evt = new MouseWheelInputEvent
 			{
 				Offset = x,
-				Direction = ScrollDirection.Horizontal
+				Direction = ScrollDirection.Horizontal,
 			};
 			RaiseEvent(evt);
 		}

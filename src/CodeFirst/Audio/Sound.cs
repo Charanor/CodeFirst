@@ -80,7 +80,7 @@ public class Sound
 		}
 		
 		var source = ObtainSource();
-		source.Volume = MathHelper.Clamp(volume, MIN_VOLUME, MAX_VOLUME);
+		source.Volume = Math.Clamp(volume, MIN_VOLUME, MAX_VOLUME);
 		source.Looping = looping;
 		source.Play();
 
