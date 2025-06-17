@@ -112,4 +112,31 @@ public static class Intersect
 		distance = MathF.Max(distance, y: 0);
 		return true;
 	}
+
+	public static bool LineCircle(in Line2D line, in Circle circle, out float distance)
+	{
+		distance = Vector2.Distance(line.NearestPoint(circle.Origin), circle.Origin);
+		return distance <= circle.Radius;
+	}
+
+	public static bool LineAabb(in Line2D line, in Box2 aabb, out float distance)
+	{
+		var tMin = 0f;
+		var tMax = float.PositiveInfinity;
+
+		CalculateT(line.Start.X, line.InverseDirection.X, aabb.Min.X, aabb.Max.X);
+		CalculateT(line.Start.Y, line.InverseDirection.Y, aabb.Min.Y, aabb.Max.Y);
+
+		distance = tMin;
+		return tMin > 0 && tMin <= tMax && distance >= 0 && distance <= line.Length;
+
+		void CalculateT(float rayOrigin, float rayInverseDirection, float aabbMin, float aabbMax)
+		{
+			var t1 = (aabbMin - rayOrigin) * rayInverseDirection;
+			var t2 = (aabbMax - rayOrigin) * rayInverseDirection;
+
+			tMin = Min(Max(t1, tMin), Max(t2, tMin));
+			tMax = Max(Min(t1, tMax), Min(t2, tMax));
+		}
+	}
 }

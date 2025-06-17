@@ -1,5 +1,7 @@
-﻿using JetBrains.Annotations;
-using OpenTK.Mathematics;
+﻿using System.Numerics;
+using JetBrains.Annotations;
+using Vector2 = OpenTK.Mathematics.Vector2;
+using Vector3 = OpenTK.Mathematics.Vector3;
 
 namespace CodeFirst.Utils.Math;
 
@@ -9,7 +11,7 @@ public class Interpolation
 		static value => value);
 
 	public static readonly Interpolation Smooth = new(
-		static value => value * value * (3 - 2 * value));
+		static value => value * value * (3 - value * 2));
 
 	public static readonly Interpolation Smoother = new(static value =>
 		value * value * value * (value * (value * 6 - 15) + 10));
@@ -37,6 +39,11 @@ public class Interpolation
 	public Vector3 Apply(in Vector3 start, in Vector3 end, [ValueRange(from: 0, to: 1)] float alpha) =>
 		start + (end - start) * interpolator(alpha);
 
+	[Pure]
+	public T Apply<T>(in T start, in T end, [ValueRange(from: 0, to: 1)] float alpha) 
+		where T : IAdditionOperators<T, T, T>, ISubtractionOperators<T, T, T>, IMultiplyOperators<T, float, T>
+		=> start + (end - start) * interpolator(alpha);
+
 	private static Interpolator PowInterpolator(int power) => value =>
 	{
 		if (value <= 0.5f)
@@ -56,14 +63,6 @@ public class Interpolation
 	}
 
 	public static Vector2 Spring(Vector2 from, Vector2 to, ref Vector2 vel, float smoothTime, float delta)
-	{
-		var dynamicVel = (dynamic)vel; // We can't ref of a different type, so we need this intermediate variable
-		var result = SpringDynamic(from, to, ref dynamicVel, smoothTime, delta);
-		vel = dynamicVel;
-		return result;
-	}
-
-	public static float Spring(float from, float to, ref float vel, float smoothTime, float delta)
 	{
 		var dynamicVel = (dynamic)vel; // We can't ref of a different type, so we need this intermediate variable
 		var result = SpringDynamic(from, to, ref dynamicVel, smoothTime, delta);
@@ -122,19 +121,17 @@ public class Interpolation
 		return to + (change + temp) * exp;
 	}
 
-	/// <summary>
-	///     This is a bit of a hack. We use <c>dynamic</c> so we don't have to copy+paste this function
-	///     implementation over and over again for each type we want to implement. With .NET 6 preview features
-	///     we could do this using arithmetic interfaces, but for now this is a fine workaround.
-	/// </summary>
-	/// <remarks>
-	///     Only works when all of the dynamic types are the same underlying type, and they all allow for the
-	///     addition (+), subtraction (-), and multiplication (*) operators between their own types AND <c>float</c>.
-	/// </remarks>
-	public static T Spring<T>(T from, T to, ref T vel, float smoothTime, float delta)
+	public static T Spring<T>(T from, T to, ref T vel, float smoothTime, float delta) 
+		where T : IAdditionOperators<T, T, T>, ISubtractionOperators<T, T, T>, IMultiplyOperators<T, float, T>
 	{
-		var dynamicVel = (dynamic)vel; // We can't ref of a different type, so we need this intermediate variable
-		return SpringDynamic(from, to, ref dynamicVel, smoothTime, delta);
+		// Game Programming Gems 4: 1.10
+		var omega = 2f / MathF.Max(smoothTime, y: 0.001f); // So we don't divide by 0
+		var x = omega * delta;
+		var exp = 1f / (1f + x + 0.48f * MathF.Pow(x, y: 2) + 0.235f * MathF.Pow(x, y: 3));
+		var change = from - to;
+		var temp = (vel + change * omega) * delta;
+		vel = (vel - temp * omega) * exp;
+		return to + (change + temp) * exp;
 	}
 
 	/// <summary>
@@ -149,7 +146,7 @@ public class Interpolation
 	private static dynamic SpringDynamic(dynamic from, dynamic to, ref dynamic vel, float smoothTime, float delta)
 	{
 		// Game Programming Gems 4: 1.10
-		var omega = 2f / MathF.Max(smoothTime, y: 0.0000001f); // So we don't divide by 0
+		var omega = 2f / MathF.Max(smoothTime, y: 0.001f); // So we don't divide by 0
 		var x = omega * delta;
 		var exp = 1f / (1f + x + 0.48f * MathF.Pow(x, y: 2) + 0.235f * MathF.Pow(x, y: 3));
 		var change = from - to;
