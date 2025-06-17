@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using CodeFirst.Utils.Logging;
+using OpenTK.Mathematics;
 
 namespace CodeFirst.Utils;
 
@@ -8,26 +9,68 @@ public static class DevTools
 	private const string DEFAULT_SOURCE_FILE_PATH = "<none>";
 	private const string DEFAULT_SOURCE_MEMBER_NAME = "<none>";
 	private const int DEFAULT_SOURCE_LINE_NUMBER = -1;
-	
+
 	private static readonly ILogger Logger = LoggingManager.Get(nameof(DevTools));
 
 	/// <summary>
-	///		A zero-arg function that returns <c>true</c> if we are currently in dev mode, or <c>false</c> if we are not
-	///		in dev mode. By default this is a function that returns <c>true</c> when <c>DEBUG</c> is defined through environment
-	///		variable or <c>#define DEBUG</c>. If your setup requires some other check, simply assign a new function to
-	///		this property.
+	///     A zero-arg function that returns <c>true</c> if we are currently in dev mode, or <c>false</c> if we are not
+	///     in dev mode. By default this is a function that returns <c>true</c> when <c>DEBUG</c> is defined through
+	///     environment
+	///     variable or <c>#define DEBUG</c>. If your setup requires some other check, simply assign a new function to
+	///     this property.
 	/// </summary>
 	/// <example>if (DevTools.IsDevMode()) throw new FooBarException("Missing baz!")</example>
 	public static Func<bool> IsDevMode { get; set; } = () =>
 	{
 #if DEBUG
 		return true;
-#endif
+#else
 		return false;
+#endif
 	};
 
+	public static void Trace<TSource>(string msg,
+		[CallerFilePath] string sourceFilePath = "<none>",
+		[CallerLineNumber] int sourceLineNumber = -1,
+		[CallerMemberName] string memberName = "<none>")
+	{
+		LoggingManager.Get<TSource>().Trace(msg, sourceFilePath, sourceLineNumber, memberName);
+	}
+
+	public static void Debug<TSource>(string msg,
+		[CallerFilePath] string sourceFilePath = "<none>",
+		[CallerLineNumber] int sourceLineNumber = -1,
+		[CallerMemberName] string memberName = "<none>")
+	{
+		LoggingManager.Get<TSource>().Debug(msg, sourceFilePath, sourceLineNumber, memberName);
+	}
+
+	public static void Info<TSource>(string msg,
+		[CallerFilePath] string sourceFilePath = "<none>",
+		[CallerLineNumber] int sourceLineNumber = -1,
+		[CallerMemberName] string memberName = "<none>")
+	{
+		LoggingManager.Get<TSource>().Info(msg, sourceFilePath, sourceLineNumber, memberName);
+	}
+
+	public static void Warn<TSource>(string msg,
+		[CallerFilePath] string sourceFilePath = "<none>",
+		[CallerLineNumber] int sourceLineNumber = -1,
+		[CallerMemberName] string memberName = "<none>")
+	{
+		LoggingManager.Get<TSource>().Warn(msg, sourceFilePath, sourceLineNumber, memberName);
+	}
+
+	public static void Error<TSource>(string msg,
+		[CallerFilePath] string sourceFilePath = "<none>",
+		[CallerLineNumber] int sourceLineNumber = -1,
+		[CallerMemberName] string memberName = "<none>")
+	{
+		LoggingManager.Get<TSource>().Error(msg, sourceFilePath, sourceLineNumber, memberName);
+	}
+
 	/// <summary>
-	///     Throws the given exception if <see cref="IsDevMode"/> return <c>true</c>, otherwise does nothing.
+	///     Throws the given exception if <see cref="IsDevMode" /> return <c>true</c>, otherwise does nothing.
 	/// </summary>
 	/// <param name="exception"></param>
 	/// <exception cref="Exception"></exception>
@@ -39,10 +82,9 @@ public static class DevTools
 		// ReSharper disable once InvalidXmlDocComment
 		[CallerMemberName] string memberName = DEFAULT_SOURCE_MEMBER_NAME)
 	{
-		
-		LoggingManager.Get<TResponsible>().Error(exception.Message, 
+		LoggingManager.Get<TResponsible>().Error(exception.Message,
 			// ReSharper disable once ExplicitCallerInfoArgument
-			sourceFilePath, 
+			sourceFilePath,
 			// ReSharper disable once ExplicitCallerInfoArgument
 			sourceLineNumber, memberName);
 		if (IsDevMode())
@@ -51,8 +93,66 @@ public static class DevTools
 		}
 	}
 
+	public static void InvalidOperation<TResponsible>(string message,
+		// ReSharper disable once InvalidXmlDocComment
+		[CallerFilePath] string sourceFilePath = DEFAULT_SOURCE_FILE_PATH,
+		// ReSharper disable once InvalidXmlDocComment
+		[CallerLineNumber] int sourceLineNumber = DEFAULT_SOURCE_LINE_NUMBER,
+		// ReSharper disable once InvalidXmlDocComment
+		[CallerMemberName] string memberName = DEFAULT_SOURCE_MEMBER_NAME)
+	{
+		LoggingManager.Get<TResponsible>().Error(message,
+			// ReSharper disable once ExplicitCallerInfoArgument
+			sourceFilePath,
+			// ReSharper disable once ExplicitCallerInfoArgument
+			sourceLineNumber, memberName);
+		if (IsDevMode())
+		{
+			throw new InvalidOperationException(message);
+		}
+	}
+
+	public static void ArgumentOutOfRange<TResponsible>(string argumentName, object argValue, string message,
+		// ReSharper disable once InvalidXmlDocComment
+		[CallerFilePath] string sourceFilePath = DEFAULT_SOURCE_FILE_PATH,
+		// ReSharper disable once InvalidXmlDocComment
+		[CallerLineNumber] int sourceLineNumber = DEFAULT_SOURCE_LINE_NUMBER,
+		// ReSharper disable once InvalidXmlDocComment
+		[CallerMemberName] string memberName = DEFAULT_SOURCE_MEMBER_NAME)
+	{
+		LoggingManager.Get<TResponsible>().Error($"Argument {argumentName} out of range (got {argValue}): {message}",
+			// ReSharper disable once ExplicitCallerInfoArgument
+			sourceFilePath,
+			// ReSharper disable once ExplicitCallerInfoArgument
+			sourceLineNumber, memberName);
+		if (IsDevMode())
+		{
+			throw new ArgumentOutOfRangeException(argumentName, argValue, message);
+		}
+	}
+
+	public static void InvalidArgument<TResponsible>(string argumentName, object argValue, string message,
+		// ReSharper disable once InvalidXmlDocComment
+		[CallerFilePath] string sourceFilePath = DEFAULT_SOURCE_FILE_PATH,
+		// ReSharper disable once InvalidXmlDocComment
+		[CallerLineNumber] int sourceLineNumber = DEFAULT_SOURCE_LINE_NUMBER,
+		// ReSharper disable once InvalidXmlDocComment
+		[CallerMemberName] string memberName = DEFAULT_SOURCE_MEMBER_NAME)
+	{
+		var logMessage = $"Invalid value {argValue} for argument {argumentName}: {message}";
+		LoggingManager.Get<TResponsible>().Error(logMessage,
+			// ReSharper disable once ExplicitCallerInfoArgument
+			sourceFilePath,
+			// ReSharper disable once ExplicitCallerInfoArgument
+			sourceLineNumber, memberName);
+		if (IsDevMode())
+		{
+			throw new ArgumentException(logMessage, argumentName);
+		}
+	}
+
 	/// <summary>
-	///     Throws the given exception if <see cref="IsDevMode"/> return <c>true</c>, otherwise does nothing.
+	///     Throws the given exception if <see cref="IsDevMode" /> return <c>true</c>, otherwise does nothing.
 	/// </summary>
 	/// <param name="throwingClass">the class that is throwing this exception</param>
 	/// <param name="exception"></param>
@@ -65,9 +165,9 @@ public static class DevTools
 		// ReSharper disable once InvalidXmlDocComment
 		[CallerMemberName] string memberName = DEFAULT_SOURCE_MEMBER_NAME)
 	{
-		LoggingManager.Get(throwingClass.Name).Error(exception.Message, 
+		LoggingManager.Get(throwingClass.Name).Error(exception.Message,
 			// ReSharper disable once ExplicitCallerInfoArgument
-			sourceFilePath, 
+			sourceFilePath,
 			// ReSharper disable once ExplicitCallerInfoArgument
 			sourceLineNumber, memberName);
 		if (IsDevMode())
@@ -77,7 +177,7 @@ public static class DevTools
 	}
 
 	/// <summary>
-	///     Throws the given exception if <see cref="IsDevMode"/> return <c>true</c>, otherwise does nothing.
+	///     Throws the given exception if <see cref="IsDevMode" /> return <c>true</c>, otherwise does nothing.
 	/// </summary>
 	/// <param name="exception"></param>
 	/// <exception cref="Exception"></exception>
@@ -89,9 +189,9 @@ public static class DevTools
 		// ReSharper disable once InvalidXmlDocComment
 		[CallerMemberName] string memberName = DEFAULT_SOURCE_MEMBER_NAME)
 	{
-		Logger.Error(exception.Message, 
+		Logger.Error(exception.Message,
 			// ReSharper disable once ExplicitCallerInfoArgument
-			sourceFilePath, 
+			sourceFilePath,
 			// ReSharper disable once ExplicitCallerInfoArgument
 			sourceLineNumber, memberName);
 		if (IsDevMode())
@@ -101,7 +201,7 @@ public static class DevTools
 	}
 
 	/// <summary>
-	///     Throws the given exception if <see cref="IsDevMode"/> return <c>true</c>, otherwise returns value.
+	///     Throws the given exception if <see cref="IsDevMode" /> return <c>true</c>, otherwise returns value.
 	/// </summary>
 	/// <param name="value"></param>
 	/// <param name="exception"></param>
@@ -116,16 +216,16 @@ public static class DevTools
 		// ReSharper disable once InvalidXmlDocComment
 		[CallerMemberName] string memberName = DEFAULT_SOURCE_MEMBER_NAME)
 	{
-		Throw<TResponsible>(exception, 
+		Throw<TResponsible>(exception,
 			// ReSharper disable once ExplicitCallerInfoArgument
-			sourceFilePath, 
+			sourceFilePath,
 			// ReSharper disable once ExplicitCallerInfoArgument
 			sourceLineNumber, memberName);
 		return value;
 	}
 
 	/// <summary>
-	///     Throws the given exception if <see cref="IsDevMode"/> return <c>true</c>, otherwise returns value.
+	///     Throws the given exception if <see cref="IsDevMode" /> return <c>true</c>, otherwise returns value.
 	/// </summary>
 	/// <param name="value"></param>
 	/// <param name="exception"></param>
@@ -139,18 +239,19 @@ public static class DevTools
 		// ReSharper disable once InvalidXmlDocComment
 		[CallerMemberName] string memberName = DEFAULT_SOURCE_MEMBER_NAME)
 	{
-		ThrowStatic(exception, 
+		ThrowStatic(exception,
 			// ReSharper disable once ExplicitCallerInfoArgument
-			sourceFilePath, 
+			sourceFilePath,
 			// ReSharper disable once ExplicitCallerInfoArgument
 			sourceLineNumber, memberName);
 		return value;
 	}
 
 	/// <summary>
-	///     Attempts to run the factory method. If the factory method throws AND if <see cref="IsDevMode"/> return <c>true</c>:
-	///		throws the exception, otherwise if the factory method throws and if <see cref="IsDevMode"/> return <c>false</c>,
-	///		returns the default value. If the factory method does not throw, simply returns the returned value.
+	///     Attempts to run the factory method. If the factory method throws AND if <see cref="IsDevMode" /> return <c>true</c>
+	///     :
+	///     throws the exception, otherwise if the factory method throws and if <see cref="IsDevMode" /> return <c>false</c>,
+	///     returns the default value. If the factory method does not throw, simply returns the returned value.
 	/// </summary>
 	/// <param name="factory"></param>
 	/// <param name="defaultValue"></param>
@@ -171,9 +272,9 @@ public static class DevTools
 		}
 		catch (Exception e)
 		{
-			Throw<TResponsible>(e, 
+			Throw<TResponsible>(e,
 				// ReSharper disable once ExplicitCallerInfoArgument
-				sourceFilePath, 
+				sourceFilePath,
 				// ReSharper disable once ExplicitCallerInfoArgument
 				sourceLineNumber, memberName);
 			return defaultValue;
@@ -181,9 +282,10 @@ public static class DevTools
 	}
 
 	/// <summary>
-	///     Attempts to run the factory method. If the factory method throws AND if <see cref="IsDevMode"/> return <c>true</c>:
-	///		throws the exception, otherwise if the factory method throws and if <see cref="IsDevMode"/> return <c>false</c>,
-	///		returns the default value. If the factory method does not throw, simply returns the returned value.
+	///     Attempts to run the factory method. If the factory method throws AND if <see cref="IsDevMode" /> return <c>true</c>
+	///     :
+	///     throws the exception, otherwise if the factory method throws and if <see cref="IsDevMode" /> return <c>false</c>,
+	///     returns the default value. If the factory method does not throw, simply returns the returned value.
 	/// </summary>
 	/// <param name="factory"></param>
 	/// <param name="defaultValue"></param>
@@ -203,9 +305,9 @@ public static class DevTools
 		}
 		catch (Exception e)
 		{
-			ThrowStatic(e, 
+			ThrowStatic(e,
 				// ReSharper disable once ExplicitCallerInfoArgument
-				sourceFilePath, 
+				sourceFilePath,
 				// ReSharper disable once ExplicitCallerInfoArgument
 				sourceLineNumber, memberName);
 			return defaultValue;
