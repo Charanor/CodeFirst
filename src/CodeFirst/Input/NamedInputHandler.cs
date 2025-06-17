@@ -15,6 +15,10 @@ public class NamedInputHandler
 	}
 
 	public Vector2 MousePosition { get; private set; }
+	public float MouseScroll { get; private set; }
+	public float MouseScrollHorizontal { get; private set; }
+	
+	public KeyModifiers Modifiers { get; private set; }
 
 	public MultiInputAction this[string name]
 	{
@@ -51,9 +55,27 @@ public class NamedInputHandler
 
 	public void HandleInput(InputManager sender, InputEvent e)
 	{
-		if (e is MouseMoveInputEvent mouseMove)
+		switch (e)
 		{
-			MousePosition = mouseMove.Position;
+			case MouseMoveInputEvent mouseMove:
+				MousePosition = mouseMove.Position;
+				break;
+			case MouseWheelInputEvent mouseWheel:
+				switch (mouseWheel.Direction)
+				{
+					// We negate the offset because that feels more natural for the consumer
+					case ScrollDirection.Vertical:
+						MouseScroll = -mouseWheel.Offset;
+						break;
+					case ScrollDirection.Horizontal:
+						MouseScrollHorizontal = -mouseWheel.Offset;
+						break;
+				}
+
+				break;
+			case KeycodeInputEvent keycodeInputEvent:
+				Modifiers = keycodeInputEvent.Modifiers;
+				break;
 		}
 
 		foreach (var (_, action) in actions)
@@ -64,6 +86,8 @@ public class NamedInputHandler
 
 	public void Update()
 	{
+		MouseScroll = 0;
+		MouseScrollHorizontal = 0;
 		foreach (var (_, action) in actions)
 		{
 			action.Update();
