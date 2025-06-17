@@ -95,6 +95,15 @@ public partial class Frame
 		{
 			// If we have a background texture we ensure a minimum border around the content
 			var (top, right, bottom, left) = (BorderSize)BackgroundTexture.Padding;
+			var (nodeWidth, nodeHeight) = (Node.LayoutWidth, Node.LayoutHeight);
+			var (bgWidth, bgHeight) = BackgroundTexture.Size;
+
+			// This is a bit of a hack to make 9-patch paddings match the size of the frame. Could cause jitter...
+			left *= NaNSwitch(nodeWidth / bgWidth, fallback: 1);
+			right *= NaNSwitch(nodeWidth / bgWidth, fallback: 1);
+			top *= NaNSwitch(nodeHeight / bgHeight, fallback: 1);
+			bottom *= NaNSwitch(nodeHeight / bgHeight, fallback: 1);
+
 			// Top and bottom are switched because coordinate system is inverted
 			Node.PaddingLeft = left + (PaddingLeft.Unit == YogaUnit.Point ? PaddingLeft.Value : 0);
 			Node.PaddingRight = right + (PaddingRight.Unit == YogaUnit.Point ? PaddingRight.Value : 0);
@@ -108,6 +117,7 @@ public partial class Frame
 			Node.PaddingTop = PaddingTop;
 			Node.PaddingBottom = PaddingBottom;
 		}
+
 		Node.PaddingVertical = PaddingVertical;
 		Node.PaddingHorizontal = PaddingHorizontal;
 		Node.Width = Width;
