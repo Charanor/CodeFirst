@@ -19,12 +19,19 @@ public class InputManager
 		window.MouseMove += GameOnMouseMove;
 		window.MouseWheel += GameOnMouseWheel;
 
+		window.MouseEnter += GameOnMouseEnter;
+		window.MouseLeave += GameOnMouseLeave;
+
 		window.KeyUp += GameOnKeyUp;
 		window.KeyDown += GameOnKeyDown;
 		window.TextInput += GameOnTextInput;
+
+		window.FocusedChanged += GameOnFocusChanged;
 	}
 
 	public bool LatestInputWasGamepad { get; private set; }
+	public bool IsFocused { get; private set; }
+	public bool MouseInBounds { get; private set; }
 
 	~InputManager()
 	{
@@ -33,9 +40,14 @@ public class InputManager
 		window.MouseMove -= GameOnMouseMove;
 		window.MouseWheel -= GameOnMouseWheel;
 
+		window.MouseEnter -= GameOnMouseEnter;
+		window.MouseLeave -= GameOnMouseLeave;
+
 		window.KeyUp -= GameOnKeyUp;
 		window.KeyDown -= GameOnKeyDown;
 		window.TextInput -= GameOnTextInput;
+		
+		window.FocusedChanged -= GameOnFocusChanged;
 	}
 
 	public void Update()
@@ -129,6 +141,36 @@ public class InputManager
 		GLFW.UpdateGamepadMappings(mapping);
 	}
 
+	private void GameOnMouseLeave()
+	{
+		MouseInBounds = false;
+		RaiseEvent(new WindowFocusEvent
+		{
+			IsFocused = IsFocused,
+			MouseInBounds = MouseInBounds
+		});
+	}
+
+	private void GameOnMouseEnter()
+	{
+		MouseInBounds = true;
+		RaiseEvent(new WindowFocusEvent
+		{
+			IsFocused = IsFocused,
+			MouseInBounds = MouseInBounds
+		});
+	}
+
+	private void GameOnFocusChanged(FocusedChangedEventArgs obj)
+	{
+		IsFocused = obj.IsFocused;
+		RaiseEvent(new WindowFocusEvent
+		{
+			IsFocused = IsFocused,
+			MouseInBounds = MouseInBounds
+		});
+	}
+
 	private void GameOnTextInput(TextInputEventArgs e)
 	{
 		// NOTE: Don't set "LatestInputWasGamepad" here.
@@ -177,7 +219,7 @@ public class InputManager
 			var evt = new MouseWheelInputEvent
 			{
 				Offset = x,
-				Direction = ScrollDirection.Horizontal,
+				Direction = ScrollDirection.Horizontal
 			};
 			RaiseEvent(evt);
 		}
@@ -217,7 +259,7 @@ public class InputManager
 		};
 		RaiseEvent(evt);
 	}
-
+	
 	public event EventHandler<InputManager, InputEvent>? OnInput;
 
 	private void RaiseEvent(InputEvent e)
@@ -236,6 +278,12 @@ public class InputManager
 			}
 		}
 	}
+}
+
+public class WindowFocusEvent : InputEvent
+{
+	public required bool IsFocused { get; init; }
+	public required bool MouseInBounds { get; init; }
 }
 
 public class KeyboardInputEvent : KeycodeInputEvent

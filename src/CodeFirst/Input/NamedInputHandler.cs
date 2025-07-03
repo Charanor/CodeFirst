@@ -19,6 +19,8 @@ public class NamedInputHandler
 	public float MouseScrollHorizontal { get; private set; }
 	
 	public KeyModifiers Modifiers { get; private set; }
+	
+	public bool IsFocused { get; private set; }
 
 	public MultiInputAction this[string name]
 	{
@@ -43,9 +45,8 @@ public class NamedInputHandler
 		}
 		set
 		{
-			if (!actions.ContainsKey(name))
+			if (actions.TryAdd(name, value))
 			{
-				actions.Add(name, value);
 				return;
 			}
 
@@ -75,6 +76,9 @@ public class NamedInputHandler
 				break;
 			case KeycodeInputEvent keycodeInputEvent:
 				Modifiers = keycodeInputEvent.Modifiers;
+				break;
+			case WindowFocusEvent windowFocusEvent:
+				IsFocused = windowFocusEvent is { IsFocused: true, MouseInBounds: true };
 				break;
 		}
 
@@ -110,7 +114,7 @@ public class NamedInputHandler
 		return normalize ? direction.Normalized() : direction;
 	}
 
-	public InputAction? GetActionObject(string name) => actions.TryGetValue(name, out var action) ? action : null;
+	public InputAction? GetActionObject(string name) => actions.GetValueOrDefault(name);
 
 	public InputAction? Define(string name, Keys key, KeyModifiers modifiers = default)
 	{
