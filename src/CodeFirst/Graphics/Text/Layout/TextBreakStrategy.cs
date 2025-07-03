@@ -21,7 +21,8 @@ public enum TextBreakStrategy
 public static class TextBreakStrategyExtensions
 {
 	public static bool ShouldLineBreakOn(this TextBreakStrategy strategy, char character) =>
-		strategy switch
+		// We always split on a newline character, even if text break strategy is "None".
+		character == '\n' || strategy switch
 		{
 			TextBreakStrategy.None => false,
 			TextBreakStrategy.Anywhere => true,

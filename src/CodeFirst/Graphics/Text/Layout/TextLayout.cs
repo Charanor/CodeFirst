@@ -47,7 +47,7 @@ public class TextLayout
 		if (strategy == TextBreakStrategy.None)
 		{
 			// We can't linebreak so just return all the glyphs
-			return new[] { new TextRow(font, fontGlyphs) };
+			return [new TextRow(font, fontGlyphs)];
 		}
 
 		var newRows = new List<TextRow>();
@@ -109,7 +109,7 @@ public class TextLayout
 	public Vector2 CalculateTextSize(IEnumerable<TextRow> rows)
 	{
 		var rowList = rows.ToList();
-		if (!rowList.Any())
+		if (rowList.Count == 0)
 		{
 			return Vector2.Zero;
 		}
