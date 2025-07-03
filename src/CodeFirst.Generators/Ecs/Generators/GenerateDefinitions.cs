@@ -52,7 +52,7 @@ public class GenerateDefinitions : IIncrementalGenerator
 			var commonTokenStream = new CommonTokenStream(lexer);
 			var parser = new EcsParser(commonTokenStream);
 			parser.AddErrorListener(new DebugErrorListener(context, fileName));
-			var visitor = new EcsVisitor();
+			var visitor = new EcsVisitor(context);
 			var programContext = parser.program();
 			var program = visitor.Visit(programContext).OfType<EcsProgram>().FirstOrDefault();
 			if (program == null)

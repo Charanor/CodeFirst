@@ -40,11 +40,12 @@ components: (NEWLINE | component)*;
 component: SINGLETON? COMPONENT Identifier NEWLINE;
 
 systems: (NEWLINE | system)*;
-system: ORDERED? ASYNC? SYSTEM Identifier COLON NEWLINE INDENT processParam aspectParam DEDENT;
+system: ORDERED? ASYNC? SYSTEM Identifier COLON NEWLINE INDENT processParam PrimaryAspect=aspectParam ExternalAspects=externalAspects DEDENT;
+externalAspects: aspectParam*;
 
 processParam: PROCESS COLON ProcessPass NEWLINE;
 
-aspectParam: EXTERNAL? ASPECT COLON NEWLINE INDENT tagComponent* aspectComponent+ excludedComponent* DEDENT;
+aspectParam: EXTERNAL? ASPECT Identifier? COLON NEWLINE INDENT tagComponent* aspectComponent+ excludedComponent* DEDENT;
 tagComponent: TAG Identifier NEWLINE;
 aspectComponent: OPTIONAL? EXTERNAL? READONLY? Identifier NEWLINE;
 excludedComponent: EXCLUDE Identifier NEWLINE;

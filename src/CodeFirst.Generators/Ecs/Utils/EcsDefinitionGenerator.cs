@@ -72,7 +72,7 @@ public class EcsDefinitionGenerator
 		AttributeLine("ProcessPass", $"{CORE_NAMESPACE}.Pass.{system.ProcessPass.Pass.ToString()}");
 
 		// TODO: Change this logic when we implement multiple aspects
-		if (system is { IsOrdered: true, Aspect.IsExternal: true })
+		if (system is { IsOrdered: true, PrimaryAspect.IsExternal: true })
 		{
 			// We can not have an ordered system with an external aspect
 			// TODO: Exception
@@ -83,7 +83,7 @@ public class EcsDefinitionGenerator
 			// TODO: Exception
 		}
 
-		if (system.Aspect.IsExternal)
+		if (system.PrimaryAspect.IsExternal)
 		{
 			GenerateExternalAspectSystem(system);
 		}
@@ -95,9 +95,9 @@ public class EcsDefinitionGenerator
 
 	private void GenerateExternalAspectSystem(EcsSystem system)
 	{
-		var components = system.Aspect.Components.ToList();
 		using (SystemBlock(system.Name, "EntitySystem"))
 		{
+			var components = system.PrimaryAspect.Components.ToList();
 			var mapperContexts = components.ToDictionary(
 				cmp => cmp.Name,
 				cmp => builder.ComponentMapper(
@@ -105,6 +105,21 @@ public class EcsDefinitionGenerator
 					program.Namespace?.Name,
 					IsSingleton(cmp),
 					isIteratingSystem: false));
+
+			var tagComponents = system.PrimaryAspect.Tags.ToList();
+			var excludedComponents = system.PrimaryAspect.Excluded.ToList();
+			AddComponentAttributes(components, tagComponents, excludedComponents);
+
+			var identifier = system.PrimaryAspect.Identifier ?? "aspect";
+			builder.IndentedLn(
+				$"private readonly CodeFirst.Utils.Collections.IReadOnlySnapshotList<Entity> {identifier} = null!;");
+
+			foreach (var aspect in system.ExternalAspects)
+			{
+				AddComponentAttributes(components, aspect.Tags.ToList(), aspect.Excluded.ToList());
+				builder.IndentedLn(
+					$"private readonly CodeFirst.Utils.Collections.IReadOnlySnapshotList<Entity> {aspect.Identifier} = null!;");
+			}
 
 			builder.IndentedLn($"public new {WorldName} World {{ get; internal set; }}");
 
@@ -120,22 +135,10 @@ public class EcsDefinitionGenerator
 
 	private void GenerateDefaultSystem(EcsSystem system)
 	{
-		var components = system.Aspect.Components.ToList();
-		var mandatory = components
-			.Where(component => !component.IsOptional && !IsSingleton(component))
-			.Cast<EcsAspectComponentBase>() // Cast instead of OfType because we want the exception fallback here
-			.Concat(system.Aspect.Tags)
-			.ToList();
-		if (mandatory.Count > 0)
-		{
-			AttributeLine("All", string.Join(",", mandatory.Select(c => $"typeof({c.Name})")));
-		}
-
-		var excluded = system.Aspect.Excluded.ToList();
-		if (excluded.Count > 0)
-		{
-			AttributeLine("None", string.Join(",", excluded.Select(c => $"typeof({c.Name})")));
-		}
+		var primaryAspectComponents = system.PrimaryAspect.Components.ToList();
+		var tagComponents = system.PrimaryAspect.Tags.ToList();
+		var excludedComponents = system.PrimaryAspect.Excluded.ToList();
+		AddComponentAttributes(primaryAspectComponents, tagComponents, excludedComponents);
 
 		var systemClassName = system switch
 		{
@@ -145,7 +148,28 @@ public class EcsDefinitionGenerator
 		};
 		using (SystemBlock(system.Name, systemClassName))
 		{
-			var mapperContexts = components.ToDictionary(
+			var allComponents = new List<EcsAspectComponent>();
+			allComponents.AddRange(primaryAspectComponents);
+			foreach (var externalComponent in system.ExternalAspects.SelectMany(a => a.Components))
+			{
+				var idx = allComponents.FindIndex(c => c.Name == externalComponent.Name);
+				if (idx < 0)
+				{
+					allComponents.Add(externalComponent with { IsExternal = true });
+					continue;
+				}
+
+				// Duplicate component definition, aggregate them
+				var component = allComponents[idx];
+				allComponents[idx] = component with
+				{
+					IsExternal = true,
+					IsReadonly = component.IsReadonly && externalComponent.IsReadonly,
+					IsOptional = component.IsOptional && externalComponent.IsOptional
+				};
+			}
+
+			var mapperContexts = allComponents.ToDictionary(
 				cmp => cmp.Name,
 				cmp => builder.ComponentMapper(
 					cmp.Name,
@@ -153,42 +177,46 @@ public class EcsDefinitionGenerator
 					IsSingleton(cmp),
 					isIteratingSystem: true));
 
+			foreach (var aspect in system.ExternalAspects)
+			{
+				AddComponentAttributes(aspect.Components.ToList(), aspect.Tags.ToList(), aspect.Excluded.ToList());
+				builder.IndentedLn(
+					$"private readonly CodeFirst.Utils.Collections.IReadOnlySnapshotList<Entity> {aspect.Identifier} = null!;");
+			}
+
 			// This is a nice utility, but I'm afraid this will lead to developers doing something like:
 			//		World.MySingleton.SomeProperty = "some value";
 			// This could be an issue because it circumvents the safety measures that are in place for async processing.
 			// For now, let's trust developers.
 			builder.IndentedLn($"public new {WorldName} World {{ get; internal set; }}");
 
-			foreach (var component in components.Where(component =>
-				         component.IsOptional ||
-				         component.IsExternal ||
-				         IsSingleton(component)))
+			foreach (var component in allComponents
+				         .Where(component => component.IsOptional || component.IsExternal || IsSingleton(component)))
 			{
 				var mapperContext = mapperContexts[component.Name];
 				builder.UtilityMethods(mapperContext, component.IsReadonly, component.IsOptional);
 			}
 
-			GenerateRemoveComponentMethods(components, mapperContexts);
+			GenerateRemoveComponentMethods(allComponents, mapperContexts);
 
 			// Generate current entity remove methods
-			foreach (var component in components.Where(cmp => cmp is
+			foreach (var component in primaryAspectComponents.Where(cmp => cmp is
 				         { IsReadonly: false, IsOptional: false } && !IsSingleton(cmp)))
 			{
 				var mapperContext = mapperContexts[component.Name];
 				using (builder.Block($"private void Remove(ref {component.Name} {ToCamelCase(component.Name)})"))
 				{
-					builder.FunctionCall("AssertHasEntity", "nameof(Remove)");
+					builder.FunctionCall("AssertHasEntity");
 					builder.IndentedLn($"{mapperContext.FieldName}.Remove(CurrentEntity);");
 				}
 			}
 
-			var paramComponents = components
+			var paramComponents = primaryAspectComponents
 				.Where(cmp => cmp is { IsOptional: false } && !IsSingleton(cmp))
 				.ToList();
 			using (builder.Block("protected override void Update(Entity entity, float delta)"))
 			{
 				builder.AssignmentOp("CurrentEntity", "entity");
-
 				foreach (var component in paramComponents)
 				{
 					var mapperContext = mapperContexts[component.Name];
@@ -197,9 +225,9 @@ public class EcsDefinitionGenerator
 						$"{varModifier} {component.Name} {ToCamelCase(component.Name)} = ref {mapperContext.FieldName}.Get(entity);");
 				}
 
-				var paramList = paramComponents.Select(
-					cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {ToCamelCase(cmp.Name)}"
-				).ToList();
+				var paramList = paramComponents
+					.Select(cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {ToCamelCase(cmp.Name)}")
+					.ToList();
 				if (paramList.Count > 0)
 				{
 					builder.FunctionCall("ProcessEntity", paramList);
@@ -234,7 +262,7 @@ public class EcsDefinitionGenerator
 		IReadOnlyDictionary<string, ComponentMapperContext> mapperContexts)
 	{
 		foreach (var component in components.Where(cmp =>
-			         cmp is { IsReadonly: false } && !IsSingleton(cmp)))
+			         cmp is { IsReadonly: false, IsExternal: true } && !IsSingleton(cmp)))
 		{
 			var mapperContext = mapperContexts[component.Name];
 			using (builder.Block(
@@ -370,4 +398,30 @@ public class EcsDefinitionGenerator
 		builder.IndentedLn($"[{name}({contents})]");
 
 	private bool IsSingleton(EcsAspectComponent component) => singletonComponentNames.Contains(component.Name);
+
+	private void AddComponentAttributes(List<EcsAspectComponent> components, List<EcsTagComponent> tags,
+		List<EcsExcludedComponent> excluded)
+	{
+		var mandatory = components
+			.Where(component => !component.IsOptional && !IsSingleton(component))
+			.Cast<EcsAspectComponentBase>() // Cast instead of OfType because we want the exception fallback here
+			.Concat(tags)
+			.ToList();
+		if (mandatory.Count > 0)
+		{
+			AttributeLine("All", string.Join(",", mandatory.Select(c => $"typeof({c.Name})")));
+		}
+
+		if (excluded.Count > 0)
+		{
+			AttributeLine("None", string.Join(",", excluded.Select(c => $"typeof({c.Name})")));
+		}
+	}
+
+	private record EcsAspectComponentWithMetadata(
+		string Name,
+		bool IsOptional,
+		bool IsReadonly,
+		bool IsExternal,
+		bool IsMultiAspect) : EcsAspectComponent(Name, IsOptional, IsReadonly, IsExternal);
 }

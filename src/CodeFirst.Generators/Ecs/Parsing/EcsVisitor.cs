@@ -1,11 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using CodeFirst.Generators.Ecs.Generators;
+using Microsoft.CodeAnalysis;
 
 namespace CodeFirst.Generators.Ecs.Parsing;
 
 public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
-{
+{	
+	private static readonly DiagnosticDescriptor InvalidExternalAspect = new(
+		"DRG0102",
+		"Invalid external aspect",
+		"System generation failed for system {0} / {1}. External aspect must be marked as \"external\" and have a valid identifier.",
+		"EcsVisitor",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+	
+	private static readonly DiagnosticDescriptor MissingAspect = new(
+		"DRG0103",
+		"Missing aspect",
+		"System generation failed for system {0} / {1}. Aspect is missing.",
+		"EcsVisitor",
+		DiagnosticSeverity.Error,
+		isEnabledByDefault: true);
+	
+	private readonly SourceProductionContext source;
+
+	public EcsVisitor(SourceProductionContext source)
+	{
+		this.source = source;
+	}
+
 	private static IEnumerable<EcsDefinition> Empty => [];
 
 	protected override IEnumerable<EcsDefinition> DefaultResult => Empty;
@@ -40,15 +66,28 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 			return Empty;
 		}
 
-		var aspect = context.aspectParam().Accept(this).OfType<EcsAspectParameter>().FirstOrDefault();
+		var primaryAspect = context.PrimaryAspect.Accept(this).OfType<EcsAspectParameter>().FirstOrDefault();
 		// ReSharper disable once ConvertIfStatementToReturnStatement
-		if (aspect == null)
+		if (primaryAspect == null)
 		{
-			// TODO: Report error
+			source.ReportDiagnostic(Diagnostic.Create(MissingAspect, location: null, name));
 			return Empty;
 		}
 
-		return Single(new EcsSystem(name, processPass, aspect, context.ORDERED() != null, context.ASYNC() != null));
+		var externalAspects = context.ExternalAspects.aspectParam()
+			.SelectMany(p => p.Accept(this))
+			.OfType<EcsAspectParameter>()
+			.ToList();
+		if (externalAspects.Any(aspect => aspect is not { IsExternal: true, Identifier: not null }))
+		{
+			// All non-primary aspects must be marked as "external" and must have an identifier
+			source.ReportDiagnostic(Diagnostic.Create(InvalidExternalAspect, location: null, name, externalAspects.Count));
+			return Empty;
+		}
+
+		var isOrdered = context.ORDERED() != null;
+		var isAsync = context.ASYNC() != null;
+		return [new EcsSystem(name, processPass, primaryAspect, externalAspects, isOrdered, isAsync)];
 	}
 
 	public override IEnumerable<EcsDefinition> VisitProcessParam(EcsParser.ProcessParamContext context)
@@ -70,8 +109,9 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 		var tagComponents = context.tagComponent().SelectMany(cmp => cmp.Accept(this)).OfType<EcsTagComponent>();
 		var excludedComponents = context.excludedComponent().SelectMany(cmp => cmp.Accept(this))
 			.OfType<EcsExcludedComponent>();
-		return Single(new EcsAspectParameter(aspectComponents, tagComponents, excludedComponents,
-			context.EXTERNAL() != null));
+		var isExternal = context.EXTERNAL() != null;
+		var identifier = context.Identifier()?.GetText();
+		return [new EcsAspectParameter(aspectComponents, tagComponents, excludedComponents, isExternal, identifier)];
 	}
 
 	public override IEnumerable<EcsDefinition> VisitTagComponent(EcsParser.TagComponentContext context) =>
@@ -123,7 +163,8 @@ public record EcsComponent(string Name, bool IsSingleton) : EcsDefinition;
 public record EcsSystem(
 	string Name,
 	EcsProcessPassParameter ProcessPass,
-	EcsAspectParameter Aspect,
+	EcsAspectParameter PrimaryAspect,
+	IEnumerable<EcsAspectParameter> ExternalAspects,
 	bool IsOrdered,
 	bool IsAsync) : EcsDefinition;
 
@@ -140,7 +181,8 @@ public record EcsAspectParameter(
 	IEnumerable<EcsAspectComponent> Components,
 	IEnumerable<EcsTagComponent> Tags,
 	IEnumerable<EcsExcludedComponent> Excluded,
-	bool IsExternal
+	bool IsExternal,
+	string? Identifier
 ) : EcsDefinition;
 
 public abstract record EcsAspectComponentBase(string Name) : EcsDefinition;
