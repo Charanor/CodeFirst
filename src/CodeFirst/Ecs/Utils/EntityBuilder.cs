@@ -33,7 +33,7 @@ public class EntityBuilder
 	/// </summary>
 	public Entity Entity { get; }
 
-	public T Create<T>() where T : IComponent, new() => Add(new T());
+	public ref T Create<T>() where T : IComponent => ref World.GetMapper<T>().Create(Entity);
 
 	public ref T Add<T>(in T component) where T : IComponent =>
 		ref World.GetMapper<T>().Add(Entity, in component);

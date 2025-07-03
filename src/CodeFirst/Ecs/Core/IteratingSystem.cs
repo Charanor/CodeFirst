@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using CodeFirst.Ecs.Core.Attributes;
 using CodeFirst.Ecs.Utils;
 using CodeFirst.Utils.Collections;
@@ -115,7 +116,7 @@ public abstract class IteratingSystem : EntitySystem
 		Entities.Commit();
 	}
 
-	protected void AssertHasEntity(string methodName)
+	protected void AssertHasEntity([CallerMemberName] string methodName = "")
 	{
 		if (!CurrentEntity.IsValid)
 		{
@@ -125,13 +126,13 @@ public abstract class IteratingSystem : EntitySystem
 
 	protected sealed override void Remove(Entity entity)
 	{
-		AssertHasEntity(nameof(Remove));
+		AssertHasEntity(); // This is here to make sure we don't call this method when the system is not active
 		base.Remove(entity);
 	}
 
 	protected void RemoveEntity()
 	{
-		AssertHasEntity(nameof(RemoveEntity));
+		AssertHasEntity();
 		base.Remove(CurrentEntity);
 	}
 

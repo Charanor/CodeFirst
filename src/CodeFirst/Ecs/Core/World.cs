@@ -52,7 +52,7 @@ public class World : IDisposable
 	///     The fixed update is controlled by the <see cref="Update" /> function and run directly after the normal update
 	///     pass (if it is its time to run, that is).
 	/// </remarks>
-	public float FixedUpdateDelta { get; set; }
+	public float FixedUpdateDelta { get; set; } = 0.02f;
 
 	/// <summary>
 	///     Disposes all <see cref="EntitySystem" />s that implement <see cref="IDisposable" />.
