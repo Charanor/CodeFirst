@@ -65,6 +65,7 @@ public partial class Frame
 
 	public Color4<Rgba> BorderColor { get; set; }
 	public Color4<Rgba> BackgroundColor { get; set; }
+	public float Opacity { get; set; } = 1;
 
 	public NinePatch? BackgroundTexture { get; set; }
 

@@ -148,10 +148,11 @@ public sealed class Scene : IEnumerable<Frame>, IDisposable
 		GraphicsProvider.End();
 	}
 
-	public void AddFrame<TFrame>(TFrame frame) where TFrame : Frame
+	public TFrame AddFrame<TFrame>(TFrame frame) where TFrame : Frame
 	{
 		frame.Scene = this;
 		frames.Add(frame);
+		return frame;
 	}
 
 	public bool RemoveFrame<TFrame>(TFrame frame) where TFrame : Frame

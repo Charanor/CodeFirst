@@ -1,3 +1,4 @@
+using CodeFirst.Graphics.Core.Utils;
 using Facebook.Yoga;
 using OpenTK.Mathematics;
 
@@ -169,11 +170,13 @@ public partial class Frame
 				return;
 			}
 
+			var totalOpacity = CalculateTotalOpacity().Clamp(min: 0, max: 1);
 			if (BackgroundTexture != null)
 			{
 				// If we have a background texture, only draw the tinted texture, skip drawing background rectangles
-				var color = BackgroundColor.W == 0 ? Color4.White : BackgroundColor;
-				graphicsProvider.DrawNinePatch(BackgroundTexture, TransformedBounds, color);
+				var backgroundColor = BackgroundColor.W == 0 ? Color4.White : BackgroundColor;
+				backgroundColor.W *= totalOpacity;
+				graphicsProvider.DrawNinePatch(BackgroundTexture, TransformedBounds, backgroundColor);
 				AfterDrawBackground(graphicsProvider);
 				return;
 			}
@@ -186,12 +189,13 @@ public partial class Frame
 				topLeft, topRight, bottomLeft, bottomRight);
 
 			// Inner (background color) rectangle
-			var innerRectangleBounds = Box2.FromSize(
+			var innerRectBounds = Box2.FromSize(
 				TransformedBounds.Location + new Vector2(left, top),
 				TransformedBounds.Size - new Vector2(left + right, top + bottom)
 			);
 
-			graphicsProvider.DrawRect(innerRectangleBounds, BackgroundColor,
+			graphicsProvider.DrawRect(innerRectBounds,
+				BackgroundColor with { W = BackgroundColor.W * totalOpacity },
 				topLeft, topRight, bottomLeft, bottomRight);
 
 			AfterDrawBackground(graphicsProvider);
@@ -267,4 +271,6 @@ public partial class Frame
 	}
 
 	private static float NaNSwitch(float value, float fallback) => float.IsNaN(value) ? fallback : value;
+
+	protected float CalculateTotalOpacity() => Opacity * (Parent?.CalculateTotalOpacity() ?? 1);
 }

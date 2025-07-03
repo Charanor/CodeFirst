@@ -7,12 +7,16 @@ public partial class Frame : IEnumerable<Frame>
 	public IEnumerator<Frame> GetEnumerator() => GetChildren().GetEnumerator();
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-	public void AddChild(Frame frame)
+	// This Add method exists so we can use collection initializers and such.
+	public TFrame Add<TFrame>(TFrame frame) where TFrame : Frame => AddChild<TFrame>(frame);
+
+	public TFrame AddChild<TFrame>(TFrame frame) where TFrame : Frame
 	{
 		Node.AddChild(frame.Node);
 		frame.Parent = this;
 		frame.Scene = Scene;
 		children.Add(frame);
+		return frame;
 	}
 
 	public bool RemoveChild(Frame frame)
@@ -26,6 +30,20 @@ public partial class Frame : IEnumerable<Frame>
 		}
 
 		return removed;
+	}
+
+	public void RemoveChildAt(int index)
+	{
+		if (index < 0 || index > children.Count)
+		{
+			return;
+		}
+
+		var child = children[index];
+		Node.RemoveChild(child.Node);
+		child.Parent = null;
+		child.Scene = null;
+		children.RemoveAt(index);
 	}
 
 	public void RemoveAllChildren()
@@ -99,4 +117,6 @@ public partial class Frame : IEnumerable<Frame>
 
 	public IEnumerable<Frame> GetChildren() => children;
 	public IEnumerable<T> GetChildren<T>() => GetChildren().OfType<T>();
+
+	public int ChildCount => children.Count;
 }

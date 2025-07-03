@@ -28,7 +28,6 @@ public enum TextAlign
 public class Text : Frame
 {
 	private const int DEFAULT_FONT_SIZE = 18;
-	private const TextBreakStrategy DEFAULT_BREAK_STRATEGY = TextBreakStrategy.Whitespace;
 
 	private readonly List<TextRow> textRows;
 
@@ -37,11 +36,11 @@ public class Text : Frame
 
 	private string textContent;
 	private int fontSize = DEFAULT_FONT_SIZE;
-	private TextBreakStrategy textBreakStrategy = DEFAULT_BREAK_STRATEGY;
+	private TextBreakStrategy textBreakStrategy = TextBreakStrategy.Whitespace;
 
 	public Text(Font font, string value = "")
 	{
-		textRows = new List<TextRow>();
+		textRows = [];
 		Font = this.font = font;
 		TextContent = textContent = value;
 		layout ??= new TextLayout(font);
@@ -183,7 +182,8 @@ public class Text : Frame
 			};
 
 			var positionOffset = new Vector2(offsetX, offsetY);
-			graphicsProvider.DrawText(Font, row, FontSize, position + positionOffset, FontColor);
+			graphicsProvider.DrawText(Font, row, FontSize, position + positionOffset,
+				FontColor with { W = FontColor.W * CalculateTotalOpacity() });
 			offsetY += font.ScaleEmToFontSize(font.Metrics.LineHeight, FontSize);
 		}
 	}
@@ -192,13 +192,16 @@ public class Text : Frame
 		float width, YogaMeasureMode widthMode,
 		float height, YogaMeasureMode heightMode)
 	{
-		var maxWidth = widthMode == YogaMeasureMode.Undefined ? float.PositiveInfinity : width;
+		var maxWidth = widthMode == YogaMeasureMode.Undefined
+			? float.PositiveInfinity
+			: width * font.Atlas.CharacterPixelSize / FontSize;
+
 		var textSize = font.ScalePixelsToFontSize(
 			layout.CalculateTextSize(textContent, maxWidth, TextBreakStrategy),
 			FontSize
 		);
 
-		return new YogaSize
+		var yogaSize = new YogaSize
 		{
 			width = widthMode switch
 			{
@@ -213,5 +216,6 @@ public class Text : Frame
 				_ => textSize.Y
 			}
 		};
+		return yogaSize;
 	}
 }
