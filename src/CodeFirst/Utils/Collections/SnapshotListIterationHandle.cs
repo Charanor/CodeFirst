@@ -18,6 +18,8 @@ public sealed class SnapshotListIterationHandle<T> : IDisposable, IEnumerable<T>
 		list.Begin(out items, out count);
 		hasEnded = false;
 	}
+	
+	public int Count => count;
 
 	public void Dispose()
 	{
