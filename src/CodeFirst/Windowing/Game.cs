@@ -33,11 +33,18 @@ public abstract class Game : GameWindow
 		}
 	}
 
+	public float MaxDeltaTime { get; protected set; }
+
 	protected abstract void LoadResources();
 	protected abstract void UnloadResources();
 
 	protected override void OnUpdateFrame(FrameEventArgs args)
 	{
+		if (MaxDeltaTime > 0 && args.Time > MaxDeltaTime)
+		{
+			args = new FrameEventArgs(MaxDeltaTime);
+		}
+
 		base.OnUpdateFrame(args);
 		screen?.Update((float)args.Time);
 	}
