@@ -17,6 +17,12 @@ public abstract class Camera
 	}
 
 	public Vector3 Position { get; set; } = Vector3.Zero;
+
+	public Vector2 Position2D
+	{
+		get => Position.Xy;
+		set => Position = new Vector3(value, Position.Z);
+	}
 	public Quaternion Rotation { get; set; } = Quaternion.Identity;
 
 	public Vector3 Forward
