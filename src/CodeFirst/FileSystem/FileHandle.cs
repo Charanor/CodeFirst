@@ -167,6 +167,9 @@ public record FileHandle(string FilePath)
 		return file.CanRead;
 	}
 
+	/// <summary>
+	/// For a directory, recursively removes all children. For a file, writes 0 to all bytes in the file.
+	/// </summary>
 	public void Clear()
 	{
 		// ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
@@ -215,4 +218,6 @@ public record FileHandle(string FilePath)
 
 		return path;
 	}
+
+	public static FileHandle operator /(FileHandle fileHandle, string child) => fileHandle.Child(child);
 }
