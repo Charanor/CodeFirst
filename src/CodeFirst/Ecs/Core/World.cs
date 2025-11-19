@@ -55,6 +55,15 @@ public class World : IDisposable
 	public float FixedUpdateDelta { get; set; } = 0.02f;
 
 	/// <summary>
+	///		How far along the partial fixed frame we are. For example if your fixed update runs every second, and it has
+	///		been 0.4 seconds since the last update, <c>FixedUpdatePartialFrame</c> would be <c>0.4</c>
+	///		(i.e. 40% between frames). If your update runs every 0.5 seconds and it has been 0.4 seconds
+	///		<c>FixedUpdatePartialFrame</c> would be <c>0.8</c> (i.e. 80% between frames).
+	/// </summary>
+	/// <remarks>This value is in the range <c>[0, inf)</c> but in the normal case is between <c>[0, 1]</c>.</remarks>
+	public float FixedUpdateFraction => FixedUpdateDelta <= 0 ? 0 : fixedUpdateAccumulator / FixedUpdateDelta;
+
+	/// <summary>
 	///     Disposes all <see cref="EntitySystem" />s that implement <see cref="IDisposable" />.
 	/// </summary>
 	public void Dispose()
@@ -547,6 +556,27 @@ public class World : IDisposable
 		}
 
 		return entityFlags.Get(entity);
+	}
+
+	public int GetComponentCount(Entity entity)
+	{
+		if (!entity.IsValid)
+		{
+			DevTools.Throw<World>(new InvalidEntityException());
+			return 0;
+		}
+
+		if (!HasEntity(entity))
+		{
+			return 0;
+		}
+		
+		if (EntityIsDirty(entity))
+		{
+			HydrateEntity(entity);
+		}
+
+		return GetFlagsForEntityInternal(entity).Count;
 	}
 
 	/// <summary>

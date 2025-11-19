@@ -13,10 +13,12 @@ public record ComponentFlags
 	{
 		this.componentFlags = new bool[componentFlags.Length];
 		Array.Copy(componentFlags, this.componentFlags, componentFlags.Length);
-		IsEmpty = !this.componentFlags.Any(flag => flag);
+		Count = this.componentFlags.Count(flag => flag);
+		IsEmpty = Count == 0;
 	}
 
 	public bool IsEmpty { get; }
+	public int Count { get; }
 
 	public override string ToString() => string.Join(", ", componentFlags
 		.Select((flag, i) => flag ? ComponentManager.GetType(i).Name : string.Empty)
