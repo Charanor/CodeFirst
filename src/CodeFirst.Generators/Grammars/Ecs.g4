@@ -32,12 +32,20 @@ public override IToken NextToken()
 }
 }
 
-program: NEWLINE* namespace? components systems NEWLINE* world NEWLINE* EOF;
+program: NEWLINE* namespace? components blueprints systems NEWLINE* world NEWLINE* EOF;
 
 namespace: NAMESPACE NamespaceIdentifier NEWLINE;
 
 components: (NEWLINE | component)*;
 component: SINGLETON? COMPONENT Identifier NEWLINE;
+
+blueprints: (NEWLINE | blueprint)*;
+blueprint: ABSTRACT? BLUEPRINT Identifier blueprintBases? blueprintBody?;
+blueprintBases: EXTENDS blueprintBasesChain;
+blueprintBasesChain: blueprintId (LIST_SEPARATOR blueprintBasesChain)?;
+blueprintBody: COLON NEWLINE INDENT blueprintComponent* DEDENT;
+blueprintComponent: blueprintId NEWLINE;
+blueprintId: Identifier;
 
 systems: (NEWLINE | system)*;
 system: ORDERED? ASYNC? SYSTEM Identifier COLON NEWLINE INDENT processParam PrimaryAspect=aspectParam ExternalAspects=externalAspects DEDENT;
@@ -74,6 +82,7 @@ LIST_SEPARATOR: ',';
 // Keywords
 NAMESPACE: 'namespace';
 COMPONENT: 'component';
+BLUEPRINT: 'blueprint';
 SYSTEM: 'system';
 WORLD: 'world';
 
@@ -88,6 +97,8 @@ SINGLETON: 'singleton';
 TAG: 'tag';
 EXCLUDE: 'exclude';
 ASYNC: 'async';
+ABSTRACT: 'abstract';
+EXTENDS: 'extends';
 
 // Compounds
 ProcessPass: 'Update' | 'FixedUpdate' | 'Draw';

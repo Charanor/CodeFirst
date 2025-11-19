@@ -15,10 +15,16 @@ public class EcsDefinitionGenerator
 	private const string COMPONENT_TYPE = "IComponent";
 	private const string SINGLETON_COMPONENT_TYPE = "ISingletonComponent";
 
+	private const string ENTITY_BUILDER = "CodeFirst.Ecs.Utils.EntityBuilder";
+	private const string DEV_TOOLS = "CodeFirst.Utils.DevTools";
+
+	private const string NOT_EDITOR_BROWSABLE =
+		"[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]";
+
 	private readonly EcsProgram program;
 	private readonly ClassBuilder builder;
 
-	private readonly HashSet<string> singletonComponentNames = new();
+	private readonly HashSet<string> singletonComponentNames = [];
 
 	public EcsDefinitionGenerator(EcsProgram program)
 	{
@@ -49,12 +55,25 @@ public class EcsDefinitionGenerator
 			}
 		}
 
+		var blueprints = program.Blueprints.ToList();
+		if (blueprints.Any())
+		{
+			using (builder.Block("public enum EntityBlueprint"))
+			{
+				builder.IndentedLn("None = 0,");
+				foreach (var blueprint in blueprints.Where(blueprint => !blueprint.IsAbstract))
+				{
+					builder.IndentedLn($"{blueprint.Name},");
+				}
+			}
+		}
+
 		foreach (var system in program.Systems)
 		{
 			GenerateSystem(system);
 		}
 
-		GenerateWorld();
+		GenerateWorld(blueprints);
 
 		return builder.Generate();
 	}
@@ -214,6 +233,9 @@ public class EcsDefinitionGenerator
 			var paramComponents = primaryAspectComponents
 				.Where(cmp => cmp is { IsOptional: false } && !IsSingleton(cmp))
 				.ToList();
+			var paramList = paramComponents
+				.Select(cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {ToCamelCase(cmp.Name)}")
+				.ToList();
 			using (builder.Block("protected override void Update(Entity entity, float delta)"))
 			{
 				builder.AssignmentOp("CurrentEntity", "entity");
@@ -225,9 +247,6 @@ public class EcsDefinitionGenerator
 						$"{varModifier} {component.Name} {ToCamelCase(component.Name)} = ref {mapperContext.FieldName}.Get(entity);");
 				}
 
-				var paramList = paramComponents
-					.Select(cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {ToCamelCase(cmp.Name)}")
-					.ToList();
 				if (paramList.Count > 0)
 				{
 					builder.FunctionCall("ProcessEntity", paramList);
@@ -243,12 +262,52 @@ public class EcsDefinitionGenerator
 				builder.AssignmentOp("CurrentEntity", "Entity.Invalid");
 			}
 
+			if (paramList.Count > 0 && !system.IsOrdered)
+			{
+				using (builder.Block("protected override void EntityAdded(Entity entity)"))
+				{
+					foreach (var component in paramComponents)
+					{
+						var mapperContext = mapperContexts[component.Name];
+						var varModifier = component.IsReadonly ? "ref readonly" : "ref";
+						builder.IndentedLn(
+							$"{varModifier} {component.Name} {ToCamelCase(component.Name)} = ref {mapperContext.FieldName}.Get(entity);");
+					}
+
+					builder.FunctionCall("EntityAdded", paramList);
+					builder.FunctionCall("EntityAdded", "entity", paramList);
+				}
+				
+				using (builder.Block("protected override void EntityRemoved(Entity entity)"))
+				{
+					foreach (var component in paramComponents)
+					{
+						var mapperContext = mapperContexts[component.Name];
+						var varModifier = component.IsReadonly ? "ref readonly" : "ref";
+						builder.IndentedLn(
+							$"{varModifier} {component.Name} {ToCamelCase(component.Name)} = ref {mapperContext.FieldName}.Get(entity);");
+					}
+
+					builder.FunctionCall("EntityRemoved", paramList);
+					builder.FunctionCall("EntityRemoved", "entity", paramList);
+				}
+			}
+
 			var processEntityParameterList = string.Join(",",
 				paramComponents.Select(cmp => $"{(cmp.IsReadonly ? "in" : "ref")} {cmp.Name} {ToCamelCase(cmp.Name)}"));
 			if (processEntityParameterList.Length > 0)
 			{
 				builder.IndentedLn($"partial void ProcessEntity(float delta, {processEntityParameterList});");
 				builder.IndentedLn($"partial void ProcessEntity({processEntityParameterList});");
+
+				if (!system.IsOrdered)
+				{
+					builder.IndentedLn($"partial void EntityAdded({processEntityParameterList});");
+					builder.IndentedLn($"partial void EntityAdded(Entity entity, {processEntityParameterList});");
+
+					builder.IndentedLn($"partial void EntityRemoved({processEntityParameterList});");
+					builder.IndentedLn($"partial void EntityRemoved(Entity entity, {processEntityParameterList});");
+				}
 			}
 			else
 			{
@@ -273,7 +332,7 @@ public class EcsDefinitionGenerator
 		}
 	}
 
-	private void GenerateWorld()
+	private void GenerateWorld(List<EcsBlueprint> blueprints)
 	{
 		var world = program.World;
 		using (builder.Block($"public partial class {WorldName} : World"))
@@ -378,7 +437,90 @@ public class EcsDefinitionGenerator
 					}
 				}
 			}
+
+			if (blueprints.Count > 0)
+			{
+				builder.IndentedLn(
+					$"public {ENTITY_BUILDER} CreateEntity(EntityBlueprint blueprint) => blueprint switch");
+				builder.BeginBlock();
+				{
+					foreach (var blueprint in blueprints.Where(b => !b.IsAbstract))
+					{
+						builder.IndentedLn($"EntityBlueprint.{blueprint.Name} => Create{blueprint.Name}(),");
+					}
+
+					builder.IndentedLn(
+						$"_ => {DEV_TOOLS}.DebugReturn<{ENTITY_BUILDER}, {WorldName}>(new {ENTITY_BUILDER}(this), new System.ComponentModel.InvalidEnumArgumentException(nameof(blueprint), (int)blueprint, typeof(EntityBlueprint)))");
+				}
+				builder.EndBlock(";");
+
+				builder.IndentedLn(NOT_EDITOR_BROWSABLE);
+				builder.IndentedLn(
+					"private readonly Dictionary<Entity, EntityBlueprint> __do_not_access_directly_blueprintMap = new();");
+				builder.IndentedLn(
+					"public EntityBlueprint GetBlueprint(Entity entity) => __do_not_access_directly_blueprintMap.TryGetValue(entity, out var blueprint) ? blueprint : EntityBlueprint.None;");
+			}
+
+			foreach (var blueprint in blueprints)
+			{
+				AddBlueprintMethod(blueprint);
+			}
+
+			void AddBlueprintMethod(EcsBlueprint blueprint)
+			{
+				var accessor = blueprint.IsAbstract ? "private" : "public";
+				if (blueprint.IsAbstract)
+				{
+					builder.IndentedLn(NOT_EDITOR_BROWSABLE);
+				}
+
+				using (builder.Block($"{accessor} {ENTITY_BUILDER} Create{blueprint.Name}()"))
+				{
+					builder.IndentedLn($"var entity = new {ENTITY_BUILDER}(this);");
+					if (!blueprint.IsAbstract)
+					{
+						builder.IndentedLn(
+							$"__do_not_access_directly_blueprintMap.Add(entity, EntityBlueprint.{blueprint.Name});");
+					}
+
+					builder.FunctionCall($"Create{blueprint.Name}", "entity");
+					builder.IndentedLn("return entity;");
+				}
+
+				var componentHierarchy = GetComponentsForBlueprint(blueprint).ToList();
+				builder.IndentedLn(NOT_EDITOR_BROWSABLE);
+				using (builder.Block($"private void Create{blueprint.Name}({ENTITY_BUILDER} entity)"))
+				{
+					foreach (var blueprintBase in blueprint.Bases)
+					{
+						builder.FunctionCall($"Create{blueprintBase.Name}", "entity");
+					}
+
+					foreach (var component in componentHierarchy)
+					{
+						builder.IndentedLn(
+							$"ref var {ToCamelCase(component.Name)} = ref entity.Has<{component.Name}>() " +
+							$"? ref entity.Get<{component.Name}>() " +
+							$": ref entity.Create<{component.Name}>();");
+					}
+
+					builder.FunctionCall(
+						$"Setup{blueprint.Name}", componentHierarchy.Select(c => $"ref {ToCamelCase(c.Name)}"));
+				}
+
+				builder.IndentedLn(NOT_EDITOR_BROWSABLE);
+				builder.IndentedLn(
+					$"partial void Setup{blueprint.Name}({string.Join(", ", componentHierarchy.Select(c => $"ref {c.Name} {ToCamelCase(c.Name)}"))});");
+			}
 		}
+
+		return;
+
+		IEnumerable<EcsBlueprintComponent> GetComponentsForBlueprint(EcsBlueprint startBlueprint) =>
+			startBlueprint.Bases
+				.Select(b => blueprints.Find(bp => bp.Name == b.Name))
+				.SelectMany(GetComponentsForBlueprint)
+				.Concat(startBlueprint.Components);
 	}
 
 	private void UsingLine(string ns) => builder.IndentedLn($"using {ns};");
@@ -417,6 +559,7 @@ public class EcsDefinitionGenerator
 			AttributeLine("None", string.Join(",", excluded.Select(c => $"typeof({c.Name})")));
 		}
 	}
+
 
 	private record EcsAspectComponentWithMetadata(
 		string Name,

@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using CodeFirst.Generators.Ecs.Generators;
 using Microsoft.CodeAnalysis;
 
 namespace CodeFirst.Generators.Ecs.Parsing;
 
 public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
-{	
+{
 	private static readonly DiagnosticDescriptor InvalidExternalAspect = new(
 		"DRG0102",
 		"Invalid external aspect",
@@ -16,7 +14,7 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 		"EcsVisitor",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
-	
+
 	private static readonly DiagnosticDescriptor MissingAspect = new(
 		"DRG0103",
 		"Missing aspect",
@@ -24,7 +22,7 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 		"EcsVisitor",
 		DiagnosticSeverity.Error,
 		isEnabledByDefault: true);
-	
+
 	private readonly SourceProductionContext source;
 
 	public EcsVisitor(SourceProductionContext source)
@@ -45,9 +43,10 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 	{
 		var ns = context.@namespace()?.Accept(this).OfType<EcsNamespace>().FirstOrDefault();
 		var components = context.components().Accept(this).OfType<EcsComponent>();
+		var blueprints = context.blueprints().Accept(this).OfType<EcsBlueprint>();
 		var systems = context.systems().Accept(this).OfType<EcsSystem>();
 		var world = context.world().Accept(this).OfType<EcsWorld>().First();
-		return Single(new EcsProgram(ns, components, systems, world));
+		return Single(new EcsProgram(ns, components, blueprints, systems, world));
 	}
 
 	public override IEnumerable<EcsDefinition> VisitNamespace(EcsParser.NamespaceContext context) =>
@@ -55,6 +54,24 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 
 	public override IEnumerable<EcsDefinition> VisitComponent(EcsParser.ComponentContext context) =>
 		Single(new EcsComponent(context.Identifier().GetText(), context.SINGLETON() != null));
+
+	public override IEnumerable<EcsDefinition> VisitBlueprint(EcsParser.BlueprintContext context)
+	{
+		var isAbstract = context.ABSTRACT() != null;
+		var name = context.Identifier().GetText();
+		var bases = context.blueprintBases()?.Accept(this).OfType<EcsBlueprintComponent>() ?? [];
+		var components = context.blueprintBody()?.Accept(this).OfType<EcsBlueprintComponent>() ?? [];
+		return [new EcsBlueprint(name, isAbstract, bases, components)];
+	}
+
+	public override IEnumerable<EcsDefinition> VisitBlueprintBody(EcsParser.BlueprintBodyContext context) =>
+		context.blueprintComponent().SelectMany(c => c.Accept(this));
+
+	public override IEnumerable<EcsDefinition> VisitBlueprintComponent(EcsParser.BlueprintComponentContext context) =>
+		context.blueprintId().Accept(this);
+
+	public override IEnumerable<EcsDefinition> VisitBlueprintId(EcsParser.BlueprintIdContext context)
+		=> [new EcsBlueprintComponent(context.Identifier().GetText())];
 
 	public override IEnumerable<EcsDefinition> VisitSystem(EcsParser.SystemContext context)
 	{
@@ -81,7 +98,8 @@ public class EcsVisitor : EcsBaseVisitor<IEnumerable<EcsDefinition>>
 		if (externalAspects.Any(aspect => aspect is not { IsExternal: true, Identifier: not null }))
 		{
 			// All non-primary aspects must be marked as "external" and must have an identifier
-			source.ReportDiagnostic(Diagnostic.Create(InvalidExternalAspect, location: null, name, externalAspects.Count));
+			source.ReportDiagnostic(Diagnostic.Create(InvalidExternalAspect, location: null, name,
+				externalAspects.Count));
 			return Empty;
 		}
 
@@ -153,6 +171,7 @@ public abstract record EcsDefinition;
 public record EcsProgram(
 	EcsNamespace? Namespace,
 	IEnumerable<EcsComponent> Components,
+	IEnumerable<EcsBlueprint> Blueprints,
 	IEnumerable<EcsSystem> Systems,
 	EcsWorld World) : EcsDefinition;
 
@@ -193,6 +212,14 @@ public record EcsAspectComponent(string Name, bool IsOptional, bool IsReadonly, 
 public record EcsTagComponent(string Name) : EcsAspectComponentBase(Name);
 
 public record EcsExcludedComponent(string Name) : EcsAspectComponentBase(Name);
+
+public record EcsBlueprint(
+	string Name,
+	bool IsAbstract,
+	IEnumerable<EcsBlueprintComponent> Bases,
+	IEnumerable<EcsBlueprintComponent> Components) : EcsDefinition;
+
+public record EcsBlueprintComponent(string Name) : EcsDefinition;
 
 public record EcsWorld(
 	string? Name,
