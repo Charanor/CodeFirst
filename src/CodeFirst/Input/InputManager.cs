@@ -30,8 +30,8 @@ public class InputManager
 	}
 
 	public bool LatestInputWasGamepad { get; private set; }
-	public bool IsFocused { get; private set; }
-	public bool MouseInBounds { get; private set; }
+	public bool IsFocused { get; private set; } = true;
+	public bool MouseInBounds { get; private set; } = true;
 
 	~InputManager()
 	{

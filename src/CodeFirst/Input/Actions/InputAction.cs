@@ -61,9 +61,16 @@ public abstract record InputAction
 
 	public static implicit operator InputAction((Keys Negative, Keys Positive) axis) =>
 		new KeyAxisInputAction(axis.Positive, axis.Negative);
+
 	public static implicit operator InputAction(MouseButton button) => new MouseButtonInputAction(button);
+
+	public static implicit operator InputAction((MouseButton Negative, MouseButton Positive) axis) =>
+		new MouseAxisInputAction(axis.Positive, axis.Negative);
+
 	public static implicit operator InputAction(GamepadButton button) => new GamepadButtonInputAction(Id: 0, button);
 	public static implicit operator InputAction(GamepadAxis axis) => new GamepadAxisInputAction(Id: 0, axis);
+
+	public static implicit operator InputAction(KeyModifiers modifier) => new ModifierInputAction(modifier);
 
 	public static InputAction operator !(InputAction action) => action.Inverted();
 	public static InputAction operator -(InputAction action) => action.Inverted();
