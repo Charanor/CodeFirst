@@ -94,8 +94,8 @@ public partial class TiledMap
 				return new TiledMapObject
 				{
 					Id = xObject.IntAttribute("id"),
-					Name = xObject.StringAttribute("name"),
-					Type = xObject.StringAttribute("type"),
+					Name = xObject.StringAttribute("name", string.Empty),
+					Type = xObject.StringAttribute("type", string.Empty),
 					Gid = xObject.IntAttribute("gid", defaultValue: 0),
 					X = xObject.IntAttribute("x"),
 					Y = xObject.IntAttribute("y"),

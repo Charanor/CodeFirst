@@ -8,10 +8,10 @@ namespace CodeFirst.Cartography.Assets;
 public class TiledMapAssetResolver : IAssetResolver
 {
 	private static readonly ILogger Logger = LoggingManager.Get<TiledMapAssetResolver>();
-	
-	public bool CanLoadAssetOfType(Type type) => type == typeof(TiledMap);
 
-	public bool TryLoadAsset(FileHandle fileHandle,[NotNullWhen(true)] out object? asset)
+	public bool CanLoadAssetOfType(Type type) => type == typeof(TiledMap);
+	
+	public bool TryLoadAsset(FileHandle fileHandle, [NotNullWhen(true)] out object? asset)
 	{
 		if (!fileHandle.HasExtension(".tmx"))
 		{
@@ -24,7 +24,7 @@ public class TiledMapAssetResolver : IAssetResolver
 			asset = TiledMap.CreateFromFileHandle(fileHandle);
 			return true;
 		}
-		catch(Exception e)
+		catch (Exception e)
 		{
 			Logger.Error(e.ToString());
 			asset = default;

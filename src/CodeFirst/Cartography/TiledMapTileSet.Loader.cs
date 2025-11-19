@@ -31,6 +31,9 @@ public partial class TiledMapTileSet
 			: null;
 
 		var tileCount = root.IntAttribute("tilecount");
+		var tileWidth = root.IntAttribute("tilewidth");
+		var tileHeight = root.IntAttribute("tileheight");
+		var columns = root.IntAttribute("columns");
 		var xTiles = root.Elements("tile");
 		var tiles = Enumerable.Range(start: 0, tileCount).Select(id =>
 		{
@@ -83,13 +86,20 @@ public partial class TiledMapTileSet
 				// Null assertion is valid here since if we don't have an "image" element the parent image must be present
 				: image!;
 
+			var defaultX = id % columns * tileWidth;
+			var defaultY = (int)(id / (float)columns + 1) * tileHeight;
+			if (image != null)
+			{
+				defaultY = image.Height - defaultY;
+			}
+
 			return new TiledMapTileSetTile
 			{
 				Type = xTile?.StringAttribute("type", string.Empty) ?? string.Empty,
-				X = xTile?.IntAttribute("x", defaultValue: 0) ?? 0,
-				Y = xTile?.IntAttribute("y", defaultValue: 0) ?? 0,
-				Width = xTile?.IntAttribute("width", tileImage.Width) ?? tileImage.Width,
-				Height = xTile?.IntAttribute("height", tileImage.Height) ?? tileImage.Height,
+				X = xTile?.IntAttribute("x", defaultX) ?? defaultX,
+				Y = xTile?.IntAttribute("y", defaultY) ?? defaultY,
+				Width = xTile?.IntAttribute("width", tileWidth) ?? tileWidth,
+				Height = xTile?.IntAttribute("height", tileHeight) ?? tileHeight,
 				Image = tileImage,
 				// TODO: Implement proper parsing of animation frames
 				AnimationFrames = Enumerable.Empty<TiledMapTileSetTileAnimationFrame>().ToList().AsReadOnly(),
@@ -107,7 +117,7 @@ public partial class TiledMapTileSet
 			TileCount = tileCount,
 			Columns = root.IntAttribute("columns"),
 			Image = image,
-			Tiles = tiles.ToList().AsReadOnly(),
+			Tiles = tiles.ToList().AsReadOnly()
 			// TODO: Parse other attributes
 		};
 	}
