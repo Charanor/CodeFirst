@@ -5,13 +5,10 @@ using Vector3 = OpenTK.Mathematics.Vector3;
 
 namespace CodeFirst.Utils.Math;
 
-public class Interpolation
+public class Interpolation(Interpolator interpolator)
 {
-	public static readonly Interpolation Linear = new(
-		static value => value);
-
-	public static readonly Interpolation Smooth = new(
-		static value => value * value * (3 - value * 2));
+	public static readonly Interpolation Linear = new(static value => value);
+	public static readonly Interpolation Smooth = new(static value => value * value * (3 - value * 2));
 
 	public static readonly Interpolation Smoother = new(static value =>
 		value * value * value * (value * (value * 6 - 15) + 10));
@@ -19,13 +16,6 @@ public class Interpolation
 	public static readonly Interpolation Pow2 = new(PowInterpolator(2));
 	public static readonly Interpolation Pow3 = new(PowInterpolator(3));
 	public static readonly Interpolation Pow4 = new(PowInterpolator(4));
-
-	private readonly Interpolator interpolator;
-
-	public Interpolation(Interpolator interpolator)
-	{
-		this.interpolator = interpolator;
-	}
 
 	[Pure]
 	public float Apply(float start, float end, [ValueRange(from: 0, to: 1)] float alpha) =>
@@ -40,7 +30,7 @@ public class Interpolation
 		start + (end - start) * interpolator(alpha);
 
 	[Pure]
-	public T Apply<T>(in T start, in T end, [ValueRange(from: 0, to: 1)] float alpha) 
+	public T Apply<T>(in T start, in T end, [ValueRange(from: 0, to: 1)] float alpha)
 		where T : IAdditionOperators<T, T, T>, ISubtractionOperators<T, T, T>, IMultiplyOperators<T, float, T>
 		=> start + (end - start) * interpolator(alpha);
 
@@ -121,7 +111,7 @@ public class Interpolation
 		return to + (change + temp) * exp;
 	}
 
-	public static T Spring<T>(T from, T to, ref T vel, float smoothTime, float delta) 
+	public static T Spring<T>(T from, T to, ref T vel, float smoothTime, float delta)
 		where T : IAdditionOperators<T, T, T>, ISubtractionOperators<T, T, T>, IMultiplyOperators<T, float, T>
 	{
 		// Game Programming Gems 4: 1.10

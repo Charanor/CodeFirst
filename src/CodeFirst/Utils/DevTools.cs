@@ -15,9 +15,8 @@ public static class DevTools
 	/// <summary>
 	///     A zero-arg function that returns <c>true</c> if we are currently in dev mode, or <c>false</c> if we are not
 	///     in dev mode. By default this is a function that returns <c>true</c> when <c>DEBUG</c> is defined through
-	///     environment
-	///     variable or <c>#define DEBUG</c>. If your setup requires some other check, simply assign a new function to
-	///     this property.
+	///     environment variable or <c>#define DEBUG</c>. If your setup requires some other check, simply assign a new
+	///		function to this property.
 	/// </summary>
 	/// <example>if (DevTools.IsDevMode()) throw new FooBarException("Missing baz!")</example>
 	public static Func<bool> IsDevMode { get; set; } = () =>

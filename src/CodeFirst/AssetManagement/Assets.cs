@@ -17,12 +17,9 @@ public static class Assets
 
 	private static readonly ILogger Logger = LoggingManager.Get(nameof(Assets));
 
-	private static readonly IDictionary<string, PathResolver> SchemeResolvers = new Dictionary<string, PathResolver>();
+	private static readonly Dictionary<string, PathResolver> SchemeResolvers = new();
 
-	private static readonly IList<IAssetResolver> AssetResolvers = new List<IAssetResolver>
-	{
-		new TextAssetResolver()
-	};
+	private static readonly List<IAssetResolver> AssetResolvers = [new TextAssetResolver()];
 
 	private static readonly ConcurrentDictionary<string, Task<object>> AssetTasks = new();
 	private static readonly ConcurrentDictionary<string, int> InstanceCounts = new();
